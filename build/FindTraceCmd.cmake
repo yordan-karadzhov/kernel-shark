@@ -18,7 +18,6 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
 
   find_program(TRACECMD_EXECUTABLE   NAMES  trace-cmd
                                      PATHS  $ENV{TRACE_CMD}/tracecmd/
-                                            ${CMAKE_SOURCE_DIR}/../tracecmd/
                                      NO_DEFAULT_PATH)
 
 endif (CMAKE_BUILD_TYPE MATCHES Debug)
@@ -31,26 +30,22 @@ endif (NOT TRACECMD_EXECUTABLE)
 
 find_path(TRACECMD_INCLUDE_DIR  NAMES  trace-cmd/trace-cmd.h
                                 PATHS  $ENV{TRACE_CMD}/include/
-                                       ${CMAKE_SOURCE_DIR}/../include/
                                 NO_DEFAULT_PATH)
+
 find_path(TRACEFS_INCLUDE_DIR   NAMES  tracefs/tracefs.h
                                 PATHS  $ENV{TRACE_CMD}/include/
-                                       ${CMAKE_SOURCE_DIR}/../include/
                                 NO_DEFAULT_PATH)
 
 find_library(TRACECMD_LIBRARY   NAMES  trace-cmd/libtracecmd.a
                                 PATHS  $ENV{TRACE_CMD}/lib/
-                                       ${CMAKE_SOURCE_DIR}/../lib/
                                 NO_DEFAULT_PATH)
 
 find_library(TRACEFS_LIBRARY    NAMES  tracefs/libtracefs.a
                                 PATHS  $ENV{TRACE_CMD}/lib/
-                                       ${CMAKE_SOURCE_DIR}/../lib/
                                 NO_DEFAULT_PATH)
 
 find_library(TRACEEVENT_LIBRARY NAMES  traceevent/libtraceevent.a
                                 PATHS  $ENV{TRACE_CMD}/lib/
-                                       ${CMAKE_SOURCE_DIR}/../lib/
                                 NO_DEFAULT_PATH)
 
 # If not found, search in the default system paths. Note that if the previous
@@ -93,7 +88,6 @@ ELSE (TRACEFS_FOUND)
   MESSAGE(FATAL_ERROR "\nCould not find tracefs!\n")
 
 ENDIF (TRACEFS_FOUND)
-
 
 IF (TRACEEVENT_LIBRARY)
 
