@@ -80,6 +80,8 @@ ColorTable getTaskColorTable();
 
 ColorTable getCPUColorTable();
 
+ColorTable getStreamColorTable();
+
 Color getColor(ColorTable *colors, int pid);
 
 /** Represents an abstract graphical element. */

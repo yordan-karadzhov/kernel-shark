@@ -200,6 +200,39 @@ ColorTable getCPUColorTable()
 }
 
 /**
+ * @brief Create a Hash table of Rainbow colors. The Steam Ids are
+ *	  mapped to the palette of Rainbow colors.
+ *
+ * @returns ColorTable instance.
+ */
+ColorTable getStreamColorTable()
+{
+	kshark_context *kshark_ctx(nullptr);
+	ColorTable colors;
+	Color color;
+	float alpha(.35);
+	int *streamIds;
+
+	if (!kshark_instance(&kshark_ctx))
+		return colors;
+
+	streamIds = kshark_all_streams(kshark_ctx);
+	for (int i = 0; i < kshark_ctx->n_streams; ++i) {
+		/*
+		 * Starting from index 6 provides better functioning of the
+		 * color scheme slider.
+		 */
+		color.setRainbowColor(i + 6);
+		color.blend(alpha);
+		colors[streamIds[i]] = color;
+	}
+
+	free(streamIds);
+
+	return colors;
+}
+
+/**
  * @brief Search the Hash table of Rainbow colors for a particular key (pid).
  *
  * @param colors: Input location for the ColorTable instance.
