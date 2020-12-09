@@ -97,6 +97,23 @@ void Color::setRainbowColor(int n)
 	set(r, g, b);
 }
 
+/** Alpha blending with white background. */
+void Color::blend(float alpha)
+{
+	if (alpha < 0 || alpha > 1.)
+		return;
+
+	auto lamBld = [alpha](int val) {
+		return  val * alpha + (1 - alpha) * 255;
+	};
+
+	int r = lamBld(this->r());
+	int g = lamBld(this->g());
+	int b = lamBld(this->b());
+
+	set(r, g, b);
+}
+
 /**
  * @brief Create a Hash table of Rainbow colors. The sorted Pid values are
  *	  mapped to the palette of Rainbow colors.
@@ -473,6 +490,105 @@ void Polygon::_draw(const Color &col, float size) const
 		ksplot_draw_polygon_contour(_points, _nPoints,
 					    col.color_c_ptr(),
 					    size);
+}
+/** The created object will print/draw only the text without the frame. */
+TextBox::TextBox()
+: _text(""),
+  _font(nullptr)
+{
+	setPos(Point(0, 0));
+	_box._visible = false;
+}
+
+
+/** The created object will print/draw only the text without the frame. */
+TextBox::TextBox(ksplot_font *f)
+: _text(""),
+  _font(f)
+{
+	setPos(Point(0, 0));
+	_box._visible = false;
+}
+
+/** The created object will print/draw only the text without the frame. */
+TextBox::TextBox(ksplot_font *f, const std::string &text, const Point &pos)
+: _text(text),
+  _font(f)
+{
+	setPos(pos);
+	_box._visible = false;
+}
+
+/** The created object will print/draw only the text without the frame. */
+TextBox::TextBox(ksplot_font *f, const std::string &text, const Color &col,
+		 const Point &pos)
+: _text(text),
+  _font(f)
+{
+	_color = col;
+	setPos(pos);
+	_box._visible = false;
+}
+
+/** The created object will print/draw the text and the frame. */
+TextBox::TextBox(ksplot_font *f, const std::string &text, const Color &col,
+		 const Point &pos, int l, int h)
+: _text(text),
+  _font(f)
+{
+	setPos(pos);
+	setBoxAppearance(col, l, h);
+}
+
+/**
+ * @brief Set the position of the bottom-left corner of the frame.
+ *
+ * @param p: The coordinates of the bottom-left corner.
+ */
+void TextBox::setPos(const Point &p)
+{
+	_box.setPoint(0, p);
+}
+
+/**
+ * @brief Set the color and the dimensions of the frame.
+ *
+ * @param col: The color of the frame.
+ * @param l: The length of the frame.
+ * @param h: The height of the frame.
+ */
+void TextBox::setBoxAppearance(const Color &col, int l, int h)
+{
+	_box.setFill(true);
+	_box._color = col;
+	_box._visible = true;
+
+	if (h <= 0 && _font)
+		h = _font->height;
+
+	_box.setPoint(1, _box.getPointX(0),	_box.getPointY(0) - h);
+	_box.setPoint(2, _box.getPointX(0) + l,	_box.getPointY(0) - h);
+	_box.setPoint(3, _box.getPointX(0) + l,	_box.getPointY(0));
+}
+
+void TextBox::_draw(const Color &col, float size) const
+{
+	_box.draw();
+	if (!_font || _text.empty())
+		return;
+
+	if (_box._visible ) {
+		int bShift = (_box.getPointY(0) - _box.getPointY(1) - _font->height) / 2;
+		ksplot_print_text(_font, NULL,
+				  _box.getPointX(0) + _font->height / 4,
+				  _box.getPointY(0) - _font->base - bShift,
+				  _text.c_str());
+	} else {
+		ksplot_print_text(_font, col.color_c_ptr(),
+				  _box.getPointX(0) + _font->height / 4,
+				  _box.getPointY(0) - _font->base,
+				  _text.c_str());
+	}
 }
 
 /**

@@ -47,6 +47,8 @@ public:
 
 	void setRainbowColor(int n);
 
+	void blend(float alpha);
+
 	/**
 	 * @brief Get the C struct defining the RGB color.
 	 */
@@ -301,6 +303,46 @@ public:
 
 	/** Destroy the Rectangle object. Keep this destructor virtual. */
 	virtual ~Rectangle() {}
+};
+
+/**
+ * This class represents a text that is printed/drawn inside a colorful frame.
+ */
+class TextBox : public PlotObject {
+public:
+	TextBox();
+
+	TextBox(ksplot_font *f);
+
+	TextBox(ksplot_font *f, const std::string &text, const Point &pos);
+
+	TextBox(ksplot_font *f, const std::string &text, const Color &col,
+		const Point &pos);
+
+	TextBox(ksplot_font *f, const std::string &text, const Color &col,
+		const Point &pos, int l, int h = -1);
+
+	/** Destroy the TextBox object. Keep this destructor virtual. */
+	virtual ~TextBox() {}
+
+	/** Set the font to be used. */
+	void setFont(ksplot_font *f) {_font = f;}
+
+	/** Set the text. */
+	void setText(const std::string &t) {_text = t;}
+
+	void setPos(const Point &p);
+
+	void setBoxAppearance(const Color &col, int l, int h);
+
+private:
+	void _draw(const Color &, float size = 1.) const override;
+
+	std::string	_text;
+
+	ksplot_font	*_font;
+
+	Rectangle	_box;
 };
 
 /**
