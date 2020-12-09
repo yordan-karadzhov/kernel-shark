@@ -578,6 +578,53 @@ private:
 	int	_firstBinOffset();
 };
 
+/**
+ * This class represents the graphical element visualizing how the execution
+ * goes from the host to the guest and back.
+ */
+class VirtBridge : public Polyline {
+public:
+	/** Create a default VirtBridge. */
+	VirtBridge() : Polyline(4) {}
+
+	/* Keep this destructor virtual. */
+	virtual ~VirtBridge() {}
+
+	/** Set the coordinates of the EntryHost point of the VirtBridge. */
+	void setEntryHost(int x, int y) {setPoint(0, x, y);}
+
+	/** Set the coordinates of the EntryGuest point of the VirtBridge. */
+	void setEntryGuest(int x, int y) {setPoint(1, x, y);}
+
+	/** Set the coordinates of the ExitGuest point of the VirtBridge. */
+	void setExitGuest(int x, int y) {setPoint(2, x, y);}
+
+	/** Set the coordinates of the ExitHost point of the VirtBridge. */
+	void setExitHost(int x, int y) {setPoint(3, x, y);}
+};
+
+/**
+ * This class represents the graphical element visualizing the time interval
+ * in the guest during which the execution has been returned to the host.
+ */
+class VirtGap : public Shape {
+public:
+	/** Create a VirtGap with height "h". */
+	VirtGap(int h) :_height(h) {}
+
+	/**  The point where the execution exits the VM. */
+	Point _exitPoint;
+
+	/** The point where the execution enters the VM. */
+	Point _entryPoint;
+
+private:
+	/** The vertical size (height) of the graphical element. */
+	int _height;
+
+	void _draw(const Color &col, float size) const;
+};
+
 }; // KsPlot
 
 #endif  /* _KS_PLOT_TOOLS_H */

@@ -1460,4 +1460,26 @@ void Graph::draw(float size)
 	}
 }
 
+void VirtGap::_draw(const Color &col, float size) const
+{
+	if (_entryPoint.x() - _exitPoint.x() < 4)
+		return;
+
+	Point p0(_exitPoint.x() + _size, _exitPoint.y());
+	Point p1(_exitPoint.x() + _size, _exitPoint.y() - _height);
+	Point p2(_entryPoint.x() - _size , _entryPoint.y());
+	Point p3(_entryPoint.x() - _size , _entryPoint.y() - _height);
+
+	Rectangle g;
+
+	g.setPoint(0, p0);
+	g.setPoint(1, p1);
+	g.setPoint(2, p2);
+	g.setPoint(3, p3);
+
+	g._color = {255, 255, 255}; // The virt. gap is always white.
+	g.setFill(false);
+	g.draw();
+}
+
 } // KsPlot
