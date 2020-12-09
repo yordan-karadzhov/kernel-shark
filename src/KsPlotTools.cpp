@@ -252,6 +252,21 @@ Color getColor(const ColorTable *colors, int id)
 }
 
 /**
+ * @brief A method to be implemented in the inheriting class. It calculates
+ *	  the distance between the position of the click and the shape. This
+ *	  distance is used by the GUI to decide if the corresponding
+ *	  "Double click" action of the shape must be executed. The default
+ *	  implementation returns infinity.
+ *
+ * @param x: The X coordinate of the click.
+ * @param y: The Y coordinate of the click.
+ */
+double PlotObject::distance(int x, int y) const
+{
+	return std::numeric_limits<double>::max();
+}
+
+/**
  * @brief Create a default Shape.
  */
 Shape::Shape()
@@ -296,6 +311,22 @@ Shape::Shape(Shape &&s)
 */
 Shape::~Shape() {
 	delete[] _points;
+}
+
+/** @brief Get the coordinates of the geometrical center of this shape. */
+ksplot_point Shape::center() const
+{
+	ksplot_point c = {0, 0};
+
+	for (size_t i = 0; i < _nPoints; ++i) {
+		c.x += _points[i].x;
+		c.y += _points[i].y;
+	}
+
+	c.x /= _nPoints;
+	c.y /= _nPoints;
+
+	return c;
 }
 
 /** Assignment operator. */

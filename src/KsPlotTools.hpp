@@ -103,6 +103,16 @@ public:
 			_draw(_color, _size);
 	}
 
+	/**
+	 * Generic action to be executed when the objects is double clicked.
+	 */
+	void doubleClick() const {
+		if (_visible)
+			_doubleClick();
+	}
+
+	virtual double distance(int x, int y) const;
+
 	/** Is this object visible. */
 	bool	_visible;
 
@@ -114,6 +124,8 @@ public:
 
 private:
 	virtual void _draw(const Color &col, float s) const = 0;
+
+	virtual void _doubleClick() const {}
 };
 
 /** List of graphical element. */
@@ -134,6 +146,8 @@ public:
 
 	/* Keep this destructor virtual. */
 	virtual ~Shape();
+
+	ksplot_point center() const;
 
 	void operator=(const Shape &s);
 
