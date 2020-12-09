@@ -432,9 +432,9 @@ public:
 	/** @brief Set the Hash table of Task's colors. */
 	void setBinColorTablePtr(KsPlot::ColorTable *ct) {_binColors = ct;}
 
-	void fillCPUGraph(int cpu);
+	void fillCPUGraph(int sd, int cpu);
 
-	void fillTaskGraph(int pid);
+	void fillTaskGraph(int sd, int pid);
 
 	void draw(float s = 1);
 
