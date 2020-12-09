@@ -449,7 +449,7 @@ public:
 	 */
 	Graph(const Graph &) = delete;
 
-	/* Disable moving. Same as copying.*/
+	/* Disable moving. Same as copying. */
 	Graph(Graph &&) = delete;
 
 	Graph(kshark_trace_histo *histo, KsPlot::ColorTable *bct,
@@ -512,18 +512,10 @@ public:
 	void setLabelAppearance(ksplot_font *f, Color col,
 				int lSize, int hMargin);
 
-	/**
-	 * Check if this graph is Zero Suppressed. Zero Suppressed means that
-	 * bins having Id value = 0 (Idle task records) are not grouped
-	 * together.
-	 */
-	bool zeroSuppressed(bool zs) {return _zeroSuppress;}
+	void setIdleSuppressed(bool is, int ip = 0);
 
-	/**
-	 * Set Zero Suppression. If True, the bins having Id value = 0 (Idle
-	 * task records) are not grouped together.
-	 */
-	void setZeroSuppressed(bool zs) {_zeroSuppress = zs;}
+	/** Draw the base line of the graph or not. */
+	void setDrawBase(bool b) {_drawBase = b;}
 
 protected:
 	/** Pointer to the model descriptor object. */
@@ -559,7 +551,11 @@ protected:
 private:
 	TextBox		_label;
 
-	bool			_zeroSuppress;
+	bool	_idleSuppress;
+
+	int	_idlePid;
+
+	bool	_drawBase;
 
 	void	_initBins();
 

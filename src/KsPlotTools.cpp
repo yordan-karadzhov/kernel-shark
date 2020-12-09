@@ -755,12 +755,13 @@ Graph::Graph()
 : _histoPtr(nullptr),
   _bins(nullptr),
   _size(0),
-  _hMargin(30),
   _collectionPtr(nullptr),
   _binColors(nullptr),
   _ensembleColors(nullptr),
   _label(),
-  _zeroSuppress(false)
+  _idleSuppress(false),
+  _idlePid(0),
+  _drawBase(true)
 {}
 
 /**
@@ -774,12 +775,13 @@ Graph::Graph(kshark_trace_histo *histo, KsPlot::ColorTable *bct, KsPlot::ColorTa
 : _histoPtr(histo),
   _bins(new(std::nothrow) Bin[histo->n_bins]),
   _size(histo->n_bins),
-  _hMargin(30),
   _collectionPtr(nullptr),
   _binColors(bct),
   _ensembleColors(ect),
   _label(),
-  _zeroSuppress(false)
+  _idleSuppress(false),
+  _idlePid(0),
+  _drawBase(true)
 {
 	if (!_bins) {
 		_size = 0;
@@ -905,6 +907,20 @@ void Graph::setLabelAppearance(ksplot_font *f, Color col, int lSize, int hMargin
 }
 
 /**
+ * @brief Set Idle Suppression. If True, the bins containing Idle task records
+ *	  are not grouped together.
+ *
+ * @param is: If True, Idle is suppressed.
+ * @param ip: The process Id of the Idle task. If Idle is not suppressed, this
+ *	      value has no effect.
+ */
+void Graph::setIdleSuppressed(bool is, int ip)
+{
+	_idleSuppress = is;
+	_idlePid = ip;
+}
+
+/**
  * @brief Set the value of a given bin.
  *
  * @param bin: Bin Id.
@@ -916,7 +932,7 @@ void Graph::setBinValue(int bin, int val)
 }
 
 /**
- * @brief Set the Process Id (Front and Back) a given bin.
+ * @brief Set the Process Id (Front and Back) of a given bin.
  *
  * @param bin: Bin Id.
  * @param pidF: The Process Id detected at the from (first in time) edge of
@@ -1328,22 +1344,28 @@ void Graph::draw(float size)
 
 	_label.draw();
 
-	/*
-	 * Start by drawing a line between the base points of the first and
-	 * the last bin.
-	 */
-	drawLine(_bins[0]._base, _bins[_size - 1]._base, {}, size);
+	if (_drawBase) {
+		/*
+		 * Start by drawing a line between the base points of the first and
+		 * the last bin.
+		 */
+		drawLine(_bins[0]._base, _bins[_size - 1]._base, {}, size);
+	}
 
 	/* Draw as vartical lines all bins containing data. */
 	for (int i = 0; i < _size; ++i)
-		if (_bins[i]._idFront >= 0 || _bins[i]._idBack >= 0)
+		if (_bins[i]._idFront >= 0 || _bins[i]._idBack >= 0 ||
+		    _bins[i]._idFront == _idlePid || _bins[i]._idBack ==_idlePid)
 			if (_bins[i]._visMask & KS_EVENT_VIEW_FILTER_MASK) {
 				_bins[i]._size = size;
 				_bins[i].draw();
 			}
 
 	auto lamCheckEnsblVal = [this] (int v) {
-		return v > 0 || (v == 0 && !this->_zeroSuppress);
+		if (_idleSuppress && v == _idlePid)
+			return false;
+
+		return v >= 0;
 	};
 
 	/*
@@ -1424,4 +1446,4 @@ void Graph::draw(float size)
 	}
 }
 
-}; // KsPlot
+} // KsPlot
