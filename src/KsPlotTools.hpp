@@ -506,7 +506,11 @@ public:
 	/** @brief Get a particular bin. */
 	const Bin &bin(int bin) const {return _bins[bin];}
 
-	void setHMargin(int hMargin);
+	/** Set the text of the graph's label. */
+	void setLabelText(std::string text) {_label.setText(text);}
+
+	void setLabelAppearance(ksplot_font *f, Color col,
+				int lSize, int hMargin);
 
 	/**
 	 * Check if this graph is Zero Suppressed. Zero Suppressed means that
@@ -521,7 +525,7 @@ public:
 	 */
 	void setZeroSuppressed(bool zs) {_zeroSuppress = zs;}
 
-private:
+protected:
 	/** Pointer to the model descriptor object. */
 	kshark_trace_histo	*_histoPtr;
 
@@ -537,6 +541,9 @@ private:
 	 */
 	int			_hMargin;
 
+	/** The horizontal size of the Graph's label. */
+	int			_labelSize;
+
 	/** The vertical size (height) of the Graph. */
 	int			_height;
 
@@ -549,9 +556,14 @@ private:
 	/** Hash table of ensemble's colors. */
 	ColorTable		*_ensembleColors;
 
+private:
+	TextBox		_label;
+
 	bool			_zeroSuppress;
 
-	void _initBins();
+	void	_initBins();
+
+	int	_firstBinOffset();
 };
 
 }; // KsPlot

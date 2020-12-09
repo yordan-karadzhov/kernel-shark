@@ -759,6 +759,7 @@ Graph::Graph()
   _collectionPtr(nullptr),
   _binColors(nullptr),
   _ensembleColors(nullptr),
+  _label(),
   _zeroSuppress(false)
 {}
 
@@ -777,6 +778,7 @@ Graph::Graph(kshark_trace_histo *histo, KsPlot::ColorTable *bct, KsPlot::ColorTa
   _collectionPtr(nullptr),
   _binColors(bct),
   _ensembleColors(ect),
+  _label(),
   _zeroSuppress(false)
 {
 	if (!_bins) {
@@ -795,10 +797,15 @@ Graph::~Graph()
 	delete[] _bins;
 }
 
+int Graph::_firstBinOffset()
+{
+	return _labelSize + 2 * _hMargin;
+}
+
 void Graph::_initBins()
 {
 	for (int i = 0; i < _size; ++i) {
-		_bins[i]._base.setX(i + _hMargin);
+		_bins[i]._base.setX(i + _firstBinOffset());
 		_bins[i]._base.setY(0);
 		_bins[i]._val.setX(_bins[i]._base.x());
 		_bins[i]._val.setY(_bins[i]._base.y());
@@ -852,6 +859,8 @@ void Graph::setBase(int b)
 	if (b == _bins[0]._base.y()) // Nothing to do.
 		return;
 
+	_label.setBoxAppearance(_label._color, _labelSize, height());
+
 	for (int i = 0; i < _size; ++i) {
 		mod = _bins[i].mod();
 		_bins[i]._base.setY(b);
@@ -870,24 +879,29 @@ void Graph::setHeight(int h)
 }
 
 /**
- * @brief Set the size of the white space added on both sides of the Graph.
+ * @brief Set the color and the dimensions of the graph's label.
  *
- * @param hMargin: the size of the white space in pixels.
+ * @param f: The font to be used to draw the labels.
+ * @param col: The color of the ComboGraph's label.
+ * @param lSize: the size of the graph's label in pixels.
+ * @param hMargin: the size of the white margine space in pixels.
  */
-void Graph::setHMargin(int hMargin)
+void Graph::setLabelAppearance(ksplot_font *f, Color col, int lSize, int hMargin)
 {
 	if (!_size)
 		return;
 
-	if (hMargin == _bins[0]._base.x()) // Nothing to do.
-		return;
+	_labelSize = lSize;
+	_hMargin = hMargin;
+
+	_label.setPos({_hMargin, base()});
+	_label.setFont(f);
+	_label.setBoxAppearance(col, lSize, height());
 
 	for (int i = 0; i < _size; ++i) {
-		_bins[i]._base.setX(i + hMargin);
+		_bins[i]._base.setX(i + _firstBinOffset());
 		_bins[i]._val.setX(_bins[i]._base.x());
 	}
-
-	_hMargin = hMargin;
 }
 
 /**
@@ -1311,6 +1325,8 @@ void Graph::draw(float size)
 {
 	int lastPid(-1), b(0), boxH(_height * .3);
 	Rectangle taskBox;
+
+	_label.draw();
 
 	/*
 	 * Start by drawing a line between the base points of the first and
