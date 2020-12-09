@@ -82,7 +82,7 @@ ColorTable getCPUColorTable();
 
 ColorTable getStreamColorTable();
 
-Color getColor(ColorTable *colors, int pid);
+Color getColor(const ColorTable *colors, int id);
 
 /** Represents an abstract graphical element. */
 class PlotObject {

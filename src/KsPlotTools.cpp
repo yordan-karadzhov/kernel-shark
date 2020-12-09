@@ -233,17 +233,17 @@ ColorTable getStreamColorTable()
 }
 
 /**
- * @brief Search the Hash table of Rainbow colors for a particular key (pid).
+ * @brief Search the Hash table of Rainbow colors for a particular key (Id).
  *
  * @param colors: Input location for the ColorTable instance.
- * @param pid: the Process Id to search for.
+ * @param id: The Id to search for.
  *
- * @returns The Rainbow color of the key "pid". If "pid" does not exist, the
+ * @returns The Rainbow color of the key "id". If "id" does not exist, the
  *	    returned color is Black.
  */
-Color getColor(ColorTable *colors, int pid)
+Color getColor(const ColorTable *colors, int id)
 {
-	auto item = colors->find(pid);
+	auto item = colors->find(id);
 
 	if (item != colors->end())
 		return item->second;
