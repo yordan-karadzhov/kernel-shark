@@ -64,7 +64,7 @@ public:
 	 * @brief Get the frequency value used to generate the Rainbow
 	 * palette.
 	 */
-	static float getRainbowFrequency() {return _frequency;}
+	static float rainbowFrequency() {return _frequency;}
 
 private:
 	ksplot_color _col_c;
@@ -76,11 +76,11 @@ private:
 /** Hash table of colors. */
 typedef std::unordered_map<int, KsPlot::Color> ColorTable;
 
-ColorTable getTaskColorTable();
+ColorTable taskColorTable();
 
-ColorTable getCPUColorTable();
+ColorTable CPUColorTable();
 
-ColorTable getStreamColorTable();
+ColorTable streamColorTable();
 
 Color getColor(const ColorTable *colors, int id);
 
@@ -143,15 +143,15 @@ public:
 
 	void setPoint(size_t i, const Point &p);
 
-	const ksplot_point *getPoint(size_t i) const;
+	const ksplot_point *point(size_t i) const;
 
 	void setPointX(size_t i, int x);
 
 	void setPointY(size_t i, int y);
 
-	int getPointX(size_t i) const;
+	int pointX(size_t i) const;
 
-	int getPointY(size_t i) const;
+	int pointY(size_t i) const;
 
 	/**
 	 * @brief Get the number of point used to define the polygon.
@@ -179,10 +179,10 @@ public:
 	virtual ~Point() {}
 
 	/** @brief Get the horizontal coordinate of the point. */
-	int x() const {return getPointX(0);}
+	int x() const {return pointX(0);}
 
 	/** @brief Get the vertical coordinate of the point. */
-	int y() const {return getPointY(0);}
+	int y() const {return pointY(0);}
 
 	/** @brief Set the horizontal coordinate of the point. */
 	void setX(int x) {setPointX(0, x);}
@@ -201,7 +201,7 @@ public:
 	/**
 	 * @brief Get the C struct defining the point.
 	 */
-	const ksplot_point *point_c_ptr() const {return getPoint(0);}
+	const ksplot_point *point_c_ptr() const {return point(0);}
 
 private:
 	void _draw(const Color &col, float size = 1.) const override;
@@ -235,7 +235,7 @@ public:
 	void setA(int x, int y) { setPoint(0, x, y);}
 
 	/** @brief Get the first finishing point of the line. */
-	const ksplot_point *getA() const {return getPoint(0);}
+	const ksplot_point *a() const {return point(0);}
 
 	/**
 	 * @brief Set the coordinats of the second finishing point of the
@@ -247,7 +247,7 @@ public:
 	void setB(int x, int y) {setPoint(1, x, y);}
 
 	/** @brief Get the second finishing point of the line. */
-	const ksplot_point *getB() const {return getPoint(1);}
+	const ksplot_point *b() const {return point(1);}
 
 private:
 	void _draw(const Color &col, float size = 1.) const override;
@@ -408,7 +408,7 @@ public:
 	void drawVal(float size = 2.);
 
 	/** Get the height (module) of the line, representing the Bin. */
-	int mod() {return _val.y() - _base.y();}
+	int mod() const {return _val.y() - _base.y();}
 
 	/** @brief Set the vertical coordinate of the "val" Point. */
 	void setVal(int v) {_val.setY(_base.y() - v); }
@@ -458,7 +458,7 @@ public:
 	/* Keep this destructor virtual. */
 	virtual ~Graph();
 
-	int size();
+	int size() const;
 
 	void setModelPtr(kshark_trace_histo *histo);
 
@@ -485,12 +485,12 @@ public:
 	void setBase(int b);
 
 	/** @brief Get the vertical coordinate of the Graph's base. */
-	int getBase() const {return _bins[0]._base.y();}
+	int base() const {return _bins[0]._base.y();}
 
 	void setHeight(int h);
 
 	/** @brief Get the vertical size (height) of the Graph. */
-	int getHeight() const {return _height;}
+	int height() const {return _height;}
 
 	void setBinValue(int bin, int val);
 
@@ -504,7 +504,7 @@ public:
 		    const Color &col, uint8_t m);
 
 	/** @brief Get a particular bin. */
-	const Bin &getBin(int bin) const {return _bins[bin];}
+	const Bin &bin(int bin) const {return _bins[bin];}
 
 	void setHMargin(int hMargin);
 

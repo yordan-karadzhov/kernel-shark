@@ -120,7 +120,7 @@ void Color::blend(float alpha)
  *
  * @returns ColorTable instance.
  */
-ColorTable getTaskColorTable()
+ColorTable taskColorTable()
 {
 	struct kshark_context *kshark_ctx(nullptr);
 	int nTasks(0), pid, *pids, i(0), *streamIds;
@@ -173,7 +173,7 @@ ColorTable getTaskColorTable()
  *
  * @returns ColorTable instance.
  */
-ColorTable getCPUColorTable()
+ColorTable CPUColorTable()
 {
 	kshark_context *kshark_ctx(nullptr);
 	int nCPUs, nCPUMax(0), *streamIds;
@@ -205,7 +205,7 @@ ColorTable getCPUColorTable()
  *
  * @returns ColorTable instance.
  */
-ColorTable getStreamColorTable()
+ColorTable streamColorTable()
 {
 	kshark_context *kshark_ctx(nullptr);
 	ColorTable colors;
@@ -360,7 +360,7 @@ void Shape::setPoint(size_t i, const Point &p)
  * @brief Get the point "i". If the point does not exist, the function returns
  *	  nullptr.
  */
-const ksplot_point *Shape::getPoint(size_t i) const
+const ksplot_point *Shape::point(size_t i) const
 {
 	if (i < _nPoints)
 		return &_points[i];
@@ -394,7 +394,7 @@ void Shape::setPointY(size_t i, int y) {
  * @brief Get the horizontal coordinate of the point "i". If the point does
  * 	  not exist, the function returns 0.
  */
-int Shape::getPointX(size_t i) const {
+int Shape::pointX(size_t i) const {
 	if (i < _nPoints)
 		return _points[i].x;
 
@@ -405,7 +405,7 @@ int Shape::getPointX(size_t i) const {
  * @brief Get the vertical coordinate of the point "i". If the point does
  * 	  not exist, the function returns 0.
  */
-int Shape::getPointY(size_t i) const {
+int Shape::pointY(size_t i) const {
 	if (i < _nPoints)
 		return _points[i].y;
 
@@ -599,9 +599,9 @@ void TextBox::setBoxAppearance(const Color &col, int l, int h)
 	if (h <= 0 && _font)
 		h = _font->height;
 
-	_box.setPoint(1, _box.getPointX(0),	_box.getPointY(0) - h);
-	_box.setPoint(2, _box.getPointX(0) + l,	_box.getPointY(0) - h);
-	_box.setPoint(3, _box.getPointX(0) + l,	_box.getPointY(0));
+	_box.setPoint(1, _box.pointX(0),	_box.pointY(0) - h);
+	_box.setPoint(2, _box.pointX(0) + l,	_box.pointY(0) - h);
+	_box.setPoint(3, _box.pointX(0) + l,	_box.pointY(0));
 }
 
 void TextBox::_draw(const Color &col, float size) const
@@ -611,15 +611,15 @@ void TextBox::_draw(const Color &col, float size) const
 		return;
 
 	if (_box._visible ) {
-		int bShift = (_box.getPointY(0) - _box.getPointY(1) - _font->height) / 2;
+		int bShift = (_box.pointY(0) - _box.pointY(1) - _font->height) / 2;
 		ksplot_print_text(_font, NULL,
-				  _box.getPointX(0) + _font->height / 4,
-				  _box.getPointY(0) - _font->base - bShift,
+				  _box.pointX(0) + _font->height / 4,
+				  _box.pointY(0) - _font->base - bShift,
 				  _text.c_str());
 	} else {
 		ksplot_print_text(_font, col.color_c_ptr(),
-				  _box.getPointX(0) + _font->height / 4,
-				  _box.getPointY(0) - _font->base,
+				  _box.pointX(0) + _font->height / 4,
+				  _box.pointY(0) - _font->base,
 				  _text.c_str());
 	}
 }
@@ -808,7 +808,7 @@ void Graph::_initBins()
 /**
  *  Get the number of bins.
  */
-int Graph::size()
+int Graph::size() const
 {
 	return _size;
 }
