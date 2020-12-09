@@ -253,6 +253,22 @@ private:
 	void _draw(const Color &col, float size = 1.) const override;
 };
 
+/** This class represents a polyline. */
+class Polyline : public Shape {
+public:
+	Polyline(size_t n);
+
+	/**
+	 * @brief Destroy the polyline object. Keep this destructor virtual.
+	 */
+	virtual ~Polyline() {}
+
+private:
+	Polyline() = delete;
+
+	void _draw(const Color &, float size = 1.) const override;
+};
+
 /** This class represents a polygon. */
 class Polygon : public Shape {
 public:

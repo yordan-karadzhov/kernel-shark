@@ -504,6 +504,20 @@ void Line::_draw(const Color &col, float size) const
 }
 
 /**
+ * @brief Create a default polyline. All points are initialized at (0, 0).
+ *
+ * @param n: The number of points connected by the polyline.
+ */
+Polyline::Polyline(size_t n)
+: Shape(n)
+{}
+
+void Polyline::_draw(const Color &col, float size) const
+{
+	ksplot_draw_polyline(_points, _nPoints, col.color_c_ptr(), size);
+}
+
+/**
  * @brief Create a default polygon. All points are initialized at (0, 0).
  *
  * @param n: The number of edges of the polygon.
