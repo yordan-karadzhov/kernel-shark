@@ -129,6 +129,12 @@ static const char top_name[] = { 0x1b, 0x00 }; // Non printable character
  */
 #define KS_UNNAMED	(char *) &top_name
 
+/**
+ * Timestamp calibration function type. To be user for system clock
+ * calibration.
+ */
+typedef void (*time_calib_func) (int64_t *, int64_t *);
+
 struct kshark_data_stream;
 
 /** A function type to be used by the method interface of the data stream. */
@@ -326,6 +332,15 @@ struct kshark_data_stream {
 
 	/** The number of plugins registered for this stream.*/
 	int			n_plugins;
+
+	/** System clock calibration function. */
+	time_calib_func		calib;
+
+	/** An array of time calibration constants. */
+	int64_t			*calib_array;
+
+	/** The size of the array of time calibration constants. */
+	size_t			calib_array_size;
 
 	/** List of Plugin's Event handlers. */
 	struct kshark_event_proc_handler	*event_handlers;
@@ -589,6 +604,12 @@ void kshark_clear_all_filters(struct kshark_context *kshark_ctx,
 
 void kshark_plugin_actions(struct kshark_data_stream *stream,
 			   void *record, struct kshark_entry *entry);
+
+void kshark_calib_entry(struct kshark_data_stream *stream,
+			struct kshark_entry *entry);
+
+void kshark_postprocess_entry(struct kshark_data_stream *stream,
+			      void *record, struct kshark_entry *entry);
 
 /** Search failed identifiers. */
 enum kshark_search_failed {
@@ -979,6 +1000,12 @@ struct kshark_config_doc *kshark_open_config_file(const char *file_name,
 						  const char *type);
 
 struct kshark_config_doc *kshark_json_to_conf(struct json_object *jobj);
+
+void kshark_offset_calib(int64_t *ts, int64_t *atgv);
+
+void kshark_set_clock_offset(struct kshark_context *kshark_ctx,
+			     struct kshark_entry **entries, size_t size,
+			     int sd, int64_t offset);
 
 /** Structure representing a data set made of KernelShark entries. */
 struct kshark_entry_data_set {
