@@ -121,6 +121,19 @@ void kshark_hash_id_free(struct kshark_hash_id *hash);
 
 int *kshark_hash_ids(struct kshark_hash_id *hash);
 
+/* Quiet warnings over documenting simple structures */
+//! @cond Doxygen_Suppress
+
+static const char top_name[] = { 0x1b, 0x00 }; // Non printable character
+
+//! @endcond
+
+/**
+ * Non printable character used for the name in the case when the name has to
+ * be ignored.
+ */
+#define KS_UNNAMED	(char *) &top_name
+
 struct kshark_data_stream;
 
 /** A function type to be used by the method interface of the data stream. */
@@ -264,6 +277,9 @@ struct kshark_generic_stream_interface {
 /** The limit in size of the data format identifier string. */
 #define KS_DATA_FORMAT_SIZE	15
 
+/** Data format identifier string indicating invalid data. */
+#define KS_INVALID_DATA		"invalid data"
+
 /** Structure representing a stream of trace data. */
 struct kshark_data_stream {
 	/** Data stream identifier. */
@@ -320,6 +336,12 @@ struct kshark_data_stream {
 	void				*interface;
 };
 
+static inline char *kshark_set_data_format(char *dest_format,
+					   const char *src_format)
+{
+	return strncpy(dest_format, src_format, KS_DATA_FORMAT_SIZE - 1);
+}
+
 /** Size of the task's hash table. */
 #define KS_TASK_HASH_SHIFT 16
 #define KS_TASK_HASH_SIZE (1 << KS_TASK_HASH_SHIFT)
@@ -333,8 +355,32 @@ struct kshark_task_list {
 	int			 pid;
 };
 
+/**
+ * Structure representing the parameters of the stream descriptor array owned
+ * by the kshark session.
+ */
+struct kshark_stream_array_descriptor {
+	/** The identifier of the Data stream added. */
+	int		max_stream_id;
+
+	/** The the next free Data stream identifier (index). */
+	int		next_free_stream_id;
+
+	/** The capacity of the array of stream objects (pointers). */
+	int		array_size;
+};
+
 /** Structure representing a kshark session. */
 struct kshark_context {
+	/** Array of data stream descriptors. */
+	struct kshark_data_stream	**stream;
+
+	/** The number of data streams. */
+	int				n_streams;
+
+	/** Parameters of the stream descriptor array. */
+	struct kshark_stream_array_descriptor	stream_info;
+
 	/** Input handle for the trace data file. */
 	struct tracecmd_input	*handle;
 
@@ -392,6 +438,18 @@ bool kshark_instance(struct kshark_context **kshark_ctx);
 
 bool kshark_open(struct kshark_context *kshark_ctx, const char *file);
 
+int kshark_add_stream(struct kshark_context *kshark_ctx);
+
+int kshark_remove_stream(struct kshark_context *kshark_ctx, int sd);
+
+struct kshark_data_stream *
+kshark_get_data_stream(struct kshark_context *kshark_ctx, int sd);
+
+struct kshark_data_stream *
+kshark_get_stream_from_entry(const struct kshark_entry *entry);
+
+int *kshark_all_streams(struct kshark_context *kshark_ctx);
+
 ssize_t kshark_load_data_entries(struct kshark_context *kshark_ctx,
 				 struct kshark_entry ***data_rows);
 
@@ -411,6 +469,10 @@ void kshark_close(struct kshark_context *kshark_ctx);
 
 void kshark_free(struct kshark_context *kshark_ctx);
 
+char *kshark_comm_from_pid(int sd, int pid);
+
+char *kshark_event_from_id(int sd, int event_id);
+
 int kshark_get_pid_easy(struct kshark_entry *entry);
 
 const char *kshark_get_task_easy(struct kshark_entry *entry);
@@ -426,6 +488,48 @@ const char *kshark_get_info_easy(struct kshark_entry *entry);
 void kshark_convert_nano(uint64_t time, uint64_t *sec, uint64_t *usec);
 
 char* kshark_dump_entry(const struct kshark_entry *entry);
+
+void kshark_print_entry(const struct kshark_entry *entry);
+
+int kshark_get_pid(const struct kshark_entry *entry);
+
+int kshark_get_event_id(const struct kshark_entry *entry);
+
+int *kshark_get_all_event_ids(struct kshark_data_stream *stream);
+
+int kshark_find_event_id(struct kshark_data_stream *stream,
+			 const char *event_name);
+
+char *kshark_get_event_name(const struct kshark_entry *entry);
+
+char *kshark_get_task(const struct kshark_entry *entry);
+
+char *kshark_get_info(const struct kshark_entry *entry);
+
+char *kshark_get_aux_info(const struct kshark_entry *entry);
+
+kshark_event_field_format
+kshark_get_event_field_type(const struct kshark_entry *entry,
+			    const char *field);
+
+int kshark_get_all_event_field_names(const struct kshark_entry *entry,
+				     char ***field);
+
+int kshark_read_record_field_int(struct kshark_data_stream *stream, void *rec,
+				 const char *field, int64_t *val);
+
+int kshark_read_event_field_int(const struct kshark_entry *entry,
+				const char* field, int64_t *val);
+
+ssize_t kshark_load_entries(struct kshark_context *kshark_ctx, int sd,
+			    struct kshark_entry ***data_rows);
+
+ssize_t kshark_load_matrix(struct kshark_context *kshark_ctx, int sd,
+			   int16_t **event_array,
+			   int16_t **cpu_array,
+			   int32_t **pid_array,
+			   int64_t **offset_array,
+			   int64_t **ts_array);
 
 /**
  * Custom entry info function type. To be user for dumping info for custom
