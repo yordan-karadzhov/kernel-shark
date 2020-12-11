@@ -22,6 +22,11 @@ if (NOT _LIBDIR)
 endif (NOT _LIBDIR)
 
 include(${KS_DIR}/build/FindTraceCmd.cmake)
+
+set(CMAKE_MODULE_PATH "${KS_DIR}/build")
+find_package(TraceEvent REQUIRED)
+find_package(TraceFS    REQUIRED)
+
 include(${KS_DIR}/build/FindJSONC.cmake)
 
 find_package(Doxygen)
@@ -80,8 +85,7 @@ endif (CMAKE_BUILD_TYPE MATCHES Package)
 include_directories(${KS_DIR}/src/
                     ${KS_DIR}/build/src/
                     ${JSONC_INCLUDE_DIR}
-                    ${TRACECMD_INCLUDE_DIR}
-                    ${TRACEFS_INCLUDE_DIR})
+                    ${TRACECMD_INCLUDE_DIR})
 
 message("")
 message(STATUS "C flags      : " ${CMAKE_C_FLAGS})

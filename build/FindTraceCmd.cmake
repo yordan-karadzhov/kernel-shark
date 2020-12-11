@@ -32,30 +32,15 @@ find_path(TRACECMD_INCLUDE_DIR  NAMES  trace-cmd/trace-cmd.h
                                 PATHS  $ENV{TRACE_CMD}/include/
                                 NO_DEFAULT_PATH)
 
-find_path(TRACEFS_INCLUDE_DIR   NAMES  tracefs/tracefs.h
-                                PATHS  $ENV{TRACE_CMD}/include/
-                                NO_DEFAULT_PATH)
-
 find_library(TRACECMD_LIBRARY   NAMES  trace-cmd/libtracecmd.a
-                                PATHS  $ENV{TRACE_CMD}/lib/
-                                NO_DEFAULT_PATH)
-
-find_library(TRACEFS_LIBRARY    NAMES  tracefs/libtracefs.a
-                                PATHS  $ENV{TRACE_CMD}/lib/
-                                NO_DEFAULT_PATH)
-
-find_library(TRACEEVENT_LIBRARY NAMES  traceevent/libtraceevent.a
                                 PATHS  $ENV{TRACE_CMD}/lib/
                                 NO_DEFAULT_PATH)
 
 # If not found, search in the default system paths. Note that if the previous
 # search was successful "find_path" will do nothing this time.
-find_program(TRACECMD_EXECUTABLE   NAMES  trace-cmd)
-find_path(TRACECMD_INCLUDE_DIR  NAMES  trace-cmd/trace-cmd.h)
-find_path(TRACEFS_INCLUDE_DIR   NAMES  tracefs/tracefs.h)
-find_library(TRACECMD_LIBRARY   NAMES  trace-cmd/libtracecmd.so)
-find_library(TRACEFS_LIBRARY    NAMES  tracefs/libtracefs.so)
-find_library(TRACEEVENT_LIBRARY NAMES  traceevent/libtraceevent.so)
+find_program(TRACECMD_EXECUTABLE NAMES  trace-cmd)
+find_path(TRACECMD_INCLUDE_DIR   NAMES  trace-cmd/trace-cmd.h)
+find_library(TRACECMD_LIBRARY    NAMES  trace-cmd/libtracecmd.so)
 
 IF (TRACECMD_INCLUDE_DIR AND TRACECMD_LIBRARY)
 
@@ -72,35 +57,3 @@ ELSE (TRACECMD_FOUND)
   MESSAGE(FATAL_ERROR "\nCould not find trace-cmd!\n")
 
 ENDIF (TRACECMD_FOUND)
-
-IF (TRACEFS_INCLUDE_DIR AND TRACEFS_LIBRARY)
-
-  SET(TRACEFS_FOUND TRUE)
-
-ENDIF (TRACEFS_INCLUDE_DIR AND TRACEFS_LIBRARY)
-
-IF (TRACEFS_FOUND)
-
-  MESSAGE(STATUS "Found tracefs: ${TRACEFS_LIBRARY}")
-
-ELSE (TRACEFS_FOUND)
-
-  MESSAGE(FATAL_ERROR "\nCould not find tracefs!\n")
-
-ENDIF (TRACEFS_FOUND)
-
-IF (TRACEEVENT_LIBRARY)
-
-  SET(TRACEEVENT_FOUND TRUE)
-
-ENDIF (TRACEEVENT_LIBRARY)
-
-IF (TRACEEVENT_FOUND)
-
-  MESSAGE(STATUS "Found traceevent: ${TRACEEVENT_LIBRARY}")
-
-ELSE (TRACEEVENT_FOUND)
-
-  MESSAGE(FATAL_ERROR "\nCould not find libtraceevent!\n")
-
-ENDIF (TRACEEVENT_FOUND)
