@@ -1,5 +1,5 @@
 # Check if cmake has the required version
-cmake_minimum_required(VERSION 2.8.11 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.1.2 FATAL_ERROR)
 
 # Set the name and version of the project
 project(kernel-shark)
