@@ -5,6 +5,7 @@ add_library(kshark SHARED libkshark.c
                           libkshark-hash.c
                           libkshark-model.c
                           libkshark-plugin.c
+                          libkshark-tepdata.c
                           libkshark-configio.c
                           libkshark-collection.c)
 
