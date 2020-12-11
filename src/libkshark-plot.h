@@ -12,6 +12,15 @@
 #ifndef _LIB_KSHARK_PLOT_H
 #define _LIB_KSHARK_PLOT_H
 
+// C
+#include <stdbool.h>
+
+/*
+ * STB TrueType (single-file public domain library)
+ * https://github.com/nothings/stb
+ */
+#include "stb_truetype.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -61,6 +70,54 @@ void ksplot_draw_polygon_contour(const struct ksplot_point *points,
 				 size_t n_points,
 				 const struct ksplot_color *col,
 				 float size);
+
+/** The index of the "Space" character. */
+#define KS_SPACE_CHAR 32
+
+/** The index of the "Tilda" character. */
+#define KS_TILDA_CHAR 126
+
+/** Total number of characters supported for drawing. */
+#define KS_N_CHAR (KS_TILDA_CHAR - KS_SPACE_CHAR + 1)
+
+/** Structure defining a font. */
+struct ksplot_font {
+	/** Identifier of the font's texture. */
+	GLuint texture_id;
+
+	/** Font's texture baking data. */
+	stbtt_bakedchar cdata[KS_N_CHAR];
+
+	/** The height of a text line. */
+	int height;
+
+	/** The vertical position of the font's baseline. */
+	int base;
+
+	/** The size of the font. */
+	int size;
+
+	/**
+	 * The width of the 'z' character. To be use as an average character
+	 * width.
+	 */
+	int char_width;
+};
+
+/** Check if the texture of the font is loaded. */
+static inline bool ksplot_font_is_loaded(struct ksplot_font *f)
+{
+	return f->texture_id > 1;
+}
+
+char *ksplot_find_font_file(const char *font_family, const char *font_name);
+
+bool ksplot_init_font(struct ksplot_font *font, float size, const char *file);
+
+void ksplot_print_text(const struct ksplot_font *font,
+		       const struct ksplot_color *col,
+		       float x, float y,
+		       const char *text);
 
 #ifdef __cplusplus
 }

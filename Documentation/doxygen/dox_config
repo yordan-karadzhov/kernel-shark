@@ -14,3 +14,4 @@ SORT_MEMBER_DOCS       = NO
 STRICT_PROTO_MATCHING  = YES
 DOT_MULTI_TARGETS      = YES
 PROJECT_LOGO           = ../../icons/KS_logo_stacked.svg
+EXCLUDE                = ../../src/stb_truetype.h

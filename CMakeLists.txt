@@ -30,9 +30,9 @@ find_package(JSONC      REQUIRED)
 
 find_package(Doxygen)
 
-# set(OpenGL_GL_PREFERENCE LEGACY)
-# find_package(OpenGL)
-# find_package(GLUT)
+set(OpenGL_GL_PREFERENCE LEGACY)
+find_package(OpenGL)
+find_package(GLUT)
 
 # find_package(Qt5Widgets 5.7.1)
 # find_package(Qt5Network)
