@@ -10,7 +10,7 @@ add_library(kshark SHARED libkshark.c
 target_link_libraries(kshark ${TRACECMD_LIBRARY}
                              trace::fs
                              trace::event
-                             ${JSONC_LIBRARY}
+                             jsonc::jsonc
                              ${CMAKE_DL_LIBS})
 
 set_target_properties(kshark  PROPERTIES SUFFIX	".so.${KS_VERSION_STRING}")
