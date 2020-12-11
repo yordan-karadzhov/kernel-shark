@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1
 
 /*
- * Copyright (C) 2018 VMware Inc, Yordan Karadzhov <y.karadz@gmail.com>
+ * Copyright (C) 2018 VMware Inc, Yordan Karadzhov (VMware) <y.karadz@gmail.com>
  */
 
  /**
@@ -11,9 +11,11 @@
 
 // C
 #include <stdbool.h>
+#include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <errno.h>
+#include <stdio.h>
 
 // KernelShark
 #include "libkshark.h"
@@ -74,7 +76,9 @@ kshark_data_collection_alloc(struct kshark_context *kshark_ctx,
 			     ssize_t first,
 			     size_t n_rows,
 			     matching_condition_func cond,
-			     int val,
+			     int sd,
+			     int *values,
+			     int n_val,
 			     size_t margin)
 {
 	struct kshark_entry_collection *col_ptr = NULL;
@@ -117,7 +121,7 @@ kshark_data_collection_alloc(struct kshark_context *kshark_ctx,
 	}
 
 	for (i = first + margin; i < end; ++i) {
-		if (!cond(kshark_ctx, data[i], val)) {
+		if (!cond(kshark_ctx, data[i], sd, values)) {
 			/*
 			 * The entry is irrelevant for this collection.
 			 * Do nothing.
@@ -147,7 +151,7 @@ kshark_data_collection_alloc(struct kshark_context *kshark_ctx,
 			}
 		} else if (good_data &&
 			   data[i]->next &&
-			   !cond(kshark_ctx, data[i]->next, val)) {
+			   !cond(kshark_ctx, data[i]->next, sd, values)) {
 			/*
 			 * Break the collection here. Add some margin data
 			 * after the data of interest.
@@ -168,7 +172,7 @@ kshark_data_collection_alloc(struct kshark_context *kshark_ctx,
 			 */
 			if (i + margin >= j) {
 				for (;j < i + margin; ++j) {
-					if (cond(kshark_ctx, data[j], val)) {
+					if (cond(kshark_ctx, data[j], sd, values)) {
 						/*
 						 * Good data has been found.
 						 * Continue extending the
@@ -228,9 +232,15 @@ kshark_data_collection_alloc(struct kshark_context *kshark_ctx,
 	}
 
 	col_ptr->cond = cond;
-	col_ptr->val = val;
+	col_ptr->n_val = n_val;
+	col_ptr->stream_id = sd;
+	col_ptr->values = malloc(n_val * sizeof(*col_ptr->values));
+	memcpy(col_ptr->values, values, n_val * sizeof(*col_ptr->values));
 
 	col_ptr->size = resume_count;
+	if (!col_ptr->size)
+		free(col_list);
+
 	for (i = 0; i < col_ptr->size; ++i) {
 		assert(col_list->type == COLLECTION_RESUME);
 		col_ptr->resume_points[i] = col_list->index;
@@ -316,8 +326,8 @@ map_collection_request_init(const struct kshark_entry_collection *col,
 	size_t req_end;
 
 	if (req->next || col->size == 0) {
-		fprintf(stderr, "Unexpected input in ");
-		fprintf(stderr, "map_collection_request_init()\n");
+		fprintf(stderr,
+			"Unexpected input in map_collection_request_init()\n");
 		goto do_nothing;
 	}
 
@@ -477,7 +487,8 @@ map_collection_back_request(const struct kshark_entry_collection *col,
 				kshark_entry_request_alloc(req_first,
 							   0,
 							   req->cond,
-							   req->val,
+							   req->sd,
+							   req->values,
 							   req->vis_only,
 							   req->vis_mask);
 
@@ -561,7 +572,8 @@ map_collection_front_request(const struct kshark_entry_collection *col,
 				kshark_entry_request_alloc(req_first,
 							   0,
 							   req->cond,
-							   req->val,
+							   req->sd,
+							   req->values,
 							   req->vis_only,
 							   req->vis_mask);
 
@@ -702,25 +714,41 @@ kshark_get_collection_entry_back(struct kshark_entry_request *req,
 	return entry;
 }
 
+static bool val_compare(int *val_a, int *val_b, size_t n_val)
+{
+	size_t i;
+
+	for (i = 0; i < n_val; ++i)
+		if (val_a[i] != val_b[i])
+			return false;
+
+	return true;
+}
+
 /**
  * @brief Search the list of Data collections and find the collection defined
  *	  with a given Matching condition function and value.
  *
  * @param col: Input location for the Data collection list.
  * @param cond: Matching condition function.
- * @param val: Matching condition value, used by the Matching condition
- *	       function.
+ * @param sd: Data stream identifier.
+ * @param values: Array of matching condition value, used by the Matching
+ *		  condition function.
+ * @param n_val: The size of the array of Matching values.
  *
  * @returns Pointer to a Data collections on success, or NULL on failure.
  */
 struct kshark_entry_collection *
 kshark_find_data_collection(struct kshark_entry_collection *col,
 			    matching_condition_func cond,
-			    int val)
+			    int sd, int *values, size_t n_val)
 {
 	while (col) {
-		if (col->cond == cond && col->val == val)
-			return col;
+		if (col->cond == cond &&
+		    col->stream_id == sd &&
+		    col->n_val == n_val &&
+		    val_compare(col->values, values, n_val))
+				return col;
 
 		col = col->next;
 	}
@@ -748,6 +776,7 @@ static void kshark_free_data_collection(struct kshark_entry_collection *col)
 {
 	free(col->resume_points);
 	free(col->break_points);
+	free(col->values);
 	free(col);
 }
 
@@ -761,7 +790,10 @@ static void kshark_free_data_collection(struct kshark_entry_collection *col)
  * @param n_rows: The size of the inputted data.
  * @param cond: Matching condition function for the collection to be
  *	        registered.
- * @param val: Matching condition value of for collection to be registered.
+ * @param sd: Data stream identifier.
+ * @param values: Array of matching condition value, used by the Matching
+ *		  condition function.
+ * @param n_val: The size of the array of Matching values.
  * @param margin: The size of the additional (margin) data which do not
  *		  satisfy the matching condition, but is added at the
  *		  beginning and at the end of each interval of the collection
@@ -776,7 +808,8 @@ kshark_register_data_collection(struct kshark_context *kshark_ctx,
 				struct kshark_entry **data,
 				size_t n_rows,
 				matching_condition_func cond,
-				int val,
+				int sd,
+				int *values, size_t n_val,
 				size_t margin)
 {
 	struct kshark_entry_collection *col;
@@ -784,7 +817,7 @@ kshark_register_data_collection(struct kshark_context *kshark_ctx,
 	col = kshark_add_collection_to_list(kshark_ctx,
 					    &kshark_ctx->collections,
 					    data, n_rows,
-					    cond, val,
+					    cond, sd, values, n_val,
 					    margin);
 
 	return col;
@@ -801,7 +834,10 @@ kshark_register_data_collection(struct kshark_context *kshark_ctx,
  * @param n_rows: The size of the inputted data.
  * @param cond: Matching condition function for the collection to be
  *	        registered.
- * @param val: Matching condition value of for collection to be registered.
+ * @param sd: Data stream identifier.
+ * @param values: Array of matching condition value, used by the Matching
+ *		  condition function.
+ * @param n_val: The size of the array of Matching values.
  * @param margin: The size of the additional (margin) data which do not
  *		  satisfy the matching condition, but is added at the
  *		  beginning and at the end of each interval of the collection
@@ -817,14 +853,18 @@ kshark_add_collection_to_list(struct kshark_context *kshark_ctx,
 			      struct kshark_entry **data,
 			      size_t n_rows,
 			      matching_condition_func cond,
-			      int val,
+			      int sd, int *values, size_t n_val,
 			      size_t margin)
 {
 	struct kshark_entry_collection *col;
 
+	if (!data || n_rows == 0)
+		return NULL;
+
 	col = kshark_data_collection_alloc(kshark_ctx, data,
 					   0, n_rows,
-					   cond, val,
+					   cond, sd,
+					   values, n_val,
 					   margin);
 
 	if (col) {
@@ -844,24 +884,55 @@ kshark_add_collection_to_list(struct kshark_context *kshark_ctx,
  * @param col: Input location for the Data collection list.
  * @param cond: Matching condition function of the collection to be
  *	        unregistered.
- *
- * @param val: Matching condition value of the collection to be unregistered.
+ * @param sd: Data stream identifier.
+ * @param values: Array of matching condition value, used by the Matching
+ *		  condition function.
+ * @param n_val: The size of the array of Matching values.
  */
 void kshark_unregister_data_collection(struct kshark_entry_collection **col,
 				       matching_condition_func cond,
-				       int val)
+				       int sd, int *values, size_t n_val)
 {
 	struct kshark_entry_collection **last = col;
 	struct kshark_entry_collection *list;
 
 	for (list = *col; list; list = list->next) {
-		if (list->cond == cond && list->val == val) {
+		if (list->cond == cond &&
+		    list->stream_id == sd &&
+		    list->n_val == n_val &&
+		    val_compare(list->values, values, n_val)) {
 			*last = list->next;
 			kshark_free_data_collection(list);
 			return;
 		}
 
 		last = &list->next;
+	}
+}
+
+/**
+ * @brief Unregister all Data collections associated with a given Data stream.
+ *
+ * @param col: Input location for the Data collection list.
+ * @param sd: Data stream identifier.
+ */
+void kshark_unregister_stream_collections(struct kshark_entry_collection **col,
+					  int sd)
+{
+	struct kshark_entry_collection **last = col;
+	struct kshark_entry_collection *list;
+
+	list = *col;
+	while (list) {
+		if (list->stream_id == sd) {
+			*last = list->next;
+			kshark_free_data_collection(list);
+			list = *last;
+			continue;
+		}
+
+		last = &list->next;
+		list = list->next;
 	}
 }
 

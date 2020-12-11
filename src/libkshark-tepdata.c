@@ -362,6 +362,9 @@ static ssize_t get_records(struct kshark_context *kshark_ctx,
 
 				pid = entry->pid;
 
+				/* Apply Id filtering. */
+				kshark_apply_filters(kshark_ctx, stream, entry);
+
 				/* Apply advanced event filtering. */
 				if (adv_filter && adv_filter->filters &&
 				    tep_filter_match(adv_filter, rec) != FILTER_MATCH)
@@ -1235,6 +1238,44 @@ out:
 	return peer_handle;
 }
 
+/** A list of built in default plugins for FTRACE (trace-cmd) data. */
+const char *tep_plugin_names[] = {
+	"sched_events",
+	"missed_events",
+	"kvm_combo",
+};
+
+/**
+ * Register to the data stream all default plugins for FTRACE (trace-cmd) data.
+ */
+int kshark_tep_handle_plugins(struct kshark_context *kshark_ctx, int sd)
+{
+	struct kshark_plugin_list *plugin;
+	struct kshark_data_stream *stream;
+	int i, n_tep_plugins;
+
+	n_tep_plugins = (sizeof(tep_plugin_names) / sizeof((tep_plugin_names)[0]));
+	stream = kshark_get_data_stream(kshark_ctx, sd);
+	if (!stream)
+		return -EEXIST;
+
+	for (i = 0; i < n_tep_plugins; ++i) {
+		plugin = kshark_find_plugin_by_name(kshark_ctx->plugins,
+						    tep_plugin_names[i]);
+
+		if (plugin && plugin->process_interface) {
+			kshark_register_plugin_to_stream(stream,
+							 plugin->process_interface,
+							 true);
+		} else {
+			fprintf(stderr, "Plugin \"%s\" not found.\n",
+				tep_plugin_names[i]);
+		}
+	}
+
+	return kshark_handle_all_dpis(stream, KSHARK_PLUGIN_INIT);
+}
+
 /** The Process Id of the Idle tasks is zero. */
 #define LINUX_IDLE_TASK_PID	0
 
@@ -1297,6 +1338,210 @@ static inline char *set_tep_format(struct kshark_data_stream *stream)
 {
 	return kshark_set_data_format(stream->data_format,
 				      TEP_DATA_FORMAT_IDENTIFIER);
+}
+
+static struct tracecmd_input *get_top_input(struct kshark_context *kshark_ctx,
+					    int sd)
+{
+	struct kshark_data_stream *top_stream;
+
+	top_stream = kshark_get_data_stream(kshark_ctx, sd);
+	if (!top_stream)
+		return NULL;
+
+	return kshark_get_tep_input(top_stream);
+}
+
+/**
+ * @brief Get an array containing the names of all buffers in FTRACE data
+ *	  file.
+ *
+ * @param kshark_ctx: Input location for context pointer.
+ * @param sd: Data stream identifier of the top buffers in the FTRACE data
+ *	  file.
+ * @param n_buffers: Output location for the size of the outputted array,
+ *	    or a negative error code on failure.
+ *
+ * @returns Array of strings on success, or NULL on failure. The user is
+ *	    responsible for freeing the elements of the outputted array.
+ */
+char **kshark_tep_get_buffer_names(struct kshark_context *kshark_ctx, int sd,
+				   int *n_buffers)
+{
+	struct tracecmd_input *top_input;
+	char **buffer_names;
+	int i, n;
+
+	top_input = get_top_input(kshark_ctx, sd);
+	if (!top_input) {
+		*n_buffers = -EFAULT;
+		return NULL;
+	}
+
+	n = tracecmd_buffer_instances(top_input);
+	buffer_names = calloc(n, sizeof(char *));
+	if (!buffer_names) {
+		*n_buffers = -ENOMEM;
+		return NULL;
+	}
+
+	for (i = 0; i < n; ++i) {
+		buffer_names[i] =
+			strdup(tracecmd_buffer_instance_name(top_input, i));
+		if (!buffer_names[i])
+			goto free_all;
+	}
+
+	*n_buffers = n;
+	return buffer_names;
+
+ free_all:
+	for (i = 0; i < n; ++i)
+		free(buffer_names[i]);
+	free(buffer_names);
+
+	*n_buffers = -ENOMEM;
+	return NULL;
+}
+
+static void set_stream_fields(struct tracecmd_input *top_input, int i,
+			      const char *file,
+			      const char *name,
+			      struct kshark_data_stream *buffer_stream,
+			      struct tracecmd_input **buffer_input)
+{
+	*buffer_input = tracecmd_buffer_instance_handle(top_input, i);
+
+	buffer_stream->name = strdup(name);
+	buffer_stream->file = strdup(file);
+	set_tep_format(buffer_stream);
+}
+
+/**
+ * @brief Open a given buffers in FTRACE (trace-cmd) data file.
+ *
+ * @param kshark_ctx: Input location for context pointer.
+ * @param sd: Data stream identifier of the top buffers in the FTRACE data
+ *	  file.
+ * @param buffer_name: The name of the buffer to open.
+ *
+ * @returns Data stream identifier of the buffer on success. Otherwise a
+ *	    negative error code.
+ */
+int kshark_tep_open_buffer(struct kshark_context *kshark_ctx, int sd,
+			   const char *buffer_name)
+{
+	struct kshark_data_stream *top_stream, *buffer_stream;
+	struct tracecmd_input *top_input, *buffer_input;
+	int i, sd_buffer, n_buffers, ret = -ENODATA;
+	char **names;
+
+	top_stream = kshark_get_data_stream(kshark_ctx, sd);
+	if (!top_stream)
+		return -EFAULT;
+
+	top_input = kshark_get_tep_input(top_stream);
+	if (!top_input)
+		return -EFAULT;
+
+	names = kshark_tep_get_buffer_names(kshark_ctx, sd, &n_buffers);
+	if (!names)
+		return n_buffers;
+
+	sd_buffer = kshark_add_stream(kshark_ctx);
+	buffer_stream = kshark_get_data_stream(kshark_ctx, sd_buffer);
+	if (!buffer_stream)
+		return -EFAULT;
+
+	for (i = 0; i < n_buffers; ++i) {
+		if (strcmp(buffer_name, names[i]) == 0) {
+			set_stream_fields(top_input, i,
+					  top_stream->file,
+					  buffer_name,
+					  buffer_stream,
+					  &buffer_input);
+
+			if (!buffer_stream->name || !buffer_stream->file) {
+				free(buffer_stream->name);
+				free(buffer_stream->file);
+
+				ret = -ENOMEM;
+				break;
+			}
+
+			ret = kshark_tep_stream_init(buffer_stream,
+						     buffer_input);
+			break;
+		}
+	}
+
+	for (i = 0; i < n_buffers; ++i)
+		free(names[i]);
+	free(names);
+
+	return (ret < 0)? ret : buffer_stream->stream_id;
+}
+
+/**
+ * @brief Initialize data streams for all buffers in a FTRACE (trace-cmd) data
+ *	  file.
+ *
+ * @param kshark_ctx: Input location for context pointer.
+ * @param sd: Data stream identifier of the top buffers in the FTRACE data
+ *	  file.
+ *
+ * @returns The total number of data streams initialized on success. Otherwise
+ *	    a negative error code.
+ */
+int kshark_tep_init_all_buffers(struct kshark_context *kshark_ctx,
+				int sd)
+{
+	struct kshark_data_stream *top_stream, *buffer_stream;
+	struct tracecmd_input *buffer_input;
+	struct tracecmd_input *top_input;
+	int i, n_buffers, sd_buffer, ret;
+
+	top_stream = kshark_get_data_stream(kshark_ctx, sd);
+	if (!top_stream)
+		return -EFAULT;
+
+	top_input = kshark_get_tep_input(top_stream);
+	if (!top_input)
+		return -EFAULT;
+
+	n_buffers = tracecmd_buffer_instances(top_input);
+	for (i = 0; i < n_buffers; ++i) {
+		sd_buffer = kshark_add_stream(kshark_ctx);
+		if (sd_buffer < 0)
+			return -EFAULT;
+
+		buffer_stream = kshark_ctx->stream[sd_buffer];
+
+		set_stream_fields(top_input, i,
+				  top_stream->file,
+				  tracecmd_buffer_instance_name(top_input, i),
+				  buffer_stream,
+				  &buffer_input);
+
+		if (!buffer_stream->name || !buffer_stream->file) {
+			free(buffer_stream->name);
+			free(buffer_stream->file);
+			ret = -ENOMEM;
+			break;
+		}
+
+		ret = kshark_tep_stream_init(buffer_stream, buffer_input);
+		if (ret != 0)
+			return -EFAULT;
+	}
+
+	return n_buffers;
+}
+
+/** Is this a stream corresponding to the "top" buffer in the file. */
+bool kshark_tep_is_top_stream(struct kshark_data_stream *stream)
+{
+	return strcmp(stream->name, KS_UNNAMED) == 0;
 }
 
 /** Check is the file contains TEP tracing data. */
@@ -1509,4 +1754,150 @@ void kshark_tep_filter_reset(struct kshark_data_stream *stream)
 char **kshark_tracecmd_local_plugins()
 {
 	return tracefs_tracers(tracefs_tracing_dir());
+}
+
+/**
+ * @brief Free an array, allocated by kshark_tracecmd_get_hostguest_mapping() API
+ *
+ *
+ * @param map: Array, allocated by kshark_tracecmd_get_hostguest_mapping() API
+ * @param count: Number of entries in the array
+ *
+ */
+void kshark_tracecmd_free_hostguest_map(struct kshark_host_guest_map *map, int count)
+{
+	int i;
+
+	if (!map)
+		return;
+	for (i = 0; i < count; i++) {
+		free(map[i].guest_name);
+		free(map[i].cpu_pid);
+		memset(&map[i], 0, sizeof(*map));
+	}
+	free(map);
+}
+
+/**
+ * @brief Get mapping of guest VCPU to host task, running that VCPU.
+ *	  Array of mappings for each guest is allocated and returned
+ *	  in map input parameter.
+ *
+ *
+ * @param map: Returns allocated array of kshark_host_guest_map structures, each
+ *	       one describing VCPUs mapping of one guest.
+ *
+ * @return The number of entries in the *map array, or a negative error code on
+ *	   failure.
+ */
+int kshark_tracecmd_get_hostguest_mapping(struct kshark_host_guest_map **map)
+{
+	struct kshark_host_guest_map *gmap = NULL;
+	struct tracecmd_input *peer_handle = NULL;
+	struct kshark_data_stream *peer_stream;
+	struct tracecmd_input *guest_handle = NULL;
+	struct kshark_data_stream *guest_stream;
+	struct kshark_context *kshark_ctx = NULL;
+	unsigned long long trace_id;
+	const char *name;
+	int vcpu_count;
+	const int *cpu_pid;
+	int *stream_ids;
+	int i, j, k;
+	int count = 0;
+	int ret;
+
+	if (!map || !kshark_instance(&kshark_ctx))
+		return -EFAULT;
+	if (*map)
+		return -EEXIST;
+
+	stream_ids = kshark_all_streams(kshark_ctx);
+	for (i = 0; i < kshark_ctx->n_streams; i++) {
+		guest_stream = kshark_get_data_stream(kshark_ctx, stream_ids[i]);
+		if (!guest_stream || !kshark_is_tep(guest_stream))
+			continue;
+		guest_handle = kshark_get_tep_input(guest_stream);
+		if (!guest_handle)
+			continue;
+		trace_id = tracecmd_get_traceid(guest_handle);
+		if (!trace_id)
+			continue;
+		for (j = 0; j < kshark_ctx->n_streams; j++) {
+			if (stream_ids[i] == stream_ids[j])
+				continue;
+			peer_stream = kshark_get_data_stream(kshark_ctx, stream_ids[j]);
+			if (!peer_stream || !kshark_is_tep(guest_stream))
+				continue;
+			peer_handle = kshark_get_tep_input(peer_stream);
+			if (!peer_handle)
+				continue;
+			ret = tracecmd_get_guest_cpumap(peer_handle, trace_id,
+							&name, &vcpu_count, &cpu_pid);
+			if (!ret && vcpu_count) {
+				gmap = realloc(*map,
+					       (count + 1) * sizeof(struct kshark_host_guest_map));
+				if (!gmap)
+					goto mem_error;
+				*map = gmap;
+				memset(&gmap[count], 0, sizeof(struct kshark_host_guest_map));
+				count++;
+				gmap[count - 1].guest_id = stream_ids[i];
+				gmap[count - 1].host_id = stream_ids[j];
+				gmap[count - 1].guest_name = strdup(name);
+				if (!gmap[count - 1].guest_name)
+					goto mem_error;
+				gmap[count - 1].vcpu_count = vcpu_count;
+				gmap[count - 1].cpu_pid = malloc(sizeof(int) * vcpu_count);
+				if (!gmap[count - 1].cpu_pid)
+					goto mem_error;
+				for (k = 0; k < vcpu_count; k++)
+					gmap[count - 1].cpu_pid[k] = cpu_pid[k];
+				break;
+			}
+		}
+	}
+
+	free(stream_ids);
+	return count;
+
+mem_error:
+	free(stream_ids);
+	if (*map) {
+		kshark_tracecmd_free_hostguest_map(*map, count);
+		*map = NULL;
+	}
+
+	return -ENOMEM;
+}
+
+/**
+ * @brief Find the data stream corresponding the top buffer of a FTRACE
+ *	  (trace-cmd) data file.
+ *
+ * @param kshark_ctx: Input location for context pointer.
+ * @param file: The name of the file.
+ *
+ * @returns Data stream identifier of the top buffers in the FTRACE data
+ *	    fileon success. Otherwise a negative error code.
+ */
+int kshark_tep_find_top_stream(struct kshark_context *kshark_ctx,
+			       const char *file)
+{
+	struct kshark_data_stream *top_stream = NULL, *stream;
+	int i, *stream_ids = kshark_all_streams(kshark_ctx);
+
+	for (i = 0; i < kshark_ctx->n_streams; ++i) {
+		stream = kshark_ctx->stream[stream_ids[i]];
+		if (strcmp(stream->file, file) == 0 &&
+		    kshark_tep_is_top_stream(stream))
+			top_stream = stream;
+	}
+
+	free(stream_ids);
+
+	if (!top_stream)
+		return -EEXIST;
+
+	return top_stream->stream_id;
 }

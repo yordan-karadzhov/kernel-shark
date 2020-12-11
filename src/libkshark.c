@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1
 
 /*
- * Copyright (C) 2017 VMware Inc, Yordan Karadzhov <y.karadz@gmail.com>
+ * Copyright (C) 2017 VMware Inc, Yordan Karadzhov (VMware) <y.karadz@gmail.com>
  */
 
  /**
@@ -9,8 +9,10 @@
  *  @brief   API for processing of tracing data.
  */
 
+#ifndef _GNU_SOURCE
 /** Use GNU C Library. */
-#define _GNU_SOURCE 1
+#define _GNU_SOURCE
+#endif // _GNU_SOURCE
 
 // C
 #include <stdlib.h>
@@ -34,23 +36,6 @@ static bool kshark_default_context(struct kshark_context **context)
 
 	kshark_ctx->stream = calloc(KS_DEFAULT_NUM_STREAMS,
 				    sizeof(*kshark_ctx->stream));
-	kshark_ctx->stream_info.array_size = KS_DEFAULT_NUM_STREAMS;
-	kshark_ctx->stream_info.max_stream_id = -1;
-
-	kshark_ctx->collections = NULL;
-	kshark_ctx->plugins = NULL;
-
-	kshark_ctx->show_task_filter = tracecmd_filter_id_hash_alloc();
-	kshark_ctx->hide_task_filter = tracecmd_filter_id_hash_alloc();
-
-	kshark_ctx->show_event_filter = tracecmd_filter_id_hash_alloc();
-	kshark_ctx->hide_event_filter = tracecmd_filter_id_hash_alloc();
-
-	kshark_ctx->show_cpu_filter = tracecmd_filter_id_hash_alloc();
-	kshark_ctx->hide_cpu_filter = tracecmd_filter_id_hash_alloc();
-
-	kshark_ctx->filter_mask = 0x0;
-
 	kshark_ctx->stream_info.array_size = KS_DEFAULT_NUM_STREAMS;
 	kshark_ctx->stream_info.max_stream_id = -1;
 
@@ -467,6 +452,12 @@ int kshark_close(struct kshark_context *kshark_ctx, int sd)
 	stream = kshark_get_data_stream(kshark_ctx, sd);
 	if (!stream)
 		return -EFAULT;
+
+	/*
+	 * All data collections are file specific. Make sure that collections
+	 * from this file are not going to be used with another file.
+	 */
+	kshark_unregister_stream_collections(&kshark_ctx->collections, sd);
 
 	/* Close all active plugins for this stream. */
 	if (stream->plugins) {
@@ -1042,103 +1033,134 @@ ssize_t kshark_get_task_pids(struct kshark_context *kshark_ctx, int sd,
 	return stream->tasks->count;
 }
 
-static bool filter_find(struct tracecmd_filter_id *filter, int pid,
+static bool filter_find(struct kshark_hash_id *filter, int pid,
 			bool test)
 {
 	return !filter || !filter->count ||
-		!!(unsigned long)tracecmd_filter_id_find(filter, pid) == test;
+	       kshark_hash_id_find(filter, pid) == test;
 }
 
-static bool kshark_show_task(struct kshark_context *kshark_ctx, int pid)
+static bool kshark_show_task(struct kshark_data_stream *stream, int pid)
 {
-	return filter_find(kshark_ctx->show_task_filter, pid, true) &&
-	       filter_find(kshark_ctx->hide_task_filter, pid, false);
+	return filter_find(stream->show_task_filter, pid, true) &&
+	       filter_find(stream->hide_task_filter, pid, false);
 }
 
-static bool kshark_show_event(struct kshark_context *kshark_ctx, int pid)
+static bool kshark_show_event(struct kshark_data_stream *stream, int pid)
 {
-	return filter_find(kshark_ctx->show_event_filter, pid, true) &&
-	       filter_find(kshark_ctx->hide_event_filter, pid, false);
+	return filter_find(stream->show_event_filter, pid, true) &&
+	       filter_find(stream->hide_event_filter, pid, false);
 }
 
-static bool kshark_show_cpu(struct kshark_context *kshark_ctx, int cpu)
+static bool kshark_show_cpu(struct kshark_data_stream *stream, int cpu)
 {
-	return filter_find(kshark_ctx->show_cpu_filter, cpu, true) &&
-	       filter_find(kshark_ctx->hide_cpu_filter, cpu, false);
+	return filter_find(stream->show_cpu_filter, cpu, true) &&
+	       filter_find(stream->hide_cpu_filter, cpu, false);
+}
+
+static struct kshark_hash_id *get_filter(struct kshark_context *kshark_ctx,
+					 int sd,
+					 enum kshark_filter_type filter_id)
+{
+	struct kshark_data_stream *stream;
+
+	stream = kshark_get_data_stream(kshark_ctx, sd);
+	if (!stream)
+		return NULL;
+
+	return kshark_get_filter(stream, filter_id);
 }
 
 /**
- * @brief Add an Id value to the filster specified by "filter_id".
+ * @brief Get an Id Filter.
+ *
+ * @param stream: Input location for a Trace data stream pointer.
+ * @param filter_id: Identifier of the filter.
+ */
+struct kshark_hash_id *
+kshark_get_filter(struct kshark_data_stream *stream,
+		  enum kshark_filter_type filter_id)
+{
+	switch (filter_id) {
+	case KS_SHOW_CPU_FILTER:
+		return stream->show_cpu_filter;
+	case KS_HIDE_CPU_FILTER:
+		return stream->hide_cpu_filter;
+	case KS_SHOW_EVENT_FILTER:
+		return stream->show_event_filter;
+	case KS_HIDE_EVENT_FILTER:
+		return stream->hide_event_filter;
+	case KS_SHOW_TASK_FILTER:
+		return stream->show_task_filter;
+	case KS_HIDE_TASK_FILTER:
+		return stream->hide_task_filter;
+	default:
+		return NULL;
+	}
+}
+
+/**
+ * @brief Add an Id value to the filter specified by "filter_id".
  *
  * @param kshark_ctx: Input location for the session context pointer.
+ * @param sd: Data stream identifier.
  * @param filter_id: Identifier of the filter.
  * @param id: Id value to be added to the filter.
  */
-void kshark_filter_add_id(struct kshark_context *kshark_ctx,
+void kshark_filter_add_id(struct kshark_context *kshark_ctx, int sd,
 			  int filter_id, int id)
 {
-	struct tracecmd_filter_id *filter;
+	struct kshark_hash_id *filter;
 
-	switch (filter_id) {
-		case KS_SHOW_CPU_FILTER:
-			filter = kshark_ctx->show_cpu_filter;
-			break;
-		case KS_HIDE_CPU_FILTER:
-			filter = kshark_ctx->hide_cpu_filter;
-			break;
-		case KS_SHOW_EVENT_FILTER:
-			filter = kshark_ctx->show_event_filter;
-			break;
-		case KS_HIDE_EVENT_FILTER:
-			filter = kshark_ctx->hide_event_filter;
-			break;
-		case KS_SHOW_TASK_FILTER:
-			filter = kshark_ctx->show_task_filter;
-			break;
-		case KS_HIDE_TASK_FILTER:
-			filter = kshark_ctx->hide_task_filter;
-			break;
-		default:
-			return;
-	}
-
-	tracecmd_filter_id_add(filter, id);
+	filter = get_filter(kshark_ctx, sd, filter_id);
+	if (filter)
+		kshark_hash_id_add(filter, id);
 }
 
 /**
- * @brief Clear (reset) the filster specified by "filter_id".
+ * @brief Get an array containing all Ids associated with a given Id Filter.
  *
- * @param kshark_ctx: Input location for the session context pointer.
+ * @param kshark_ctx: Input location for context pointer.
+ * @param sd: Data stream identifier.
  * @param filter_id: Identifier of the filter.
+ * @param n: Output location for the size of the returned array.
+ *
+ * @return The user is responsible for freeing the array.
  */
-void kshark_filter_clear(struct kshark_context *kshark_ctx, int filter_id)
+int *kshark_get_filter_ids(struct kshark_context *kshark_ctx, int sd,
+			   int filter_id, int *n)
 {
-	struct tracecmd_filter_id *filter;
+	struct kshark_hash_id *filter;
 
-	switch (filter_id) {
-		case KS_SHOW_CPU_FILTER:
-			filter = kshark_ctx->show_cpu_filter;
-			break;
-		case KS_HIDE_CPU_FILTER:
-			filter = kshark_ctx->hide_cpu_filter;
-			break;
-		case KS_SHOW_EVENT_FILTER:
-			filter = kshark_ctx->show_event_filter;
-			break;
-		case KS_HIDE_EVENT_FILTER:
-			filter = kshark_ctx->hide_event_filter;
-			break;
-		case KS_SHOW_TASK_FILTER:
-			filter = kshark_ctx->show_task_filter;
-			break;
-		case KS_HIDE_TASK_FILTER:
-			filter = kshark_ctx->hide_task_filter;
-			break;
-		default:
-			return;
+	filter = get_filter(kshark_ctx, sd, filter_id);
+	if (filter) {
+		if (n)
+			*n = filter->count;
+
+		return kshark_hash_ids(filter);
 	}
 
-	tracecmd_filter_id_clear(filter);
+	if (n)
+		*n = 0;
+
+	return NULL;
+}
+
+/**
+ * @brief Clear (reset) the filter specified by "filter_id".
+ *
+ * @param kshark_ctx: Input location for the session context pointer.
+ * @param sd: Data stream identifier.
+ * @param filter_id: Identifier of the filter.
+ */
+void kshark_filter_clear(struct kshark_context *kshark_ctx, int sd,
+			 int filter_id)
+{
+	struct kshark_hash_id *filter;
+
+	filter = get_filter(kshark_ctx, sd, filter_id);
+	if (filter)
+		kshark_hash_id_clear(filter);
 }
 
 /**
@@ -1148,7 +1170,7 @@ void kshark_filter_clear(struct kshark_context *kshark_ctx, int filter_id)
  *
  * @returns True if the Id filter is set, otherwise False.
  */
-bool kshark_this_filter_is_set(struct tracecmd_filter_id *filter)
+bool kshark_this_filter_is_set(struct kshark_hash_id *filter)
 {
 	return filter && filter->count;
 }
@@ -1157,17 +1179,49 @@ bool kshark_this_filter_is_set(struct tracecmd_filter_id *filter)
  * @brief Check if an Id filter is set.
  *
  * @param kshark_ctx: Input location for the session context pointer.
+ * @param sd: Data stream identifier.
  *
- * @returns True if at least one Id filter is set, otherwise False.
+ * @returns True if at least one Id filter of the stream is set, otherwise
+ *	    False.
  */
-bool kshark_filter_is_set(struct kshark_context *kshark_ctx)
+bool kshark_filter_is_set(struct kshark_context *kshark_ctx, int sd)
 {
-	return kshark_this_filter_is_set(kshark_ctx->show_task_filter) ||
--              kshark_this_filter_is_set(kshark_ctx->hide_task_filter) ||
--              kshark_this_filter_is_set(kshark_ctx->show_cpu_filter) ||
--              kshark_this_filter_is_set(kshark_ctx->hide_cpu_filter) ||
--              kshark_this_filter_is_set(kshark_ctx->show_event_filter) ||
--              kshark_this_filter_is_set(kshark_ctx->hide_event_filter);
+	struct kshark_data_stream *stream;
+
+	stream = kshark_get_data_stream(kshark_ctx, sd);
+	if (!stream)
+		return false;
+
+	return kshark_this_filter_is_set(stream->show_task_filter) ||
+	       kshark_this_filter_is_set(stream->hide_task_filter)  ||
+	       kshark_this_filter_is_set(stream->show_cpu_filter)   ||
+	       kshark_this_filter_is_set(stream->hide_cpu_filter)   ||
+	       kshark_this_filter_is_set(stream->show_event_filter) ||
+	       kshark_this_filter_is_set(stream->hide_event_filter);
+}
+
+/**
+ * @brief Apply filters to a given entry.
+ *
+ * @param kshark_ctx: Input location for the session context pointer.
+ * @param stream: Input location for a Trace data stream pointer.
+ * @param entry: Input location for entry.
+ */
+void kshark_apply_filters(struct kshark_context *kshark_ctx,
+			  struct kshark_data_stream *stream,
+			  struct kshark_entry *entry)
+{
+	/* Apply event filtering. */
+	if (!kshark_show_event(stream, entry->event_id))
+		unset_event_filter_flag(kshark_ctx, entry);
+
+	/* Apply CPU filtering. */
+	if (!kshark_show_cpu(stream, entry->cpu))
+		entry->visible &= ~kshark_ctx->filter_mask;
+
+	/* Apply task filtering. */
+	if (!kshark_show_task(stream, entry->pid))
+		entry->visible &= ~kshark_ctx->filter_mask;
 }
 
 static void set_all_visible(uint16_t *v) {
@@ -1175,56 +1229,100 @@ static void set_all_visible(uint16_t *v) {
 	*v |= 0xFF & ~KS_PLUGIN_UNTOUCHED_MASK;
 }
 
+static void filter_entries(struct kshark_context *kshark_ctx, int sd,
+			   struct kshark_entry **data, size_t n_entries)
+{
+	struct kshark_data_stream *stream = NULL;
+	size_t i;
+
+	/* Sanity checks before starting. */
+	if (sd >= 0) {
+		/* We will filter particular Data stream. */
+		stream = kshark_get_data_stream(kshark_ctx, sd);
+		if (!stream)
+			return;
+
+		if (kshark_is_tep(stream) &&
+		    kshark_tep_filter_is_set(stream)) {
+			/* The advanced filter is set. */
+			fprintf(stderr,
+				"Failed to filter (sd = %i)!\n", sd);
+			fprintf(stderr,
+				"Reset the Advanced filter or reload the data.\n");
+
+			return;
+		}
+
+		if (!kshark_filter_is_set(kshark_ctx, sd))
+			return;
+	}
+
+	/* Apply only the Id filters. */
+	for (i = 0; i < n_entries; ++i) {
+		if (sd >= 0) {
+			/*
+			 * We only filter particular stream. Chack is the entry
+			 * belongs to this stream.
+			 */
+			if (data[i]->stream_id != sd)
+				continue;
+		} else {
+			/* We filter all streams. */
+			stream = kshark_ctx->stream[data[i]->stream_id];
+		}
+
+		/* Start with and entry which is visible everywhere. */
+		set_all_visible(&data[i]->visible);
+
+		/* Apply Id filtering. */
+		kshark_apply_filters(kshark_ctx, stream, data[i]);
+	}
+}
+
 /**
  * @brief This function loops over the array of entries specified by "data"
- *	  and "n_entries" and sets the "visible" fields of each entry
- *	  according to the criteria provided by the filters of the session's
- *	  context. The field "filter_mask" of the session's context is used to
- *	  control the level of visibility/invisibility of the entries which
- *	  are filtered-out.
+ *	  and "n_entries" and sets the "visible" fields of each entry from a
+ *	  given Data stream according to the criteria provided by the filters
+ *	  of the session's context. The field "filter_mask" of the session's
+ *	  context is used to control the level of visibility/invisibility of
+ *	  the entries which are filtered-out.
  *	  WARNING: Do not use this function if the advanced filter is set.
  *	  Applying the advanced filter requires access to prevent_record,
  *	  hence the data has to be reloaded using kshark_load_entries().
  *
  * @param kshark_ctx: Input location for the session context pointer.
+ * @param sd: Data stream identifier.
  * @param data: Input location for the trace data to be filtered.
  * @param n_entries: The size of the inputted data.
  */
-void kshark_filter_entries(struct kshark_context *kshark_ctx,
-			   struct kshark_entry **data,
-			   size_t n_entries)
+void kshark_filter_stream_entries(struct kshark_context *kshark_ctx,
+				  int sd,
+				  struct kshark_entry **data,
+				  size_t n_entries)
 {
-	int i;
+	if (sd >= 0)
+		filter_entries(kshark_ctx, sd, data, n_entries);
+}
 
-	if (kshark_ctx->advanced_event_filter->filters) {
-		/* The advanced filter is set. */
-		fprintf(stderr,
-			"Failed to filter!\n");
-		fprintf(stderr,
-			"Reset the Advanced filter or reload the data.\n");
-		return;
-	}
-
-	if (!kshark_filter_is_set(kshark_ctx))
-		return;
-
-	/* Apply only the Id filters. */
-	for (i = 0; i < n_entries; ++i) {
-		/* Start with and entry which is visible everywhere. */
-		set_all_visible(&data[i]->visible);
-
-		/* Apply event filtering. */
-		if (!kshark_show_event(kshark_ctx, data[i]->event_id))
-			unset_event_filter_flag(kshark_ctx, data[i]);
-
-		/* Apply CPU filtering. */
-		if (!kshark_show_cpu(kshark_ctx, data[i]->cpu))
-			data[i]->visible &= ~kshark_ctx->filter_mask;
-
-		/* Apply task filtering. */
-		if (!kshark_show_task(kshark_ctx, data[i]->pid))
-			data[i]->visible &= ~kshark_ctx->filter_mask;
-	}
+/**
+ * @brief This function loops over the array of entries specified by "data"
+ *	  and "n_entries" and sets the "visible" fields of each entry from
+ *	  all Data stream according to the criteria provided by the filters
+ *	  of the session's context. The field "filter_mask" of the session's
+ *	  context is used to control the level of visibility/invisibility of
+ *	  the entries which are filtered-out.
+ *	  WARNING: Do not use this function if the advanced filter is set.
+ *	  Applying the advanced filter requires access to prevent_record,
+ *	  hence the data has to be reloaded using kshark_load_data_entries().
+ *
+ * @param kshark_ctx: Input location for the session context pointer.
+ * @param data: Input location for the trace data to be filtered.
+ * @param n_entries: The size of the inputted data.
+ */
+void kshark_filter_all_entries(struct kshark_context *kshark_ctx,
+			       struct kshark_entry **data, size_t n_entries)
+{
+	filter_entries(kshark_ctx, -1, data, n_entries);
 }
 
 /**
@@ -1241,6 +1339,7 @@ void kshark_clear_all_filters(struct kshark_context *kshark_ctx,
 			      size_t n_entries)
 {
 	int i;
+
 	for (i = 0; i < n_entries; ++i)
 		set_all_visible(&data[i]->visible);
 }
@@ -1364,15 +1463,15 @@ void kshark_convert_nano(uint64_t time, uint64_t *sec, uint64_t *usec)
  * @param h: Array index specifying the upper edge of the range to search in.
  *
  * @returns On success, the first kshark_entry inside the range, having a
-	    timestamp equal or bigger than "time".
-	    If all entries inside the range have timestamps greater than "time"
-	    the function returns BSEARCH_ALL_GREATER (negative value).
-	    If all entries inside the range have timestamps smaller than "time"
-	    the function returns BSEARCH_ALL_SMALLER (negative value).
+ *	    timestamp equal or bigger than "time".
+ *	    If all entries inside the range have timestamps greater than "time"
+ *	    the function returns BSEARCH_ALL_GREATER (negative value).
+ *	    If all entries inside the range have timestamps smaller than "time"
+ *	    the function returns BSEARCH_ALL_SMALLER (negative value).
  */
-ssize_t kshark_find_entry_by_time(uint64_t time,
-				 struct kshark_entry **data,
-				 size_t l, size_t h)
+ssize_t kshark_find_entry_by_time(int64_t time,
+				  struct kshark_entry **data,
+				  size_t l, size_t h)
 {
 	size_t mid;
 
@@ -1396,15 +1495,16 @@ ssize_t kshark_find_entry_by_time(uint64_t time,
  *
  * @param kshark_ctx: Input location for the session context pointer.
  * @param e: kshark_entry to be checked.
+ * @param sd: Data stream identifier.
  * @param pid: Matching condition value.
  *
  * @returns True if the Pid of the entry matches the value of "pid".
  *	    Else false.
  */
 bool kshark_match_pid(struct kshark_context *kshark_ctx,
-		      struct kshark_entry *e, int pid)
+		      struct kshark_entry *e, int sd, int *pid)
 {
-	if (e->pid == pid)
+	if (e->stream_id == sd && e->pid == *pid)
 		return true;
 
 	return false;
@@ -1415,18 +1515,78 @@ bool kshark_match_pid(struct kshark_context *kshark_ctx,
  *
  * @param kshark_ctx: Input location for the session context pointer.
  * @param e: kshark_entry to be checked.
+ * @param sd: Data stream identifier.
  * @param cpu: Matching condition value.
  *
  * @returns True if the Cpu of the entry matches the value of "cpu".
  *	    Else false.
  */
 bool kshark_match_cpu(struct kshark_context *kshark_ctx,
-		      struct kshark_entry *e, int cpu)
+		      struct kshark_entry *e, int sd, int *cpu)
 {
-	if (e->cpu == cpu)
+	if (e->stream_id == sd && e->cpu == *cpu)
 		return true;
 
 	return false;
+}
+
+/**
+ * @brief Simple event Id matching function to be user for data requests.
+ *
+ * @param kshark_ctx: Input location for the session context pointer.
+ * @param e: kshark_entry to be checked.
+ * @param sd: Data stream identifier.
+ * @param event_id: Matching condition value.
+ *
+ * @returns True if the event Id of the entry matches the value of "event_id".
+ *	    Else false.
+ */
+bool kshark_match_event_id(struct kshark_context *kshark_ctx,
+			   struct kshark_entry *e, int sd, int *event_id)
+{
+	return e->stream_id == sd && e->event_id == *event_id;
+}
+
+/**
+ * @brief Simple Event Id and PID matching function to be user for data requests.
+ *
+ * @param kshark_ctx: Input location for the session context pointer.
+ * @param e: kshark_entry to be checked.
+ * @param sd: Data stream identifier.
+ * @param values: An array of matching condition value.
+ *	  values[0] is the matches PID and values[1] is the matches event Id.
+ *
+ * @returns True if the event Id of the entry matches the values.
+ *	    Else false.
+ */
+bool kshark_match_event_and_pid(struct kshark_context *kshark_ctx,
+				struct kshark_entry *e,
+				int sd, int *values)
+{
+	return e->stream_id == sd &&
+	       e->event_id == values[0] &&
+	       e->pid == values[1];
+}
+
+/**
+ * @brief Simple Event Id and CPU matching function to be user for data requests.
+ *
+ * @param kshark_ctx: Input location for the session context pointer.
+ * @param e: kshark_entry to be checked.
+ * @param sd: Data stream identifier.
+ * @param values: An array of matching condition value.
+ *	  values[0] is the matches PID and values[1] is the matches event Id.
+ *
+ * @returns True if the event Id of the entry matches the values.
+ *	    Else false.
+ */
+bool kshark_match_event_and_cpu(struct kshark_context *kshark_ctx,
+				struct kshark_entry *e,
+				int sd, int *values)
+{
+	return e->stream_id == sd &&
+	       e->event_id == values[0] &&
+	       e->cpu == values[1];
 }
 
 /**
@@ -1437,8 +1597,9 @@ bool kshark_match_cpu(struct kshark_context *kshark_ctx,
  *		 where the search starts.
  * @param n: Number of array elements to search in.
  * @param cond: Matching condition function.
- * @param val: Matching condition value, used by the Matching condition
- *	       function.
+ * @param sd: Data stream identifier.
+ * @param values: Matching condition values, used by the Matching condition
+ *		  function.
  * @param vis_only: If true, a visible entry is requested.
  * @param vis_mask: If "vis_only" is true, use this mask to specify the level
  *		    of visibility of the requested entry.
@@ -1449,7 +1610,7 @@ bool kshark_match_cpu(struct kshark_context *kshark_ctx,
  */
 struct kshark_entry_request *
 kshark_entry_request_alloc(size_t first, size_t n,
-			   matching_condition_func cond, int val,
+			   matching_condition_func cond, int sd, int *values,
 			   bool vis_only, int vis_mask)
 {
 	struct kshark_entry_request *req = malloc(sizeof(*req));
@@ -1464,7 +1625,8 @@ kshark_entry_request_alloc(size_t first, size_t n,
 	req->first = first;
 	req->n = n;
 	req->cond = cond;
-	req->val = val;
+	req->sd = sd;
+	req->values = values;
 	req->vis_only = vis_only;
 	req->vis_mask = vis_mask;
 
@@ -1518,7 +1680,7 @@ get_entry(const struct kshark_entry_request *req,
 	 */
 	assert((inc > 0 && start < end) || (inc < 0 && start > end));
 	for (i = start; i != end; i += inc) {
-		if (req->cond(kshark_ctx, data[i], req->val)) {
+		if (req->cond(kshark_ctx, data[i], req->sd, req->values)) {
 			/*
 			 * Data satisfying the condition has been found.
 			 */

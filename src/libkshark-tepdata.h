@@ -51,8 +51,59 @@ void kshark_tep_filter_reset(struct kshark_data_stream *stream);
 
 char **kshark_tracecmd_local_plugins();
 
+struct tep_handle;
+
+struct tep_handle *kshark_get_tep(struct kshark_data_stream *stream);
+
+struct tracecmd_input;
+
+struct tracecmd_input *kshark_get_tep_input(struct kshark_data_stream *stream);
+
+struct tep_record;
+
 ssize_t kshark_load_tep_records(struct kshark_context *kshark_ctx, int sd,
 				struct tep_record ***data_rows);
+
+/**
+ * Structure representing the mapping between the virtual CPUs and their
+ * corresponding processes in the host.
+ */
+struct kshark_host_guest_map {
+	/** ID of guest stream */
+	int guest_id;
+
+	/** ID of host stream */
+	int host_id;
+
+	/** Guest name */
+	char *guest_name;
+
+	/** Number of guest's CPUs in *cpu_pid array */
+	int vcpu_count;
+
+	/** Array of host task PIDs, index is the VCPU id */
+	int *cpu_pid;
+};
+
+void kshark_tracecmd_free_hostguest_map(struct kshark_host_guest_map *map,
+					int count);
+
+int kshark_tracecmd_get_hostguest_mapping(struct kshark_host_guest_map **map);
+
+char **kshark_tep_get_buffer_names(struct kshark_context *kshark_ctx, int sd,
+				   int *n_buffers);
+
+int kshark_tep_open_buffer(struct kshark_context *kshark_ctx, int sd,
+			   const char *buffer_name);
+
+int kshark_tep_init_all_buffers(struct kshark_context *kshark_ctx, int sd);
+
+int kshark_tep_handle_plugins(struct kshark_context *kshark_ctx, int sd);
+
+int kshark_tep_find_top_stream(struct kshark_context *kshark_ctx,
+			       const char *file);
+
+bool kshark_tep_is_top_stream(struct kshark_data_stream *stream);
 
 #ifdef __cplusplus
 }
