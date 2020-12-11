@@ -19,10 +19,6 @@
 #include <string.h>
 #include <stdio.h>
 
-// OpenGL
-#include <GL/freeglut.h>
-#include <GL/gl.h>
-
 // KernelShark
 #include "libkshark-plot.h"
 
@@ -36,6 +32,10 @@
 /** Make the implementation private. */
 #define STBTT_STATIC
 #include "stb_truetype.h"
+
+#ifdef GLUT_FOUND
+
+#include <GL/freeglut.h>
 
 /**
  * @brief Create an empty scene for drawing.
@@ -61,16 +61,10 @@ void ksplot_make_scene(int width, int height)
 	/* Open the screen window. */
 	glutCreateWindow("KernelShark Plot");
 
-	/*
-	 * Set the origin of the coordinate system to be the top left corner.
-	 * The "Y" coordinate is inverted.
-	 */
-	gluOrtho2D(0, width, height, 0);
-	glViewport(0, 0, width, height);
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
+	ksplot_resize_opengl(width, height);
 }
+
+#endif // GLUT_FOUND
 
 /**
  * @brief Initialize OpenGL.

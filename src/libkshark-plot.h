@@ -15,6 +15,10 @@
 // C
 #include <stdbool.h>
 
+// OpenGL
+#include <GL/gl.h>
+#include <GL/glu.h>
+
 /*
  * STB TrueType (single-file public domain library)
  * https://github.com/nothings/stb
@@ -24,6 +28,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// KernelShark
+#include "KsCmakeDef.hpp"
 
 /** Structure defining a RGB color. */
 struct ksplot_color {
@@ -46,7 +53,11 @@ struct ksplot_point {
 	int y;
 };
 
+#ifdef GLUT_FOUND
+
 void ksplot_make_scene(int width, int height);
+
+#endif // GLUT_FOUND
 
 void ksplot_init_opengl(int dpr);
 
