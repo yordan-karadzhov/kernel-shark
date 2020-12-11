@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 
 // KernelShark
 #include "libkshark.h"
@@ -36,7 +37,6 @@ static bool kshark_default_context(struct kshark_context **context)
 	kshark_ctx->stream_info.array_size = KS_DEFAULT_NUM_STREAMS;
 	kshark_ctx->stream_info.max_stream_id = -1;
 
-	kshark_ctx->event_handlers = NULL;
 	kshark_ctx->collections = NULL;
 	kshark_ctx->plugins = NULL;
 
@@ -304,6 +304,7 @@ int kshark_add_stream(struct kshark_context *kshark_ctx)
 int kshark_stream_open(struct kshark_data_stream *stream, const char *file)
 {
 	struct kshark_context *kshark_ctx = NULL;
+	struct kshark_dri_list *input;
 
 	if (!stream || !kshark_instance(&kshark_ctx))
 		return -EFAULT;
@@ -318,6 +319,14 @@ int kshark_stream_open(struct kshark_data_stream *stream, const char *file)
 
 		return kshark_tep_init_input(stream);
 	}
+
+	for (input = kshark_ctx->inputs; input; input = input->next)
+		if (input->interface->check_data(file)) {
+			strcpy(stream->data_format,
+			       input->interface->data_format);
+
+			return input->interface->init(stream);
+		}
 
 	return -ENODATA;
 }
@@ -416,6 +425,7 @@ int *kshark_all_streams(struct kshark_context *kshark_ctx)
 static int kshark_stream_close(struct kshark_data_stream *stream)
 {
 	struct kshark_context *kshark_ctx = NULL;
+	struct kshark_dri_list *input;
 
 	if (!stream || !kshark_instance(&kshark_ctx))
 		return -EFAULT;
@@ -433,6 +443,10 @@ static int kshark_stream_close(struct kshark_data_stream *stream)
 
 	if (kshark_is_tep(stream))
 		return kshark_tep_close_interface(stream);
+
+	for (input = kshark_ctx->inputs; input; input = input->next)
+		if (strcmp(stream->data_format, input->interface->data_format) == 0)
+			return input->interface->close(stream);
 
 	return -ENODATA;
 }
@@ -453,6 +467,13 @@ int kshark_close(struct kshark_context *kshark_ctx, int sd)
 	stream = kshark_get_data_stream(kshark_ctx, sd);
 	if (!stream)
 		return -EFAULT;
+
+	/* Close all active plugins for this stream. */
+	if (stream->plugins) {
+		kshark_handle_all_dpis(stream, KSHARK_PLUGIN_CLOSE);
+		kshark_free_event_handler_list(stream->event_handlers);
+		kshark_free_dpi_list(stream->plugins);
+	}
 
 	ret = kshark_stream_close(stream);
 	kshark_remove_stream(kshark_ctx, stream->stream_id);
@@ -498,6 +519,8 @@ void kshark_free(struct kshark_context *kshark_ctx)
 
 	if (kshark_ctx->plugins)
 		kshark_free_plugin_list(kshark_ctx->plugins);
+
+	kshark_free_dri_list(kshark_ctx->inputs);
 
 	if (kshark_ctx == kshark_context_handler)
 		kshark_context_handler = NULL;
@@ -1220,6 +1243,29 @@ void kshark_clear_all_filters(struct kshark_context *kshark_ctx,
 	int i;
 	for (i = 0; i < n_entries; ++i)
 		set_all_visible(&data[i]->visible);
+}
+
+/**
+ * @brief Process all registered event-specific plugin actions.
+ *
+ * @param stream: Input location for a Trace data stream pointer.
+ * @param record: Input location for the trace record.
+ * @param entry: Output location for entry.
+ */
+void kshark_plugin_actions(struct kshark_data_stream *stream,
+			   void *record, struct kshark_entry *entry)
+{
+	if (stream->event_handlers) {
+		/* Execute all plugin-provided actions for this event (if any). */
+		struct kshark_event_proc_handler *evt_handler = stream->event_handlers;
+
+		while ((evt_handler = kshark_find_event_handler(evt_handler,
+								entry->event_id))) {
+			evt_handler->event_func(stream, record, entry);
+			evt_handler = evt_handler->next;
+			entry->visible &= ~KS_PLUGIN_UNTOUCHED_MASK;
+		}
+	}
 }
 
 static inline void free_ptr(void *ptr)

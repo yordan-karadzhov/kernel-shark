@@ -272,9 +272,6 @@ struct kshark_generic_stream_interface {
 	void			*handle;
 };
 
-/** The limit in size of the data format identifier string. */
-#define KS_DATA_FORMAT_SIZE	15
-
 /** Data format identifier string indicating invalid data. */
 #define KS_INVALID_DATA		"invalid data"
 
@@ -326,6 +323,18 @@ struct kshark_data_stream {
 
 	/** The type of the data. */
 	char			data_format[KS_DATA_FORMAT_SIZE];
+
+	/** List of Plugin interfaces. */
+	struct kshark_dpi_list	*plugins;
+
+	/** The number of plugins registered for this stream.*/
+	int			n_plugins;
+
+	/** List of Plugin's Event handlers. */
+	struct kshark_event_proc_handler	*event_handlers;
+
+	/** List of Plugin's Draw handlers. */
+	struct kshark_draw_handler		*draw_handlers;
 
 	/**
 	 * The interface of methods used to operate over the data from a given
@@ -406,11 +415,17 @@ struct kshark_context {
 	/** List of Data collections. */
 	struct kshark_entry_collection *collections;
 
+	/** List of data readout interfaces. */
+	struct kshark_dri_list		*inputs;
+
+	/** The number of readout interfaces. */
+	int				n_inputs;
+
 	/** List of Plugins. */
 	struct kshark_plugin_list	*plugins;
 
-	/** List of Plugin Event handlers. */
-	struct kshark_event_handler	*event_handlers;
+	/** The number of plugins. */
+	int				n_plugins;
 };
 
 bool kshark_instance(struct kshark_context **kshark_ctx);
@@ -586,6 +601,9 @@ void kshark_filter_entries(struct kshark_context *kshark_ctx,
 void kshark_clear_all_filters(struct kshark_context *kshark_ctx,
 			      struct kshark_entry **data,
 			      size_t n_entries);
+
+void kshark_plugin_actions(struct kshark_data_stream *stream,
+			   void *record, struct kshark_entry *entry);
 
 /** Search failed identifiers. */
 enum kshark_search_failed {
