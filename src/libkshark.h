@@ -342,6 +342,9 @@ static inline char *kshark_set_data_format(char *dest_format,
 	return strncpy(dest_format, src_format, KS_DATA_FORMAT_SIZE - 1);
 }
 
+/** Hard-coded default number of data streams available at initialization. */
+#define KS_DEFAULT_NUM_STREAMS	256
+
 /** Size of the task's hash table. */
 #define KS_TASK_HASH_SHIFT 16
 #define KS_TASK_HASH_SIZE (1 << KS_TASK_HASH_SHIFT)
@@ -436,7 +439,9 @@ struct kshark_context {
 
 bool kshark_instance(struct kshark_context **kshark_ctx);
 
-bool kshark_open(struct kshark_context *kshark_ctx, const char *file);
+int kshark_open(struct kshark_context *kshark_ctx, const char *file);
+
+int kshark_stream_open(struct kshark_data_stream *stream, const char *file);
 
 int kshark_add_stream(struct kshark_context *kshark_ctx);
 
@@ -456,9 +461,12 @@ ssize_t kshark_load_data_entries(struct kshark_context *kshark_ctx,
 ssize_t kshark_load_data_records(struct kshark_context *kshark_ctx,
 				 struct tep_record ***data_rows);
 
-ssize_t kshark_get_task_pids(struct kshark_context *kshark_ctx, int **pids);
+ssize_t kshark_get_task_pids(struct kshark_context *kshark_ctx, int sd,
+			     int **pids);
 
-void kshark_close(struct kshark_context *kshark_ctx);
+int kshark_close(struct kshark_context *kshark_ctx, int sd);
+
+void kshark_close_all(struct kshark_context *kshark_ctx);
 
 void kshark_free(struct kshark_context *kshark_ctx);
 
