@@ -72,6 +72,11 @@ void ksplot_draw_line(const struct ksplot_point *a,
 		      const struct ksplot_color *col,
 		      float size);
 
+void ksplot_draw_polyline(const struct ksplot_point *points,
+			  size_t n_points,
+			  const struct ksplot_color *col,
+			  float size);
+
 void ksplot_draw_polygon(const struct ksplot_point *points,
 			 size_t n_points,
 			 const struct ksplot_color *col,

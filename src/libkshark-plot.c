@@ -152,6 +152,30 @@ void ksplot_draw_line(const struct ksplot_point *a,
 }
 
 /**
+ * @brief Draw the a polyline.
+ *
+ * @param points: Input location for the array of points defining the polyline.
+ * @param n_points: The size of the array of points.
+ * @param col: The color of the polyline.
+ * @param size: The size of the polyline.
+ */
+void ksplot_draw_polyline(const struct ksplot_point *points,
+			  size_t n_points,
+			  const struct ksplot_color *col,
+			  float size)
+{
+	if (!points || !n_points || !col || size < .5f)
+		return;
+
+	/* Loop over the points of the polygon and draw connecting lines. */
+	for(size_t i = 1; i < n_points; ++i)
+		ksplot_draw_line(&points[i - 1],
+				 &points[i],
+				 col,
+				 size);
+}
+
+/**
  * @brief Draw a polygon.
  *
  * @param points: Input location for the array of points defining the polygon.
@@ -212,12 +236,8 @@ void ksplot_draw_polygon_contour(const struct ksplot_point *points,
 	if (!points || !n_points || !col || size < .5f)
 		return;
 
-	/* Loop over the points of the polygon and draw connecting lines. */
-	for(size_t i = 1; i < n_points; ++i)
-		ksplot_draw_line(&points[i - 1],
-				 &points[i],
-				 col,
-				 size);
+	/* Loop over the points of the polygon and draw a polyline. */
+	ksplot_draw_polyline(points, n_points, col, size);
 
 	/* Close the contour. */
 	ksplot_draw_line(&points[0],
