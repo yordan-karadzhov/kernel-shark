@@ -6,7 +6,7 @@
 
  /**
  *  @file    libkshark.h
- *  @brief   API for processing of FTRACE (trace-cmd) data.
+ *  @brief   API for processing of tracing data.
  */
 
 #ifndef _LIB_KSHARK_H
@@ -27,8 +27,6 @@ extern "C" {
 // trace-cmd
 #include "trace-cmd/trace-cmd.h"
 #include "trace-cmd/trace-filter-hash.h"
-#include "traceevent/event-parse.h"
-#include "tracefs/tracefs.h"
 
 // KernelShark
 #include "libkshark-plugin.h"
@@ -345,19 +343,6 @@ static inline char *kshark_set_data_format(char *dest_format,
 /** Hard-coded default number of data streams available at initialization. */
 #define KS_DEFAULT_NUM_STREAMS	256
 
-/** Size of the task's hash table. */
-#define KS_TASK_HASH_SHIFT 16
-#define KS_TASK_HASH_SIZE (1 << KS_TASK_HASH_SHIFT)
-
-/** Linked list of tasks. */
-struct kshark_task_list {
-	/** Pointer to the next task's PID. */
-	struct kshark_task_list	*next;
-
-	/** PID of a task. */
-	int			 pid;
-};
-
 /**
  * Structure representing the parameters of the stream descriptor array owned
  * by the kshark session.
@@ -383,15 +368,6 @@ struct kshark_context {
 
 	/** Parameters of the stream descriptor array. */
 	struct kshark_stream_array_descriptor	stream_info;
-
-	/** Input handle for the trace data file. */
-	struct tracecmd_input	*handle;
-
-	/** Page event used to parse the page. */
-	struct tep_handle	*pevent;
-
-	/** Hash table of task PIDs. */
-	struct kshark_task_list	*tasks[KS_TASK_HASH_SIZE];
 
 	/** A mutex, used to protect the access to the input file. */
 	pthread_mutex_t		input_mutex;
@@ -455,12 +431,6 @@ kshark_get_stream_from_entry(const struct kshark_entry *entry);
 
 int *kshark_all_streams(struct kshark_context *kshark_ctx);
 
-ssize_t kshark_load_data_entries(struct kshark_context *kshark_ctx,
-				 struct kshark_entry ***data_rows);
-
-ssize_t kshark_load_data_records(struct kshark_context *kshark_ctx,
-				 struct tep_record ***data_rows);
-
 ssize_t kshark_get_task_pids(struct kshark_context *kshark_ctx, int sd,
 			     int **pids);
 
@@ -473,18 +443,6 @@ void kshark_free(struct kshark_context *kshark_ctx);
 char *kshark_comm_from_pid(int sd, int pid);
 
 char *kshark_event_from_id(int sd, int event_id);
-
-int kshark_get_pid_easy(struct kshark_entry *entry);
-
-const char *kshark_get_task_easy(struct kshark_entry *entry);
-
-const char *kshark_get_latency_easy(struct kshark_entry *entry);
-
-int kshark_get_event_id_easy(struct kshark_entry *entry);
-
-const char *kshark_get_event_name_easy(struct kshark_entry *entry);
-
-const char *kshark_get_info_easy(struct kshark_entry *entry);
 
 void kshark_convert_nano(uint64_t time, uint64_t *sec, uint64_t *usec);
 
@@ -531,18 +489,6 @@ ssize_t kshark_load_matrix(struct kshark_context *kshark_ctx, int sd,
 			   int32_t **pid_array,
 			   int64_t **offset_array,
 			   int64_t **ts_array);
-
-/**
- * Custom entry info function type. To be user for dumping info for custom
- * KernelShark entryes.
- */
-typedef const char *(kshark_custom_info_func)(struct kshark_context *,
-					      const struct kshark_entry *,
-					      bool);
-
-char* kshark_dump_custom_entry(struct kshark_context *kshark_ctx,
-			       const struct kshark_entry *entry,
-			       kshark_custom_info_func info_func);
 
 /** Bit masks used to control the visibility of the entry after filtering. */
 enum kshark_filter_masks {
@@ -665,10 +611,6 @@ enum kshark_search_failed {
 ssize_t kshark_find_entry_by_time(uint64_t time,
 				  struct kshark_entry **data_rows,
 				  size_t l, size_t h);
-
-ssize_t kshark_find_record_by_time(uint64_t time,
-				   struct tep_record **data_rows,
-				   size_t l, size_t h);
 
 bool kshark_match_pid(struct kshark_context *kshark_ctx,
 		      struct kshark_entry *e, int pid);
@@ -952,16 +894,6 @@ bool kshark_export_adv_filters(struct kshark_context *kshark_ctx,
 			       struct kshark_config_doc **conf);
 
 bool kshark_import_adv_filters(struct kshark_context *kshark_ctx,
-			       struct kshark_config_doc *conf);
-
-bool kshark_export_event_filter(struct tep_handle *pevent,
-				struct tracecmd_filter_id *filter,
-				const char *filter_name,
-				struct kshark_config_doc *conf);
-
-int kshark_import_event_filter(struct tep_handle *pevent,
-			       struct tracecmd_filter_id *filter,
-			       const char *filter_name,
 			       struct kshark_config_doc *conf);
 
 bool kshark_export_user_mask(struct kshark_context *kshark_ctx,
