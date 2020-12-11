@@ -3,7 +3,7 @@ message("\n src ...")
 message(STATUS "libkshark")
 add_library(kshark SHARED libkshark.c
                           libkshark-hash.c
-#                           libkshark-model.c
+                          libkshark-model.c
                           libkshark-plugin.c
                           libkshark-tepdata.c
 #                           libkshark-configio.c
