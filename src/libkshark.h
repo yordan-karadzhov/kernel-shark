@@ -895,6 +895,12 @@ enum kshark_config_formats {
  */
 #define KS_DATA_SOURCE_NAME		"trace data"
 
+/**
+ * Field name for the Configuration document describing all currently loaded
+ * data streams.
+ */
+#define KS_DSTREAMS_NAME		"data streams"
+
 struct kshark_config_doc *
 kshark_config_alloc(enum kshark_config_formats);
 
@@ -907,7 +913,13 @@ struct kshark_config_doc *
 kshark_record_config_new(enum kshark_config_formats);
 
 struct kshark_config_doc *
+kshark_stream_config_new(enum kshark_config_formats);
+
+struct kshark_config_doc *
 kshark_filter_config_new(enum kshark_config_formats);
+
+struct kshark_config_doc *
+kshark_session_config_new(enum kshark_config_formats format);
 
 struct kshark_config_doc *kshark_string_config_alloc(void);
 
@@ -924,24 +936,42 @@ bool kshark_config_doc_get(struct kshark_config_doc *conf,
 struct kshark_trace_histo;
 
 struct kshark_config_doc *
-kshark_export_trace_file(const char *file,
+kshark_export_trace_file(const char *file, const char *name,
 			 enum kshark_config_formats format);
 
-const char *kshark_import_trace_file(struct kshark_context *kshark_ctx,
-				     struct kshark_config_doc *conf);
+int kshark_import_trace_file(struct kshark_context *kshark_ctx,
+			     struct kshark_config_doc *conf);
+
+struct kshark_config_doc *
+kshark_export_plugin_file(struct kshark_plugin_list *plugin,
+			  enum kshark_config_formats format);
+
+struct kshark_config_doc *
+kshark_export_all_plugins(struct kshark_context *kshark_ctx,
+			  enum kshark_config_formats format);
+
+bool kshark_import_all_plugins(struct kshark_context *kshark_ctx,
+			       struct kshark_config_doc *conf);
+
+struct kshark_config_doc *
+kshark_export_stream_plugins(struct kshark_data_stream *stream,
+			     enum kshark_config_formats format);
+
+bool kshark_import_stream_plugins(struct kshark_context *kshark_ctx,
+				  struct kshark_data_stream *stream,
+				  struct kshark_config_doc *conf);
 
 struct kshark_config_doc *
 kshark_export_model(struct kshark_trace_histo *histo,
 		     enum kshark_config_formats format);
 
-
 bool kshark_import_model(struct kshark_trace_histo *histo,
 			 struct kshark_config_doc *conf);
 
-bool kshark_export_adv_filters(struct kshark_context *kshark_ctx,
+bool kshark_export_adv_filters(struct kshark_context *kshark_ctx, int sd,
 			       struct kshark_config_doc **conf);
 
-bool kshark_import_adv_filters(struct kshark_context *kshark_ctx,
+bool kshark_import_adv_filters(struct kshark_context *kshark_ctx, int sd,
 			       struct kshark_config_doc *conf);
 
 bool kshark_export_event_filter(struct kshark_data_stream *stream,
@@ -968,30 +998,45 @@ bool kshark_import_filter_array(struct kshark_hash_id *filter,
 				const char *filter_name,
 				struct kshark_config_doc *conf);
 
-bool kshark_export_all_event_filters(struct kshark_context *kshark_ctx,
+bool kshark_export_all_event_filters(struct kshark_context *kshark_ctx, int sd,
 				     struct kshark_config_doc **conf);
 
-bool kshark_export_all_task_filters(struct kshark_context *kshark_ctx,
+bool kshark_export_all_task_filters(struct kshark_context *kshark_ctx, int sd,
 				    struct kshark_config_doc **conf);
 
-bool kshark_export_all_cpu_filters(struct kshark_context *kshark_ctx,
+bool kshark_export_all_cpu_filters(struct kshark_context *kshark_ctx, int sd,
 				   struct kshark_config_doc **conf);
 
 struct kshark_config_doc *
-kshark_export_all_filters(struct kshark_context *kshark_ctx,
+kshark_export_all_filters(struct kshark_context *kshark_ctx, int sd,
 			  enum kshark_config_formats format);
 
-bool kshark_import_all_event_filters(struct kshark_context *kshark_ctx,
+bool kshark_import_all_event_filters(struct kshark_context *kshark_ctx, int sd,
 				     struct kshark_config_doc *conf);
 
-bool kshark_import_all_task_filters(struct kshark_context *kshark_ctx,
+bool kshark_import_all_task_filters(struct kshark_context *kshark_ctx, int sd,
 				    struct kshark_config_doc *conf);
 
-bool kshark_import_all_cpu_filters(struct kshark_context *kshark_ctx,
+bool kshark_import_all_cpu_filters(struct kshark_context *kshark_ctx, int sd,
 				   struct kshark_config_doc *conf);
 
-bool kshark_import_all_filters(struct kshark_context *kshark_ctx,
+bool kshark_import_all_filters(struct kshark_context *kshark_ctx, int sd,
 			       struct kshark_config_doc *conf);
+
+struct kshark_config_doc *
+kshark_export_dstream(struct kshark_context *kshark_ctx, int sd,
+		      enum kshark_config_formats format);
+
+int kshark_import_dstream(struct kshark_context *kshark_ctx,
+			  struct kshark_config_doc *conf);
+
+bool kshark_export_all_dstreams(struct kshark_context *kshark_ctx,
+				struct kshark_config_doc **conf);
+
+ssize_t kshark_import_all_dstreams(struct kshark_context *kshark_ctx,
+				   struct kshark_config_doc *conf,
+				   struct kshark_entry ***data_rows);
+
 
 bool kshark_save_config_file(const char *file_name,
 			     struct kshark_config_doc *conf);
