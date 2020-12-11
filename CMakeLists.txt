@@ -42,6 +42,8 @@ if (Qt5Widgets_FOUND)
 
 endif (Qt5Widgets_FOUND)
 
+find_package (Boost COMPONENTS unit_test_framework)
+
 set(LIBRARY_OUTPUT_PATH    "${KS_DIR}/lib")
 set(EXECUTABLE_OUTPUT_PATH "${KS_DIR}/bin")
 
@@ -92,6 +94,13 @@ message(STATUS "Linker flags : " ${CMAKE_EXE_LINKER_FLAGS})
 
 add_subdirectory(${KS_DIR}/src)
 add_subdirectory(${KS_DIR}/examples)
+
+if (Boost_FOUND)
+
+    enable_testing()
+    add_subdirectory(${KS_DIR}/tests)
+
+endif()
 
 if (_DOXYGEN_DOC AND DOXYGEN_FOUND)
 
