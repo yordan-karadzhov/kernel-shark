@@ -28,6 +28,7 @@ BUILD_PLUGIN(NAME missed_events
 list(APPEND PLUGIN_LIST "missed_events default") # This plugin will be loaded by default
 
 install(TARGETS sched_events missed_events
-        LIBRARY DESTINATION ${KS_PLUGIN_INSTALL_PREFIX})
+        LIBRARY DESTINATION ${KS_PLUGIN_INSTALL_PREFIX}
+        COMPONENT kernelshark)
 
 set(PLUGINS ${PLUGIN_LIST} PARENT_SCOPE)

@@ -1,5 +1,7 @@
 message("\n src ...")
 
+set(KS_INCLUDS_DESTINATION "${_INSTALL_PREFIX}/include/${KS_APP_NAME}")
+
 message(STATUS "libkshark")
 add_library(kshark SHARED libkshark.c
                           libkshark-hash.c
@@ -15,9 +17,25 @@ target_link_libraries(kshark trace::cmd
                              jsonc::jsonc
                              ${CMAKE_DL_LIBS})
 
-set_target_properties(kshark  PROPERTIES SUFFIX	".so.${KS_VERSION_STRING}")
+set_target_properties(kshark  PROPERTIES
+                                  SOVERSION ${KS_VERSION_MAJOR}
+                                  VERSION   ${KS_VERSION_STRING})
 
-install(TARGETS kshark LIBRARY DESTINATION ${_LIBDIR})
+
+install(TARGETS kshark
+        LIBRARY DESTINATION    ${_LIBDIR}
+            COMPONENT              kernelshark
+            NAMELINK_COMPONENT     libkshark-devel
+        INCLUDES DESTINATION   ${_INSTALL_PREFIX}/include/${KS_APP_NAME}
+            COMPONENT              libkshark-devel
+        ARCHIVE DESTINATION    ${_LIBDIR}
+            COMPONENT              libkshark-devel)
+
+install(FILES "${KS_DIR}/src/libkshark.h"
+              "${KS_DIR}/src/libkshark-model.h"
+              "${KS_DIR}/src/libkshark-plugin.h"
+        DESTINATION ${KS_INCLUDS_DESTINATION}
+            COMPONENT libkshark-devel)
 
 if (OPENGL_FOUND)
 
@@ -29,9 +47,18 @@ if (OPENGL_FOUND)
                                        ${GLUT_LIBRARY}
                                        ${OPENGL_LIBRARIES})
 
-    set_target_properties(kshark-plot PROPERTIES  SUFFIX ".so.${KS_VERSION_STRING}")
+    set_target_properties(kshark-plot PROPERTIES
+                                          SOVERSION ${KS_VERSION_MAJOR}
+                                          VERSION   ${KS_VERSION_STRING})
 
-    install(TARGETS kshark-plot LIBRARY DESTINATION ${_LIBDIR})
+    install(TARGETS kshark-plot
+            LIBRARY DESTINATION    ${_LIBDIR}
+                COMPONENT              kernelshark
+                NAMELINK_COMPONENT     libkshark-devel
+            INCLUDES DESTINATION   ${_INSTALL_PREFIX}/include/${KS_APP_NAME}
+                COMPONENT              libkshark-devel
+            ARCHIVE DESTINATION    ${_LIBDIR}
+                COMPONENT              libkshark-devel)
 
 endif (OPENGL_FOUND)
 
@@ -83,21 +110,27 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND)
     target_link_libraries(kshark-record kshark-gui)
 
     install(TARGETS ${KS_APP_NAME} kshark-record kshark-gui
-            RUNTIME DESTINATION ${_INSTALL_PREFIX}/bin/
-            LIBRARY DESTINATION ${_LIBDIR})
+            RUNTIME DESTINATION       ${_INSTALL_PREFIX}/bin/
+                COMPONENT                 kernelshark
+            LIBRARY DESTINATION       ${_LIBDIR}
+                COMPONENT                 kernelshark)
 
     install(FILES "${KS_DIR}/${KS_APP_NAME}.desktop"
-            DESTINATION ${_INSTALL_PREFIX}/share/applications/)
+            DESTINATION ${_INSTALL_PREFIX}/share/applications/
+                COMPONENT                 kernelshark)
 
     install(FILES "${KS_DIR}/icons/${KS_ICON}"
                   "${KS_DIR}/icons/${KS_ICON_FIN}"
-            DESTINATION ${_INSTALL_PREFIX}/share/icons/${KS_APP_NAME})
+            DESTINATION ${_INSTALL_PREFIX}/share/icons/${KS_APP_NAME}
+                COMPONENT                 kernelshark)
 
     install(FILES "${KS_DIR}/org.freedesktop.kshark-record.policy"
-            DESTINATION /usr/share/polkit-1/actions/)
+            DESTINATION /usr/share/polkit-1/actions/
+                COMPONENT                 kernelshark)
 
     install(PROGRAMS "${KS_DIR}/bin/kshark-su-record"
-            DESTINATION ${_INSTALL_PREFIX}/bin/)
+            DESTINATION ${_INSTALL_PREFIX}/bin/
+                COMPONENT                 kernelshark)
 
 endif (Qt5Widgets_FOUND AND Qt5Network_FOUND)
 

@@ -86,7 +86,7 @@ set(KS_ICON_FIN    KS_icon_fin.svg)
 set(KS_LOGO        KS_logo_symbol.svg)
 set(KS_LOGO_LABEL  KS_logo_horizontal.svg)
 
-set(CMAKE_INSTALL_RPATH "${_LIBDIR}")
+set(CMAKE_INSTALL_RPATH "${_LIBDIR}" "$ORIGIN")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 if (CMAKE_BUILD_TYPE MATCHES Package)
