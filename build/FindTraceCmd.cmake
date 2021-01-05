@@ -1,59 +1,78 @@
-# Find traceevent and trace-cmd
-# This module finds an installed trace-cmd package.
-#
-# It sets the following variables:
-#  TRACEEVENT_LIBRARY, traceevent the library.
-#  TRACEEVENT_FOUND, If false, do not try to use traceevent.
-#
-#  TRACECMD_INCLUDE_DIR, where to find trace-cmd header.
-#  TRACEFS_INCLUDE_DIR, where to find tracefs header.
-#  TRACEFS_LIBRARY, the tracefs library.
-#  TRACECMD_LIBRARY, the trace-cmd library.
-#  TRACECMD_FOUND, If false, do not try to use trace-cmd.
+# SPDX-License-Identifier: LGPL-2.1
 
-# MESSAGE(" Looking for trace-cmd ...")
+#[=======================================================================[.rst:
+FindTraceCmd
+-------
 
-# First search in the user provided paths.
-if (CMAKE_BUILD_TYPE MATCHES Debug)
+Finds the tracecmd library.
 
-  find_program(TRACECMD_EXECUTABLE   NAMES  trace-cmd
-                                     PATHS  $ENV{TRACE_CMD}/tracecmd/
-                                     NO_DEFAULT_PATH)
+Imported Targets
+^^^^^^^^^^^^^^^^
 
-endif (CMAKE_BUILD_TYPE MATCHES Debug)
+This module defines the :prop_tgt:`IMPORTED` targets:
 
-if (NOT TRACECMD_EXECUTABLE)
+``trace::cmd``
+ Defined if the system has libtracecmd.
 
-  set(TRACECMD_EXECUTABLE "${_INSTALL_PREFIX}/bin/trace-cmd")
+Result Variables
+^^^^^^^^^^^^^^^^
 
-endif (NOT TRACECMD_EXECUTABLE)
+``TraceCmd_FOUND``
+  True if the system has the libtracecmd library.
+``TraceCmd_VERSION``
+  The version of the libtracecmd library which was found.
+``TraceCmd_INCLUDE_DIRS``
+  Include directories needed to use libtracecmd.
+``TraceCmd_LIBRARIES``
+  Libraries needed to link to libtracecmd.
 
-find_path(TRACECMD_INCLUDE_DIR  NAMES  trace-cmd/trace-cmd.h
-                                PATHS  $ENV{TRACE_CMD}/include/
-                                NO_DEFAULT_PATH)
+Cache Variables
+^^^^^^^^^^^^^^^
 
-find_library(TRACECMD_LIBRARY   NAMES  trace-cmd/libtracecmd.a
-                                PATHS  $ENV{TRACE_CMD}/lib/
-                                NO_DEFAULT_PATH)
+``TraceCmd_INCLUDE_DIR``
+  The directory containing ``trace-cmd.h``.
+``TraceCmd_LIBRARY``
+  The path to the tracecmd library.
 
-# If not found, search in the default system paths. Note that if the previous
-# search was successful "find_path" will do nothing this time.
-find_program(TRACECMD_EXECUTABLE NAMES  trace-cmd)
-find_path(TRACECMD_INCLUDE_DIR   NAMES  trace-cmd/trace-cmd.h)
-find_library(TRACECMD_LIBRARY    NAMES  trace-cmd/libtracecmd.so)
+#]=======================================================================]
 
-IF (TRACECMD_INCLUDE_DIR AND TRACECMD_LIBRARY)
+find_package(PkgConfig QUIET)
+pkg_check_modules(PC_TraceCmd QUIET libtracecmd)
 
-  SET(TRACECMD_FOUND TRUE)
+set(TraceCmd_VERSION     ${PC_TraceCmd_VERSION})
+set(TraceCmd_DEFINITIONS ${PC_TraceCmd_CFLAGS_OTHER})
 
-ENDIF (TRACECMD_INCLUDE_DIR AND TRACECMD_LIBRARY)
+find_path(TraceCmd_INCLUDE_DIR NAMES trace-cmd/trace-cmd.h
+                               HINTS ${PC_TraceCmd_INCLUDE_DIRS}
+                                     ${PC_TraceCmd_INCLUDEDIR})
 
-IF (TRACECMD_FOUND)
+find_library(TraceCmd_LIBRARY  NAMES tracecmd libtracecmd
+                               HINTS ${PC_TraceCmd_LIBDIR}
+                                     ${PC_TraceCmdLIBRARY_DIRS})
 
-  MESSAGE(STATUS "Found trace-cmd: ${TRACECMD_LIBRARY}")
+mark_as_advanced(TraceCmd_INCLUDE_DIR TraceCmd_LIBRARY)
 
-ELSE (TRACECMD_FOUND)
+include(FindPackageHandleStandardArgs)
 
-  MESSAGE(FATAL_ERROR "\nCould not find trace-cmd!\n")
+find_package_handle_standard_args(TraceCmd DEFAULT_MSG
+                                  TraceCmd_LIBRARY TraceCmd_INCLUDE_DIR)
 
-ENDIF (TRACECMD_FOUND)
+if(TraceCmd_FOUND)
+
+  set(TraceCmd_LIBRARIES    ${TraceCmd_LIBRARY})
+  set(TraceCmd_INCLUDE_DIRS ${TraceCmd_INCLUDE_DIR})
+
+  if(NOT TARGET trace::cmd)
+    add_library(trace::cmd UNKNOWN IMPORTED)
+
+    set_target_properties(trace::cmd
+                          PROPERTIES
+                            INTERFACE_INCLUDE_DIRECTORIES "${TraceCmd_INCLUDE_DIRS}"
+                            INTERFACE_COMPILE_DEFINITIONS "${TraceCmd_DEFINITIONS}"
+                            IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+                            IMPORTED_LOCATION "${TraceCmd_LIBRARIES}")
+  endif()
+
+endif()
+
+find_program(TRACECMD_EXECUTABLE NAMES trace-cmd)

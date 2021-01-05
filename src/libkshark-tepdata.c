@@ -277,7 +277,7 @@ static void free_rec_list(struct rec_list **rec_list, int n_cpus,
 			temp_rec = rec_list[cpu];
 			rec_list[cpu] = temp_rec->next;
 			if (type == REC_RECORD)
-				free_record(temp_rec->rec);
+				tracecmd_free_record(temp_rec->rec);
 			free(temp_rec);
 		}
 	}
@@ -379,7 +379,7 @@ static ssize_t get_records(struct kshark_context *kshark_ctx,
 				    tep_filter_match(adv_filter, rec) != FILTER_MATCH)
 					unset_event_filter_flag(kshark_ctx, entry);
 
-				free_record(rec);
+				tracecmd_free_record(rec);
 				break;
 			} /* REC_ENTRY */
 			}
@@ -571,7 +571,7 @@ static ssize_t tepdata_load_matrix(struct kshark_data_stream *stream,
  *
  * @param kshark_ctx: Input location for the session context pointer.
  * @param sd: Data stream identifier.
- * @param data_rows: Output location for the trace data. Use free_record()
+ * @param data_rows: Output location for the trace data. Use tracecmd_free_record()
  *	 	     to free the elements of the outputted array.
  *
  * @returns The size of the outputted data in the case of success, or a
@@ -657,7 +657,7 @@ static const int tepdata_get_event_id(struct kshark_data_stream *stream,
 		if (record)
 			event_id = tep_data_type(kshark_get_tep(stream), record);
 
-		free_record(record);
+		tracecmd_free_record(record);
 
 		pthread_mutex_unlock(&stream->input_mutex);
 	}
@@ -749,7 +749,7 @@ static const int tepdata_get_pid(struct kshark_data_stream *stream,
 		if (record)
 			pid = tep_data_pid(kshark_get_tep(stream), record);
 
-		free_record(record);
+		tracecmd_free_record(record);
 
 		pthread_mutex_unlock(&stream->input_mutex);
 	}
@@ -798,7 +798,7 @@ static char *tepdata_get_latency(struct kshark_data_stream *stream,
 	tep_print_event(kshark_get_tep(stream), &seq, record,
 			"%s", TEP_PRINT_LATENCY);
 
-	free_record(record);
+	tracecmd_free_record(record);
 
 	pthread_mutex_unlock(&stream->input_mutex);
 
@@ -869,7 +869,7 @@ static char *tepdata_get_info(struct kshark_data_stream *stream,
 	if (event)
 		info = get_info_str(stream, record, event);
 
-	free_record(record);
+	tracecmd_free_record(record);
 
 	pthread_mutex_unlock(&stream->input_mutex);
 
@@ -1178,7 +1178,7 @@ int tepdata_read_event_field(struct kshark_data_stream *stream,
 
 	ret = tep_read_number_field(evt_field, record->data,
 				    (unsigned long long *) val);
-	free_record(record);
+	tracecmd_free_record(record);
 
 	return ret;
 }
@@ -1308,7 +1308,7 @@ static int kshark_tep_stream_init(struct kshark_data_stream *stream,
 		goto fail;
 
 	tep_handle->input = input;
-	tep_handle->tep = tracecmd_get_pevent(tep_handle->input);
+	tep_handle->tep = tracecmd_get_tep(tep_handle->input);
 	if (!tep_handle->tep)
 		goto fail;
 

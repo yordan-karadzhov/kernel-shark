@@ -21,11 +21,11 @@ if (NOT _LIBDIR)
     set(_LIBDIR "${_INSTALL_PREFIX}/lib")
 endif (NOT _LIBDIR)
 
-include(${KS_DIR}/build/FindTraceCmd.cmake)
-
 set(CMAKE_MODULE_PATH "${KS_DIR}/build")
 find_package(TraceEvent REQUIRED)
 find_package(TraceFS    REQUIRED)
+find_package(TraceCmd   REQUIRED)
+
 find_package(JSONC      REQUIRED)
 
 find_package(Doxygen)

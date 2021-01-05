@@ -9,7 +9,7 @@ add_library(kshark SHARED libkshark.c
                           libkshark-configio.c
                           libkshark-collection.c)
 
-target_link_libraries(kshark ${TRACECMD_LIBRARY}
+target_link_libraries(kshark trace::cmd
                              trace::fs
                              trace::event
                              jsonc::jsonc
