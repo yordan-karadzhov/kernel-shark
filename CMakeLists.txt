@@ -13,13 +13,28 @@ message("\n project: Kernel Shark: (version: ${KS_VERSION_STRING})\n")
 
 set(KS_DIR ${CMAKE_SOURCE_DIR})
 
-if (NOT _INSTALL_PREFIX)
-    set(_INSTALL_PREFIX "/usr/local")
-endif (NOT _INSTALL_PREFIX)
+execute_process(COMMAND bash "-c" "echo __LP64__ | ${CMAKE_C_COMPILER} -E -x c - | tail -n 1"
+                OUTPUT_VARIABLE __LP64__)
 
-if (NOT _LIBDIR)
-    set(_LIBDIR "${_INSTALL_PREFIX}/lib")
-endif (NOT _LIBDIR)
+if (NOT _INSTALL_PREFIX AND NOT _LIBDIR)
+
+    set(_INSTALL_PREFIX "/usr/local")
+
+    if (__LP64__ MATCHES 1)
+        set(_LIBDIR "/usr/local/lib64")
+    else (__LP64__ MATCHES 1)
+        set(_LIBDIR "/usr/local/lib")
+    endif (__LP64__ MATCHES 1)
+
+elseif (NOT _INSTALL_PREFIX)
+
+    set(_INSTALL_PREFIX "/usr/local")
+
+elseif (NOT _LIBDIR)
+
+   set(_LIBDIR "${_INSTALL_PREFIX}/lib")
+
+endif ()
 
 set(CMAKE_MODULE_PATH "${KS_DIR}/build")
 find_package(TraceEvent REQUIRED)
@@ -71,7 +86,8 @@ set(KS_ICON_FIN    KS_icon_fin.svg)
 set(KS_LOGO        KS_logo_symbol.svg)
 set(KS_LOGO_LABEL  KS_logo_horizontal.svg)
 
-set(CMAKE_INSTALL_RPATH "${_LIBDIR}/${KS_APP_NAME}/")
+set(CMAKE_INSTALL_RPATH "${_LIBDIR}")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 if (CMAKE_BUILD_TYPE MATCHES Package)
 
