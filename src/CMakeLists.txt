@@ -41,7 +41,8 @@ if (OPENGL_FOUND)
 
     message(STATUS "libkshark-plot")
     add_library(kshark-plot  SHARED  libkshark-plot.c
-                                     KsPlotTools.cpp)
+                                     KsPlotTools.cpp
+                                     KsPlugins.cpp)
 
     target_link_libraries(kshark-plot  kshark
                                        ${GLUT_LIBRARY}
