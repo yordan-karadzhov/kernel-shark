@@ -10,6 +10,7 @@
 
 // KernelShark
 #include "libkshark.h"
+#include "libkshark-plugin.h"
 
 #define N_TEST_STREAMS	1000
 
@@ -102,4 +103,35 @@ BOOST_AUTO_TEST_CASE(fill_data_container)
 	BOOST_REQUIRE(data->data[i]->entry->ts >= MAX_TS / 2);
 
 	kshark_free_data_container(data);
+}
+
+struct test_context {
+	int a;
+	char b;
+};
+
+KS_DEFINE_PLUGIN_CONTEXT(struct test_context);
+
+BOOST_AUTO_TEST_CASE(init_close_plugin)
+{
+	struct test_context *ctx;
+	int i;
+
+	for (i = 0; i < N_TEST_STREAMS; ++i) {
+		ctx = __init(i);
+		ctx->a = i * 10;
+		ctx->b = 'z';
+	}
+
+	for (i = 0; i < N_TEST_STREAMS; ++i) {
+		ctx = __get_context(i);
+		BOOST_REQUIRE(ctx != NULL);
+		BOOST_CHECK_EQUAL(ctx->a, i * 10);
+		BOOST_CHECK_EQUAL(ctx->b, 'z');
+
+		__close(i);
+		BOOST_REQUIRE(__get_context(i) == NULL);
+	}
+
+	__close(-1);
 }

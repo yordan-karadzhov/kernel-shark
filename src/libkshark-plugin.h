@@ -363,6 +363,47 @@ int kshark_handle_all_dpis(struct kshark_data_stream *stream,
 	__ok;								\
 })									\
 
+/** General purpose macro defining methods for adding plugin context. */
+#define KS_DEFINE_PLUGIN_CONTEXT(type)					\
+static type **__context_handler;					\
+static ssize_t __n_streams = -1;					\
+static inline type *__init(int sd)					\
+{									\
+	type *obj;							\
+	if (__n_streams < 0 && sd < KS_DEFAULT_NUM_STREAMS) {		\
+		__context_handler =					\
+			(type **) calloc(KS_DEFAULT_NUM_STREAMS,	\
+					 sizeof(*__context_handler));	\
+		if (!__context_handler)					\
+			return NULL;					\
+		__n_streams = KS_DEFAULT_NUM_STREAMS;			\
+	} else if (sd >= __n_streams) {					\
+		if (!KS_DOUBLE_SIZE(__context_handler,			\
+				    __n_streams))			\
+			return NULL;					\
+	}								\
+	assert(__context_handler[sd] == NULL);				\
+	obj = (type *) calloc(1, sizeof(*obj));				\
+	__context_handler[sd] = obj;					\
+	return obj;							\
+}									\
+static inline void __close(int sd)					\
+{									\
+	if (sd < 0) {							\
+		free(__context_handler);				\
+		__n_streams = -1;					\
+		return;							\
+	}								\
+	free(__context_handler[sd]);					\
+	__context_handler[sd] = NULL;					\
+}									\
+static inline type *__get_context(int sd)				\
+{									\
+	if (sd < 0 || sd >= __n_streams)				\
+		return NULL;						\
+	return __context_handler[sd];					\
+}									\
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
