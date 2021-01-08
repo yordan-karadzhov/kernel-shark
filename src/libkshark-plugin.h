@@ -19,6 +19,7 @@ extern "C" {
 // C
 #include <stdint.h>
 #include <stdbool.h>
+#include <assert.h>
 
 /* Quiet warnings over documenting simple structures */
 //! @cond Doxygen_Suppress

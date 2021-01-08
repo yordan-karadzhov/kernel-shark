@@ -1912,3 +1912,37 @@ int kshark_tep_find_top_stream(struct kshark_context *kshark_ctx,
 
 	return top_stream->stream_id;
 }
+
+static bool find_wakeup_event(struct tep_handle *tep, const char *wakeup_name,
+			      struct tep_event **waking_event_ptr)
+{
+	*waking_event_ptr = tep_find_event_by_name(tep, "sched", wakeup_name);
+
+	return (*waking_event_ptr)? true : false;
+}
+
+/**
+ * @brief Search the available trace events and retrieve a definition of
+ *	  a waking_event.
+ *
+ * @param tep: Input location for the the Page event object.
+ * @param waking_event_ptr: Output location for the the waking_event object.
+ *
+ * @returns True on success, otherwise False.
+ */
+bool define_wakeup_event(struct tep_handle *tep,
+			 struct tep_event **waking_event_ptr)
+{
+	bool wakeup_found;
+
+	wakeup_found = find_wakeup_event(tep, "sched_wakeup",
+					 waking_event_ptr);
+
+	wakeup_found |= find_wakeup_event(tep, "sched_wakeup_new",
+					  waking_event_ptr);
+
+	wakeup_found |= find_wakeup_event(tep, "sched_waking",
+					  waking_event_ptr);
+
+	return wakeup_found;
+}

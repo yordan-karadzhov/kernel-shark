@@ -20,14 +20,13 @@ endfunction()
 set(PLUGIN_LIST "")
 BUILD_PLUGIN(NAME sched_events
              SOURCE sched_events.c SchedEvents.cpp)
-list(APPEND PLUGIN_LIST "sched_events default") # This plugin will be loaded by default
-# list(APPEND PLUGIN_LIST "sched_events") # This plugin isn't loaded by default
+list(APPEND PLUGIN_LIST "sched_events")
 
-BUILD_PLUGIN(NAME missed_events
-             SOURCE missed_events.c MissedEvents.cpp)
-list(APPEND PLUGIN_LIST "missed_events default") # This plugin will be loaded by default
+# BUILD_PLUGIN(NAME missed_events
+#              SOURCE missed_events.c MissedEvents.cpp)
+# list(APPEND PLUGIN_LIST "missed_events")
 
-install(TARGETS sched_events missed_events
+install(TARGETS ${PLUGIN_LIST}
         LIBRARY DESTINATION ${KS_PLUGIN_INSTALL_PREFIX}
         COMPONENT kernelshark)
 

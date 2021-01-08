@@ -105,6 +105,13 @@ int kshark_tep_find_top_stream(struct kshark_context *kshark_ctx,
 
 bool kshark_tep_is_top_stream(struct kshark_data_stream *stream);
 
+struct tep_event;
+
+struct tep_format_field;
+
+bool define_wakeup_event(struct tep_handle *tep,
+			 struct tep_event **wakeup_event);
+
 #ifdef __cplusplus
 }
 #endif

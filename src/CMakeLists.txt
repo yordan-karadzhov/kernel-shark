@@ -135,7 +135,7 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND)
 
 endif (Qt5Widgets_FOUND AND Qt5Network_FOUND)
 
-# add_subdirectory(plugins)
+add_subdirectory(plugins)
 
 find_program(DO_AS_ROOT pkexec)
 
