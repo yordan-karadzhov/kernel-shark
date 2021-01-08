@@ -2110,3 +2110,150 @@ kshark_merge_data_matrices(struct kshark_matrix_data_set *buffers, int n_buffers
  end:
 	return merged_data;
 }
+
+/** @brief Allocate memory for kshark_data_container. */
+struct kshark_data_container *kshark_init_data_container()
+{
+	struct kshark_data_container *container;
+
+	container = calloc(1, sizeof(*container));
+	if (!container)
+		goto fail;
+
+	container->data = calloc(KS_CONTAINER_DEFAULT_SIZE,
+				  sizeof(*container->data));
+
+	if (!container->data)
+		goto fail;
+
+	container->capacity = KS_CONTAINER_DEFAULT_SIZE;
+	container->sorted = false;
+
+	return container;
+
+ fail:
+	fprintf(stderr, "Failed to allocate memory for data container.\n");
+	kshark_free_data_container(container);
+	return NULL;
+}
+
+/**
+ * @brief Free the memory allocated for a kshark_data_container
+ * @param container: Input location for the kshark_data_container object.
+ */
+void kshark_free_data_container(struct kshark_data_container *container)
+{
+	if (!container)
+		return;
+
+	for (ssize_t i = 0; i < container->size; ++i)
+		free(container->data[i]);
+
+	free(container->data);
+	free(container);
+}
+
+/**
+ * @brief Append data field value to a kshark_data_container
+ * @param container: Input location for the kshark_data_container object.
+ * @param entry: The entry that needs addition data field value.
+ * @param field: The value of data field to be added.
+ *
+ * @returns The size of the container after the addition.
+ */
+ssize_t kshark_data_container_append(struct kshark_data_container *container,
+				     struct kshark_entry *entry, int64_t field)
+{
+	struct kshark_data_field_int64 *data_field;
+
+	if (container->capacity == container->size) {
+		if (!KS_DOUBLE_SIZE(container->data,
+				    container->capacity))
+			return -ENOMEM;
+	}
+
+	data_field = malloc(sizeof(*data_field));
+	data_field->entry = entry;
+	data_field->field = field;
+	container->data[container->size++] = data_field;
+
+	return container->size;
+}
+
+static int compare_time_dc(const void* a, const void* b)
+{
+	const struct kshark_data_field_int64 *field_a, *field_b;
+
+	field_a = *(const struct kshark_data_field_int64 **) a;
+	field_b = *(const struct kshark_data_field_int64 **) b;
+
+	if (field_a->entry->ts > field_b->entry->ts)
+		return 1;
+
+	if (field_a->entry->ts < field_b->entry->ts)
+		return -1;
+
+	return 0;
+}
+
+/**
+ * @brief Sort in time the records in kshark_data_container. The container is
+ *	  resized in order to free the unused memory capacity.
+ *
+ * @param container: Input location for the kshark_data_container object.
+ */
+void kshark_data_container_sort(struct kshark_data_container *container)
+{
+	struct kshark_data_field_int64	**data_tmp;
+
+	qsort(container->data, container->size,
+	      sizeof(struct kshark_data_field_int64 *),
+	      compare_time_dc);
+
+	container->sorted = true;
+
+	data_tmp = realloc(container->data,
+			   container->size * sizeof(*container->data));
+
+	if (!data_tmp)
+		return;
+
+	container->data = data_tmp;
+	container->capacity = container->size;
+}
+
+/**
+ * @brief Binary search inside a time-sorted array of kshark_data_field_int64.
+ *
+ * @param time: The value of time to search for.
+ * @param data: Input location for the data.
+ * @param l: Array index specifying the lower edge of the range to search in.
+ * @param h: Array index specifying the upper edge of the range to search in.
+ *
+ * @returns On success, the index of the first kshark_data_field_int64 inside
+ *	    the range, having a timestamp equal or bigger than "time".
+ *	    If all fields inside the range have timestamps greater than "time"
+ *	    the function returns BSEARCH_ALL_GREATER (negative value).
+ *	    If all fields inside the range have timestamps smaller than "time"
+ *	    the function returns BSEARCH_ALL_SMALLER (negative value).
+ */
+ssize_t kshark_find_entry_field_by_time(int64_t time,
+					struct kshark_data_field_int64 **data,
+					size_t l, size_t h)
+{
+	size_t mid;
+
+	if (data[l]->entry->ts > time)
+		return BSEARCH_ALL_GREATER;
+
+	if (data[h]->entry->ts < time)
+		return BSEARCH_ALL_SMALLER;
+
+	/*
+	 * After executing the BSEARCH macro, "l" will be the index of the last
+	 * entry having timestamp < time and "h" will be the index of the first
+	 * entry having timestamp >= time.
+	 */
+	BSEARCH(h, l, data[mid]->entry->ts < time);
+	return h;
+}

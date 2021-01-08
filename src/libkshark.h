@@ -1105,6 +1105,49 @@ struct kshark_matrix_data_set
 kshark_merge_data_matrices(struct kshark_matrix_data_set *buffers,
 			   int n_buffers);
 
+/**
+ * Structure used to store the data of a kshark_entry plus one additional
+ * 64 bit integer data field.
+ */
+struct kshark_data_field_int64 {
+	/** The entry object holding the basic data of the trace record. */
+	struct kshark_entry	*entry;
+
+	/** Additional 64 bit integer data field. */
+	int64_t			field;
+};
+
+/** The capacity of the kshark_data_container object after initialization. */
+#define KS_CONTAINER_DEFAULT_SIZE	1024
+
+/** Structure used to store an array of entries and data fields. */
+struct kshark_data_container {
+	/** An array of kshark_data_field_int64 objects. */
+	struct kshark_data_field_int64	**data;
+
+	/** The total number of kshark_data_field_int64 objects stored. */
+	ssize_t		size;
+
+	/** The memory capacity of the container. */
+	ssize_t		capacity;
+
+	/** Is sorted in time. */
+	bool		sorted;
+};
+
+struct kshark_data_container *kshark_init_data_container();
+
+void kshark_free_data_container(struct kshark_data_container *container);
+
+ssize_t kshark_data_container_append(struct kshark_data_container *container,
+				     struct kshark_entry *entry, int64_t field);
+
+void kshark_data_container_sort(struct kshark_data_container *container);
+
+ssize_t kshark_find_entry_field_by_time(int64_t time,
+					struct kshark_data_field_int64 **data,
+					size_t l, size_t h);
+
 #ifdef __cplusplus
 }
 #endif
