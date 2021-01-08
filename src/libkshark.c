@@ -234,16 +234,9 @@ int kshark_add_stream(struct kshark_context *kshark_ctx)
 
 	if (kshark_ctx->stream_info.next_free_stream_id ==
 	    kshark_ctx->stream_info.array_size) {
-		size_t new_size = 2 * kshark_ctx->stream_info.array_size;
-		struct kshark_data_stream **streams_tmp;
-
-		streams_tmp = realloc(kshark_ctx->stream,
-				      new_size * sizeof(*kshark_ctx->stream));
-		if (!streams_tmp)
+		if (!KS_DOUBLE_SIZE(kshark_ctx->stream,
+				    kshark_ctx->stream_info.array_size))
 			return -ENOMEM;
-
-		kshark_ctx->stream = streams_tmp;
-		kshark_ctx->stream_info.array_size = new_size;
 	}
 
 	stream = kshark_stream_alloc();

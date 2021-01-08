@@ -346,6 +346,23 @@ int kshark_handle_dpi(struct kshark_data_stream *stream,
 int kshark_handle_all_dpis(struct kshark_data_stream *stream,
 			   enum kshark_plugin_actions  task_id);
 
+/** General purpose macro for resizing dynamic arrays. */
+#define KS_DOUBLE_SIZE(array, size)					\
+({									\
+	ssize_t __n = size;						\
+	bool __ok = false;						\
+	__typeof__(array) __tmp =					\
+		(__typeof__(array)) realloc(array,			\
+					    2 * __n * sizeof(*__tmp));	\
+	if (__tmp) {							\
+		memset(__tmp + __n, 0, __n * sizeof(*__tmp));		\
+		size = 2 * __n;						\
+		array = __tmp;						\
+		__ok = true;						\
+	}								\
+	__ok;								\
+})									\
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
