@@ -36,7 +36,7 @@ private:
 
 	QMap<int, QString>	_filters;
 
-	KsCheckBoxTable		*_table;
+	KsWidgetsLib::KsCheckBoxTable	*_table;
 
 	QVBoxLayout	_topLayout;
 
@@ -45,6 +45,8 @@ private:
 	QToolBar	_condToolBar1, _condToolBar2, _condToolBar3;
 
 	QLabel		_descrLabel, _sysEvLabel, _opsLabel, _fieldLabel;
+
+	QComboBox	_streamComboBox;
 
 	QComboBox	_systemComboBox, _eventComboBox;
 
@@ -74,13 +76,17 @@ private:
 
 	QStringList _operators();
 
-	void _getFilters(struct kshark_context *kshark_ctx);
+	void _getFtraceStreams(kshark_context *kshark_ctx);
 
-	void _makeFilterTable(struct kshark_context *kshark_ctx);
+	void _getFilters(kshark_context *kshark_ctx);
 
-	QStringList _getEventFormatFields(struct tep_event *event);
+	void _makeFilterTable(kshark_context *kshark_ctx);
 
-	void _setSystemCombo(struct kshark_context *kshark_ctx);
+	QStringList _getEventFields(int eventId);
+
+	void _setSystemCombo(kshark_context *kshark_ctx);
+
+	kshark_data_stream *_getCurrentStream(kshark_context *kshark_ctx);
 
 private slots:
 	void _systemChanged(const QString&);

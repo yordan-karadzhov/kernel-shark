@@ -9,10 +9,16 @@
  *  @brief   GUI Dialog for Advanced filtering settings.
  */
 
+// trace-cmd
+#include "trace-cmd/trace-cmd.h"
+
 // KernelShark
-#include "KsAdvFilteringDialog.hpp"
 #include "libkshark.h"
+#include "libkshark-tepdata.h"
 #include "KsUtils.hpp"
+#include "KsAdvFilteringDialog.hpp"
+
+using namespace KsWidgetsLib;
 
 /** Create dialog for Advanced Filtering. */
 KsAdvFilteringDialog::KsAdvFilteringDialog(QWidget *parent)
@@ -70,6 +76,9 @@ KsAdvFilteringDialog::KsAdvFilteringDialog(QWidget *parent)
 	_descrLabel.hide();
 
 	lamAddLine();
+
+	_topLayout.addWidget(&_streamComboBox);
+	_getFtraceStreams(kshark_ctx);
 
 	_getFilters(kshark_ctx);
 
@@ -149,23 +158,38 @@ KsAdvFilteringDialog::KsAdvFilteringDialog(QWidget *parent)
 		this,			&QWidget::close);
 }
 
-void KsAdvFilteringDialog::_setSystemCombo(struct kshark_context *kshark_ctx)
+kshark_data_stream *
+KsAdvFilteringDialog::_getCurrentStream(kshark_context *kshark_ctx)
 {
+	int sd = _streamComboBox.currentData().toInt();
+
+	return kshark_get_data_stream(kshark_ctx, sd);
+}
+
+void KsAdvFilteringDialog::_setSystemCombo(kshark_context *kshark_ctx)
+{
+	kshark_data_stream *stream;
+	QVector<int> eventIds;
 	QStringList sysList;
-	tep_event **events;
-	int i(0), nEvts(0);
+	int i(0);
 
-	if (kshark_ctx->pevent) {
-		nEvts = tep_get_events_count(kshark_ctx->pevent);
-		events = tep_list_events(kshark_ctx->pevent,
-					 TEP_EVENT_SORT_SYSTEM);
-	}
+	stream = _getCurrentStream(kshark_ctx);
+	if (!stream || !kshark_is_tep(stream))
+		return;
 
-	while (i < nEvts) {
-		QString sysName(events[i]->system);
+	eventIds = KsUtils::getEventIdList(stream->stream_id);
+
+	auto lamGetSysName = [&stream] (int eventId) {
+		QStringList name = KsUtils::getTepEvtName(stream->stream_id,
+							  eventId);
+		return name[0];
+	};
+
+	while (i < stream->n_events) {
+		QString sysName = lamGetSysName(eventIds[i]);
 		sysList << sysName;
-		while (sysName == events[i]->system) {
-			if (++i == nEvts)
+		while (sysName == lamGetSysName(eventIds[i])) {
+			if (++i == stream->n_events)
 				break;
 		}
 	}
@@ -202,24 +226,48 @@ QStringList KsAdvFilteringDialog::_operators()
 	return OpsList;
 }
 
-void KsAdvFilteringDialog::_getFilters(struct kshark_context *kshark_ctx)
+void KsAdvFilteringDialog::_getFtraceStreams(kshark_context *kshark_ctx)
 {
-	tep_event **events;
-	char *str;
+	kshark_data_stream *stream;
+	QVector<int> streamIds;
 
-	events = tep_list_events(kshark_ctx->pevent, TEP_EVENT_SORT_SYSTEM);
+	_streamComboBox.clear();
+	streamIds = KsUtils::getStreamIdList(kshark_ctx);
+	for (auto const &sd: streamIds) {
+		stream = kshark_ctx->stream[sd];
+		if (kshark_is_tep(stream))
+			_streamComboBox.addItem(KsUtils::streamDescription(stream), sd);
+	}
 
-	for (int i = 0; events[i]; i++) {
-		str = tep_filter_make_string(kshark_ctx->advanced_event_filter,
-					     events[i]->id);
-		if (!str)
+	if (!_streamComboBox.count())
+		_streamComboBox.addItem("No FTRACE data loaded", -1);
+}
+
+void KsAdvFilteringDialog::_getFilters(kshark_context *kshark_ctx)
+{
+	kshark_data_stream *stream;
+	QVector<int> eventIds;
+	QStringList eventName;
+	char *filterStr;
+
+	stream = _getCurrentStream(kshark_ctx);
+	if (!stream || !kshark_is_tep(stream))
+		return;
+
+	eventIds = KsUtils::getEventIdList(stream->stream_id);
+	for (int i = 0; i < stream->n_events; ++i) {
+		eventName = KsUtils::getTepEvtName(stream->stream_id, eventIds[i]);
+		filterStr = kshark_tep_filter_make_string(stream, eventIds[i]);
+		if (!filterStr)
 			continue;
 
-		_filters.insert(events[i]->id,
-				QString("%1/%2:%3").arg(events[i]->system,
-							  events[i]->name, str));
+		_filters.insert(eventIds[i],
+				QString("%1:%2/%3:%4").arg(QString::number(stream->stream_id),
+							   eventName[0],
+							   eventName[1],
+							   filterStr));
 
-		free(str);
+		free(filterStr);
 	}
 }
 
@@ -232,7 +280,7 @@ void KsAdvFilteringDialog::_makeFilterTable(struct kshark_context *kshark_ctx)
 
 	_table = new KsCheckBoxTable(this);
 	_table->setSelectionMode(QAbstractItemView::SingleSelection);
-	headers << "Delete" << "Event" << " Id" << "Filter";
+	headers << "Delete" << "Stream" << "Event" << " Id" << "Filter";
 	_table->init(headers, _filters.count());
 
 	for(auto f : _filters.keys()) {
@@ -241,11 +289,14 @@ void KsAdvFilteringDialog::_makeFilterTable(struct kshark_context *kshark_ctx)
 		i1 = new QTableWidgetItem(thisFilter[0]);
 		_table->setItem(count, 1, i1);
 
-		i2 = new QTableWidgetItem(tr("%1").arg(f));
-		_table->setItem(count, 2, i2);
+		i1 = new QTableWidgetItem(thisFilter[1]);
+		_table->setItem(count, 2, i1);
 
-		i3 = new QTableWidgetItem(thisFilter[1]);
-		_table->setItem(count, 3, i3);
+		i2 = new QTableWidgetItem(tr("%1").arg(f));
+		_table->setItem(count, 3, i2);
+
+		i3 = new QTableWidgetItem(thisFilter[2]);
+		_table->setItem(count, 4, i3);
 
 		++count;
 	}
@@ -275,20 +326,25 @@ void KsAdvFilteringDialog::_help()
 void KsAdvFilteringDialog::_systemChanged(const QString &sysName)
 {
 	kshark_context *kshark_ctx(NULL);
-	QStringList evtsList;
-	tep_event **events;
-	int i, nEvts;
+	kshark_data_stream *stream;
+	QStringList evtsList, name;
+	QVector<int> eventIds;
+	int i;
 
-	_eventComboBox.clear();
-	if (!kshark_instance(&kshark_ctx) || !kshark_ctx->pevent)
+	if (!kshark_instance(&kshark_ctx))
 		return;
 
-	nEvts = tep_get_events_count(kshark_ctx->pevent);
-	events = tep_list_events(kshark_ctx->pevent, TEP_EVENT_SORT_SYSTEM);
+	_eventComboBox.clear();
 
-	for (i = 0; i < nEvts; ++i) {
-		if (sysName == events[i]->system)
-			evtsList << events[i]->name;
+	stream = _getCurrentStream(kshark_ctx);
+	if (!stream || !kshark_is_tep(stream))
+		return;
+
+	eventIds = KsUtils::getEventIdList(stream->stream_id);
+	for (i = 0; i < stream->n_events; ++i) {
+		name = KsUtils::getTepEvtName(stream->stream_id, eventIds[i]);
+		if (sysName == name[0])
+			evtsList << name[1];
 	}
 
 	std::sort(evtsList.begin(), evtsList.end());
@@ -300,15 +356,20 @@ void KsAdvFilteringDialog::_systemChanged(const QString &sysName)
 }
 
 QStringList
-KsAdvFilteringDialog::_getEventFormatFields(struct tep_event *event)
+KsAdvFilteringDialog::_getEventFields(int eventId)
 {
-	tep_format_field *field, **fields = tep_event_fields(event);
+	kshark_context *kshark_ctx(NULL);
+	kshark_data_stream *stream;
 	QStringList fieldList;
 
-	for (field = *fields; field; field = field->next)
-		fieldList << field->name;
+	if (!kshark_instance(&kshark_ctx))
+		return {};
 
-	free(fields);
+	stream = _getCurrentStream(kshark_ctx);
+	if (!stream || !kshark_is_tep(stream))
+		return {};
+
+	fieldList = KsUtils::getEventFieldsList(stream->stream_id, eventId);
 
 	std::sort(fieldList.begin(), fieldList.end());
 	return fieldList;
@@ -317,22 +378,24 @@ KsAdvFilteringDialog::_getEventFormatFields(struct tep_event *event)
 void KsAdvFilteringDialog::_eventChanged(const QString &evtName)
 {
 	QString sysName = _systemComboBox.currentText();
+	QStringList fieldList, eventName;
 	kshark_context *kshark_ctx(NULL);
-	QStringList fieldList;
-	tep_event **events;
-	int nEvts;
+	kshark_data_stream *stream;
+	QVector<int> eventIds;
 
 	_fieldComboBox.clear();
-	if (!kshark_instance(&kshark_ctx) || !kshark_ctx->pevent)
+	if (!kshark_instance(&kshark_ctx))
 		return;
 
-	nEvts = tep_get_events_count(kshark_ctx->pevent);
-	events = tep_list_events(kshark_ctx->pevent, TEP_EVENT_SORT_SYSTEM);
+	stream = _getCurrentStream(kshark_ctx);
+	if (!stream || !kshark_is_tep(stream))
+		return;
 
-	for (int i = 0; i < nEvts; ++i) {
-		if (evtName == events[i]->name &&
-		    sysName == events[i]->system) {
-			fieldList = _getEventFormatFields(events[i]);
+	eventIds = KsUtils::getEventIdList(stream->stream_id);
+	for (int i = 0; i < stream->n_events; ++i) {
+		eventName = KsUtils::getTepEvtName(stream->stream_id, eventIds[i]);
+		if (sysName == eventName[0] && evtName == eventName[1]) {
+			fieldList = _getEventFields(eventIds[i]);
 			_fieldComboBox.addItems(fieldList);
 
 			return;
@@ -384,20 +447,28 @@ void KsAdvFilteringDialog::_applyPress()
 {
 	QMapIterator<int, QString> f(_filters);
 	kshark_context *kshark_ctx(NULL);
+	kshark_data_stream *stream;
 	const char *text;
-	tep_errno ret;
 	char *filter;
 	int i(0);
 
 	if (!kshark_instance(&kshark_ctx))
 		return;
 
+	stream = _getCurrentStream(kshark_ctx);
+	if (!stream || !kshark_is_tep(stream))
+		return;
+
 	while (f.hasNext()) {
 		f.next();
 		if (_table->_cb[i]->checkState() == Qt::Checked) {
-			tep_filter_remove_event(kshark_ctx->advanced_event_filter,
-						f.key());
+			kshark_data_stream *filter_stream;
+			int sd = f.value().split(":").at(0).toInt();
+
+			filter_stream = kshark_get_data_stream(kshark_ctx, sd);
+			kshark_tep_filter_remove_event(filter_stream, f.key());
 		}
+
 		++i;
 	}
 
@@ -419,20 +490,7 @@ void KsAdvFilteringDialog::_applyPress()
 	filter = (char*) malloc(strlen(text) + 1);
 	strcpy(filter, text);
 
-	ret = tep_filter_add_filter_str(kshark_ctx->advanced_event_filter,
-					   filter);
-
-	if (ret < 0) {
-		char error_str[200];
-
-		tep_strerror(kshark_ctx->pevent, ret, error_str,
-						       sizeof(error_str));
-
-		fprintf(stderr, "filter failed due to: %s\n", error_str);
-		free(filter);
-
-		return;
-	}
+	kshark_tep_add_filter_str(stream, filter);
 
 	free(filter);
 

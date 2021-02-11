@@ -76,8 +76,8 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
                         KsTraceViewer.hpp
 #                         KsMainWindow.hpp
 #                         KsCaptureDialog.hpp
-                        KsQuickContextMenu.hpp)
-#                         KsAdvFilteringDialog.hpp)
+                        KsQuickContextMenu.hpp
+                        KsAdvFilteringDialog.hpp)
 
     QT5_WRAP_CPP(ks-guiLib_hdr_moc ${ks-guiLib_hdr})
 
@@ -92,8 +92,8 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
                                                             KsTraceViewer.cpp
 #                                                             KsMainWindow.cpp
 #                                                             KsCaptureDialog.cpp
-                                                            KsQuickContextMenu.cpp)
-#                                                             KsAdvFilteringDialog.cpp)
+                                                            KsQuickContextMenu.cpp
+                                                            KsAdvFilteringDialog.cpp)
 
     target_link_libraries(kshark-gui kshark-plot
                                      Qt5::Widgets
