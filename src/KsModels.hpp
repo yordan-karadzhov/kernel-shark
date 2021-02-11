@@ -26,6 +26,7 @@
 // KernelShark
 #include "libkshark.h"
 #include "libkshark-model.h"
+#include "KsPlotTools.hpp"
 #include "KsSearchFSM.hpp"
 
 /** A negative row index, to be used for deselecting the Passive Marker. */
@@ -45,7 +46,7 @@ public:
 	explicit KsViewModel(QObject *parent = nullptr);
 
 	/** Set the colors of the two markers. */
-	void setColors(const QColor &colA, const QColor &colB) {
+	void setMarkerColors(const QColor &colA, const QColor &colB) {
 		_colorMarkA = colA;
 		_colorMarkB = colB;
 	};
@@ -91,8 +92,16 @@ public:
 		      search_condition_func cond,
 		      QList<size_t> *matchList);
 
+	void loadColors();
+
+	/** Returns True is only one Data stream is open. */
+	bool singleStream() const {return _singleStream;}
+
 	/** Table columns Identifiers. */
 	enum {
+		/** Identifier of the Data stream. */
+		TRACE_VIEW_COL_STREAM,
+
 		/** Identifier of the Index column. */
 		TRACE_VIEW_COL_INDEX,
 
@@ -109,7 +118,7 @@ public:
 		TRACE_VIEW_COL_PID,
 
 		/** Identifier of the Latency Id column. */
-		TRACE_VIEW_COL_LAT,
+		TRACE_VIEW_COL_AUX,
 
 		/** Identifier of the Event name Id column. */
 		TRACE_VIEW_COL_EVENT,
@@ -122,6 +131,8 @@ public:
 	};
 
 private:
+	void _updateHeader();
+
 	/** Trace data array. */
 	kshark_entry		**_data;
 
@@ -142,6 +153,11 @@ private:
 
 	/** The color of the row selected by marker B. */
 	QColor	_colorMarkB;
+
+	/** True if only one Data stream is open. */
+	bool	_singleStream;
+
+	KsPlot::ColorTable	_streamColors;
 };
 
 /**
@@ -192,11 +208,7 @@ public:
 	 * Use the "row" index in the Proxy model to retrieve the "row" index
 	 * in the source model.
 	 */
-	int mapRowFromSource(int r) const
-	{
-		/*This works because the row number is shown in column "0". */
-		return this->data(this->index(r, 0)).toInt();
-	}
+	int mapRowFromSource(int r) const;
 
 	/** Get the source model. */
 	KsViewModel *source() {return _source;}
@@ -272,7 +284,7 @@ public:
 	/** Get the kshark_trace_histo object. */
 	kshark_trace_histo *histo() {return &_histo;}
 
-	void fill(kshark_entry **entries, size_t n);
+	void fill(KsDataStore *data);
 
 	void shiftForward(size_t n);
 

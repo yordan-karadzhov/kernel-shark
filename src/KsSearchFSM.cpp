@@ -136,6 +136,16 @@ void KsSearchFSM ::_lockSearchPanel(bool lock)
 /** Act according to the provided input. */
 void NotDone::handleInput(KsSearchFSM* sm, sm_input_t input)
 {
+	int column = sm->column();
+	if (sm->_columnComboBox.findText(">>", Qt::MatchContains) < 0) {
+		/*
+		 * If only one Data stream (file) is loaded, the ">>" column
+		 * (TRACE_VIEW_COL_STREAM) is not shown. The column index has
+		 * to be corrected.
+		 */
+		++column;
+	}
+
 	switch(input) {
 	case sm_input_t::Start:
 		sm->_lastRowSearched = -1;
@@ -166,7 +176,7 @@ void Paused::handleInput(KsSearchFSM* sm, sm_input_t input)
 		sm->searchRestartVisible(false);
 
 		if (sm->column() != KsViewModel::TRACE_VIEW_COL_INFO &&
-		    sm->column() != KsViewModel::TRACE_VIEW_COL_LAT)
+		    sm->column() != KsViewModel::TRACE_VIEW_COL_AUX)
 			sm->_searchCountLabel.setText("");
 
 		sm->changeState(std::shared_ptr<InProgress>(new InProgress));

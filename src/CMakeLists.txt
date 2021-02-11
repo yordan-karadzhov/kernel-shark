@@ -66,10 +66,10 @@ endif (OPENGL_FOUND)
 if (Qt5Widgets_FOUND AND Qt5Network_FOUND)
 
     message(STATUS "libkshark-gui")
-    set (ks-guiLib_hdr  KsUtils.hpp)
-#                         KsModels.hpp
+    set (ks-guiLib_hdr  KsUtils.hpp
+                        KsModels.hpp
 #                         KsGLWidget.hpp
-#                         KsSearchFSM.hpp
+                        KsSearchFSM.hpp)
 #                         KsDualMarker.hpp
 #                         KsWidgetsLib.hpp
 #                         KsTraceGraph.hpp
@@ -81,11 +81,11 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND)
 
     QT5_WRAP_CPP(ks-guiLib_hdr_moc ${ks-guiLib_hdr})
 
-    add_library(kshark-gui  SHARED  ${ks-guiLib_hdr_moc}    KsUtils.cpp)
-#                                                             KsModels.cpp
+    add_library(kshark-gui  SHARED  ${ks-guiLib_hdr_moc}    KsUtils.cpp
+                                                            KsModels.cpp
 #                                                             KsSession.cpp
 #                                                             KsGLWidget.cpp
-#                                                             KsSearchFSM.cpp
+                                                            KsSearchFSM.cpp)
 #                                                             KsDualMarker.cpp
 #                                                             KsWidgetsLib.cpp
 #                                                             KsTraceGraph.cpp
