@@ -12,6 +12,8 @@
 #include "libkshark.h"
 #include "libkshark-plugin.h"
 #include "KsUtils.hpp"
+#include "KsModels.hpp"
+
 
 using namespace KsUtils;
 
@@ -224,4 +226,61 @@ BOOST_AUTO_TEST_CASE(KsUtils_KsPluginManager)
 
 	kshark_free(kshark_ctx);
 	a.exit();
+}
+
+BOOST_AUTO_TEST_CASE(ViewModel)
+{
+	QStringList header{"#", "CPU", "Time Stamp", "Task", "PID", "Latency", "Event", "Info"};
+	struct kshark_context *kshark_ctx(nullptr);
+	KsViewModel model;
+	KsDataStore data;
+
+	data.loadDataFile(QString(KS_TEST_DIR) + "/trace_test1.dat", {});
+	model.fill(&data);
+	BOOST_CHECK_EQUAL(model.rowCount({}), N_RECORDS_TEST1);
+	BOOST_CHECK_EQUAL(model.columnCount({}), 8);
+	BOOST_CHECK_EQUAL(model.singleStream(), true);
+	BOOST_CHECK(model.header() == header);
+
+	data.appendDataFile(QString(KS_TEST_DIR) + "/trace_test2.dat", {});
+	BOOST_REQUIRE(kshark_instance(&kshark_ctx));
+	BOOST_CHECK(getStreamIdList(kshark_ctx) == QVector<int>({0, 1}));
+
+	model.update(&data);
+	header = QStringList{" >> "} + header;
+
+	BOOST_CHECK_EQUAL(model.rowCount({}), N_RECORDS_TEST1 + N_RECORDS_TEST2);
+	BOOST_CHECK_EQUAL(model.columnCount({}), 9);
+	BOOST_CHECK_EQUAL(model.singleStream(), false);
+	BOOST_CHECK(model.header() == header);
+
+	BOOST_CHECK(model.getValueStr(0, 0) == "1");
+	BOOST_CHECK(model.getValueStr(4, 1) == "trace-cmd");
+	BOOST_CHECK(model.getValueStr(5, 2) == "29474");
+	BOOST_CHECK(model.getValueStr(7, 2) == "sched/sched_switch");
+
+	BOOST_CHECK(model.getValueStr(0, N_RECORDS_TEST1 + N_RECORDS_TEST2 - 1) == "0");
+	BOOST_CHECK(model.getValueStr(4, N_RECORDS_TEST1 + N_RECORDS_TEST2 - 1) == "<idle>");
+
+	model.reset();
+	BOOST_CHECK_EQUAL(model.rowCount({}), 0);
+}
+
+BOOST_AUTO_TEST_CASE(GraphModel)
+{
+	struct kshark_context *kshark_ctx(nullptr);
+	KsGraphModel model;
+	KsDataStore data;
+
+	data.loadDataFile(QString(KS_TEST_DIR) + "/trace_test1.dat", {});
+	BOOST_REQUIRE(kshark_instance(&kshark_ctx));
+	BOOST_CHECK(getStreamIdList(kshark_ctx) == QVector<int>({0}));
+
+	model.fill(&data);
+	BOOST_CHECK_EQUAL(model.rowCount({}), KS_DEFAULT_NBUNS);
+	BOOST_CHECK(abs(model.histo()->min - data.rows()[0]->ts) < model.histo()->bin_size);
+	BOOST_CHECK(abs(model.histo()->max - data.rows()[N_RECORDS_TEST1 - 1]->ts) < model.histo()->bin_size);
+
+	model.reset();
+	BOOST_CHECK_EQUAL(model.rowCount({}), 0);
 }
