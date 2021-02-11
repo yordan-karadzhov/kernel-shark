@@ -457,7 +457,6 @@ kshark_register_input(struct kshark_context *kshark_ctx,
 	input->interface = plugin;
 	input->next = kshark_ctx->inputs;
 	kshark_ctx->inputs = input;
-
 	return input;
 
  conflict:
@@ -635,7 +634,7 @@ void kshark_unregister_plugin_from_stream(struct kshark_data_stream *stream,
 	}
 }
 
-static void plugin_init(struct kshark_data_stream *stream,
+static int plugin_init(struct kshark_data_stream *stream,
 			struct kshark_dpi_list *plugin)
 {
 	int handler_count = plugin->interface->init(stream);
@@ -660,13 +659,18 @@ static void plugin_init(struct kshark_data_stream *stream,
 		plugin->status |= KSHARK_PLUGIN_FAILED;
 		plugin->status &= ~KSHARK_PLUGIN_LOADED;
 	}
+
+	return handler_count;
 }
 
-static void plugin_close(struct kshark_data_stream *stream,
+static int plugin_close(struct kshark_data_stream *stream,
 			 struct kshark_dpi_list *plugin)
 {
-	plugin->interface->close(stream);
+	int handler_count = plugin->interface->close(stream);
+
 	plugin->status &= ~KSHARK_PLUGIN_LOADED;
+
+	return handler_count;
 }
 
 /**
@@ -689,24 +693,24 @@ int kshark_handle_dpi(struct kshark_data_stream *stream,
 	switch (task_id) {
 	case KSHARK_PLUGIN_INIT:
 		if (plugin->status & KSHARK_PLUGIN_ENABLED)
-			plugin_init(stream, plugin);
+			handler_count += plugin_init(stream, plugin);
 
 		break;
 
 	case KSHARK_PLUGIN_UPDATE:
 		if (plugin->status & KSHARK_PLUGIN_LOADED)
-			plugin_close(stream, plugin);
+			handler_count -= plugin_close(stream, plugin);
 
 		plugin->status &= ~KSHARK_PLUGIN_FAILED;
 
 		if (plugin->status & KSHARK_PLUGIN_ENABLED)
-			plugin_init(stream, plugin);
+			handler_count += plugin_init(stream, plugin);
 
 		break;
 
 	case KSHARK_PLUGIN_CLOSE:
 		if (plugin->status & KSHARK_PLUGIN_LOADED)
-			plugin_close(stream, plugin);
+			handler_count -= plugin_close(stream, plugin);
 
 		plugin->status &= ~KSHARK_PLUGIN_FAILED;
 		break;
