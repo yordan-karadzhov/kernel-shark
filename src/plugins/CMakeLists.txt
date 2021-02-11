@@ -17,10 +17,34 @@ function(BUILD_PLUGIN)
 
 endfunction()
 
+function(BUILD_GUI_PLUGIN)
+    set(options)
+    set(oneValueArgs NAME MOC)
+    set(multiValueArgs SOURCE)
+    cmake_parse_arguments(ADD_PLUGIN "${options}"
+                                     "${oneValueArgs}"
+                                     "${multiValueArgs}"
+                                     ${ARGN})
+
+    message(STATUS ${ADD_PLUGIN_NAME})
+
+    QT5_WRAP_CPP(plugin_moc ${ADD_PLUGIN_MOC})
+
+    add_library(${ADD_PLUGIN_NAME} SHARED ${plugin_moc} ${ADD_PLUGIN_SOURCE})
+    set_target_properties(${ADD_PLUGIN_NAME} PROPERTIES PREFIX "plugin-")
+    target_link_libraries(${ADD_PLUGIN_NAME} kshark kshark-gui)
+
+endfunction()
+
 set(PLUGIN_LIST "")
-BUILD_PLUGIN(NAME sched_events
-             SOURCE sched_events.c SchedEvents.cpp)
-list(APPEND PLUGIN_LIST "sched_events")
+
+if (Qt5Widgets_FOUND AND TT_FONT_FILE)
+
+    BUILD_GUI_PLUGIN(NAME sched_events
+                     SOURCE sched_events.c SchedEvents.cpp)
+    list(APPEND PLUGIN_LIST "sched_events")
+
+endif (Qt5Widgets_FOUND AND TT_FONT_FILE)
 
 BUILD_PLUGIN(NAME missed_events
              SOURCE missed_events.c MissedEvents.cpp)

@@ -20,15 +20,69 @@
 #include "plugins/sched_events.h"
 #include "KsPlotTools.hpp"
 #include "KsPlugins.hpp"
+#include "KsMainWindow.hpp"
 
 using namespace KsPlot;
 
+static KsMainWindow *ks_ptr;
+
+/**
+ * @brief Provide the plugin with a pointer to the KsMainWindow object (the GUI
+ * itself) such that the plugin can manipulate the GUI.
+ */
+void *plugin_set_gui_ptr(void *gui_ptr)
+{
+	ks_ptr = static_cast<KsMainWindow *>(gui_ptr);
+	return nullptr;
+}
+
+/**
+ * This class represents the graphical element visualizing the latency between
+ *  sched_waking and sched_switch events.
+ */
+class LatencyBox : public Rectangle
+{
+	/** On double click do. */
+	void _doubleClick() const override
+	{
+		ks_ptr->markEntry(_data[1]->entry, DualMarkerState::B);
+		ks_ptr->markEntry(_data[0]->entry, DualMarkerState::A);
+	}
+
+public:
+	/** The trace record data that corresponds to this LatencyBox. */
+	std::vector<kshark_data_field_int64 *>	_data;
+
+	/**
+	 * @brief Distance between the click and the shape. Used to decide if
+	 *	  the double click action must be executed.
+	 *
+	 * @param x: X coordinate of the click.
+	 * @param y: Y coordinate of the click.
+	 *
+	 * @returns If the click is inside the box, the distance is zero.
+	 *	    Otherwise infinity.
+	 */
+	double distance(int x, int y) const override
+	{
+		if (x < pointX(0) || x > pointX(2))
+			return std::numeric_limits<double>::max();
+
+		if (y < pointY(0) || y > pointY(1))
+			return std::numeric_limits<double>::max();
+
+		return 0;
+	}
+};
+
 static PlotObject *makeShape(std::vector<const Graph *> graph,
 			     std::vector<int> bins,
-			     std::vector<kshark_data_field_int64 *>,
+			     std::vector<kshark_data_field_int64 *> data,
 			     Color col, float size)
 {
-	Rectangle *rec = new KsPlot::Rectangle;
+	LatencyBox *rec = new LatencyBox;
+	rec->_data = data;
+
 	Point p0 = graph[0]->bin(bins[0])._base;
 	Point p1 = graph[0]->bin(bins[1])._base;
 	int height = graph[0]->height() * .3;

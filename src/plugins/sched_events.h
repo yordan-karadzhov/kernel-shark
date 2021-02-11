@@ -53,6 +53,7 @@ struct plugin_sched_context {
 	struct kshark_data_container	*sw_data;
 };
 
+/** A general purpose macro is used to define plugin context. */
 KS_DEFINE_PLUGIN_CONTEXT(struct plugin_sched_context);
 
 /** The type of the data field stored in the kshark_data_container object. */
@@ -64,6 +65,8 @@ int plugin_sched_get_prev_state(ks_num_field_t field);
 
 void plugin_draw(struct kshark_cpp_argv *argv, int sd, int pid,
 		 int draw_action);
+
+void *plugin_set_gui_ptr(void *gui_ptr);
 
 #ifdef __cplusplus
 }

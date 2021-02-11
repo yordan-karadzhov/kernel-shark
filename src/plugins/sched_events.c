@@ -216,3 +216,10 @@ int KSHARK_PLOT_PLUGIN_DEINITIALIZER(struct kshark_data_stream *stream)
 
 	return 1;
 }
+
+/** Initialize the control interface of the plugin. */
+void *KSHARK_MENU_PLUGIN_INITIALIZER(void *gui_ptr)
+{
+	printf("--> sched init menu\n");
+	return plugin_set_gui_ptr(gui_ptr);
+}
