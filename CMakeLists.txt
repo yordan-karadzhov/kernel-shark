@@ -167,4 +167,7 @@ configure_file(${KS_DIR}/build/ks.desktop.cmake
 configure_file(${KS_DIR}/build/org.freedesktop.kshark-record.policy.cmake
                ${KS_DIR}/org.freedesktop.kshark-record.policy)
 
+configure_file(${KS_DIR}/build/libkshark.pc.cmake
+               ${KS_DIR}/libkshark.pc @ONLY)
+
 message("")

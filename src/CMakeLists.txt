@@ -133,6 +133,12 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
             DESTINATION ${_INSTALL_PREFIX}/bin/
                 COMPONENT                 kernelshark)
 
+    execute_process(COMMAND  bash "-c" "pkg-config --variable pc_path pkg-config | cut -f 1 -d: -z"
+                    OUTPUT_VARIABLE PKG_CONGIG_DIR)
+    install(FILES "${KS_DIR}/libkshark.pc"
+            DESTINATION ${PKG_CONGIG_DIR}
+                COMPONENT                 libkshark-devel)
+
 endif (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
 
 add_subdirectory(plugins)

@@ -12,6 +12,7 @@ rm -rf Testing/
 rm -f ../tests/*.dat
 rm -f ../lib/*
 rm ../kernelshark.desktop
+rm ../libkshark.pc
 rm ../org.freedesktop.kshark-record.policy
 rm -f ../src/KsCmakeDef.hpp
 rm -f CMakeDoxyfile.in
