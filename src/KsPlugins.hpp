@@ -16,8 +16,13 @@
 #include <functional>
 
 // KernelShark
+#include "libkshark-plugin.h"
 #include "libkshark-model.h"
 #include "KsPlotTools.hpp"
+
+class KsMainWindow;
+/** Function type used for launching of plugin control menus. */
+typedef void (pluginActionFunc) (KsMainWindow *);
 
 /**
  * Structure representing the vector of C++ arguments of the drawing function

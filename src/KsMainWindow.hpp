@@ -20,6 +20,7 @@
 #include "KsTraceViewer.hpp"
 #include "KsTraceGraph.hpp"
 #include "KsWidgetsLib.hpp"
+#include "KsPlugins.hpp"
 #include "KsSession.hpp"
 #include "KsUtils.hpp"
 
@@ -36,35 +37,61 @@ public:
 
 	void loadDataFile(const QString &fileName);
 
+	void appendDataFile(const QString &fileName);
+
 	void loadSession(const QString &fileName);
 
 	QString lastSessionFile();
 
 	/**
-	 * @brief
+	 * @brief Register a list of plugins.
 	 *
-	 * @param plugin: can be the name of the plugin or the plugin's library
-	 * file (including absolute or relative path).
+	 * @param plugins: Provide here the names of the plugin (as in the
+ *			   CMake-generated header file) or the names of the
+ *			   plugin's library files (.so including path).
+ * 			   The names must be comma separated.
 	 */
-	void registerPlugin(const QString &plugin)
+	void registerPlugins(const QString &plugins)
 	{
-		_plugins.registerPlugin(plugin);
+		_plugins.registerPlugins(plugins);
 	}
 
 	/**
-	 * @brief
+	 * @brief Unregister a list pf plugins.
 	 *
-	 * @param plugin: can be the name of the plugin or the plugin's library
-	 * file (including absolute path).
+	 * @param pluginNames: Provide here a comma separated list of plugin
+	 *		       names (as in the CMake-generated header file).
 	 */
-	void unregisterPlugin(const QString &plugin)
+	void unregisterPlugins(const QString &pluginNames)
 	{
-		_plugins.unregisterPlugin(plugin);
+		_plugins.unregisterPlugins(pluginNames);
 	}
 
-	void setCPUPlots(QVector<int> cpus);
+	/**
+	 * @brief Register a given plugin to given Data streams.
+	 *
+	 * @param pluginName: The name of the plugin to register.
+	 * @param streamIds: Vector of Data stream identifiers.
+	 */
+	void registerPluginToStream(const QString &pluginName, QVector<int> streamIds)
+	{
+		_plugins.registerPluginToStream(pluginName, streamIds);
+	}
 
-	void setTaskPlots(QVector<int> pids);
+	/**
+	 * @brief Unregister a given plugin from given Data streams.
+	 *
+	 * @param pluginName: The name of the plugin to unregister.
+	 * @param streamIds: Vector of Data stream identifiers.
+	 */
+	void unregisterPluginFromStream(const QString &pluginName, QVector<int> streamIds)
+	{
+		_plugins.unregisterPluginFromStream(pluginName, streamIds);
+	}
+
+	void setCPUPlots(int sd, QVector<int> cpus);
+
+	void setTaskPlots(int sd, QVector<int> pids);
 
 	void resizeEvent(QResizeEvent* event);
 
@@ -73,6 +100,21 @@ public:
 		if ((!isFullScreen() && f) || (isFullScreen() && !f) )
 			_changeScreenMode();
 	}
+
+	void addPluginMenu(QString place, pluginActionFunc action);
+
+	/** Get the KsTraceGraph object. */
+	KsTraceGraph *graphPtr() {return &_graph;}
+
+	/** Get the KsTraceViewer object. */
+	KsTraceViewer *viewPtr() {return &_view;}
+
+	/** Get the KsWorkInProgress object. */
+	KsWidgetsLib::KsWorkInProgress *wipPtr() {return &_workInProgress;}
+
+	void markEntry(ssize_t row, DualMarkerState st);
+
+	void markEntry(const kshark_entry *e, DualMarkerState st);
 
 private:
 	QSplitter	_splitter;
@@ -104,6 +146,8 @@ private:
 	// File menu.
 	QAction		_openAction;
 
+	QAction		_appendAction;
+
 	QAction		_restoreSessionAction;
 
 	QAction		_importSessionAction;
@@ -113,10 +157,6 @@ private:
 	QAction		_quitAction;
 
 	// Filter menu.
-	QAction		_importFilterAction;
-
-	QAction		_exportFilterAction;
-
 	QCheckBox	*_graphFilterSyncCBox;
 
 	QCheckBox	*_listFilterSyncCBox;
@@ -143,6 +183,8 @@ private:
 
 	QAction		_captureAction;
 
+	QAction		_addOffcetAction;
+
 	QWidgetAction	_colorAction;
 
 	QWidget		_colSlider;
@@ -166,7 +208,16 @@ private:
 
 	QMetaObject::Connection		_captureErrorConnection;
 
+	// Status bar.
+	KsWidgetsLib::KsWorkInProgress	_workInProgress;
+
+	bool	_updateSessionSize;
+
+	void _load(const QString& fileName, bool append);
+
 	void _open();
+
+	void _append();
 
 	void _restoreSession();
 
@@ -174,21 +225,17 @@ private:
 
 	void _exportSession();
 
-	void _importFilter();
-
-	void _exportFilter();
-
 	void _listFilterSync(int state);
 
 	void _graphFilterSync(int state);
 
-	void _presetCBWidget(tracecmd_filter_id *showFilter,
-			     tracecmd_filter_id *hideFilter,
-			     KsCheckBoxWidget *cbw);
+	void _presetCBWidget(kshark_hash_id *showFilter,
+			     kshark_hash_id *hideFilter,
+			     KsWidgetsLib::KsCheckBoxWidget *cbw);
 
-	void _applyFilter(QVector<int> all, QVector<int> show,
-			  std::function<void(QVector<int>)> posFilter,
-			  std::function<void(QVector<int>)> negFilter);
+	void _applyFilter(int sd, QVector<int> all, QVector<int> show,
+			  std::function<void(int, QVector<int>)> posFilter,
+			  std::function<void(int, QVector<int>)> negFilter);
 
 	void _showEvents();
 
@@ -206,9 +253,13 @@ private:
 
 	void _pluginSelect();
 
+	void _pluginUpdate(int sd, QVector<int> pluginStates);
+
 	void _pluginAdd();
 
 	void _record();
+
+	void _offset();
 
 	void _setColorPhase(int);
 
@@ -240,8 +291,9 @@ private:
 
 	inline void _resizeEmpty() {resize(SCREEN_WIDTH * .5, FONT_HEIGHT * 3);}
 
-	void _error(const QString &text, const QString &errCode,
-		    bool resize, bool unloadPlugins);
+	void _error(const QString &text,
+		    const QString &errCode,
+		    bool resize);
 
 	void _deselectActive();
 

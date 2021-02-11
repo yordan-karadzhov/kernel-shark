@@ -17,14 +17,16 @@
 
 #define default_input_file (char*)"trace.dat"
 
-static char *input_file;
+static char *prior_input_file;
+QStringList appInputFiles;
 
 void usage(const char *prog)
 {
 	printf("Usage: %s\n", prog);
 	printf("  -h	Display this help message\n");
 	printf("  -v	Display version and exit\n");
-	printf("  -i	input_file, default is %s\n", default_input_file);
+	printf("  -i	prior input file, default is %s\n", default_input_file);
+	printf("  -a	input file to append to the prior\n");
 	printf("  -p	register plugin, use plugin name, absolute or relative path\n");
 	printf("  -u	unregister plugin, use plugin name or absolute path\n");
 	printf("  -s	import a session\n");
@@ -45,16 +47,18 @@ static option longOptions[] = {
 
 int main(int argc, char **argv)
 {
-	QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-	QApplication a(argc, argv);
-
 	QVector<int> cpuPlots, taskPlots;
 	bool fromSession = false;
 	int optionIndex = 0;
-	KsMainWindow ks;
 	int c;
 
-	while ((c = getopt_long(argc, argv, "hvi:p:u:s:l",
+	QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+	QApplication a(argc, argv);
+
+	KsMainWindow ks;
+	ks.show();
+
+	while ((c = getopt_long(argc, argv, "hvi:a:p:u:s:l",
 					    longOptions,
 					    &optionIndex)) != -1) {
 		switch(c) {
@@ -75,15 +79,19 @@ int main(int argc, char **argv)
 			return 0;
 
 		case 'i':
-			input_file = optarg;
+			prior_input_file = optarg;
+			break;
+
+		case 'a':
+			appInputFiles << QString(optarg).split(" ", QString::SkipEmptyParts);
 			break;
 
 		case 'p':
-			ks.registerPlugin(QString(optarg));
+			ks.registerPlugins(QString(optarg));
 			break;
 
 		case 'u':
-			ks.unregisterPlugin(QString(optarg));
+			ks.unregisterPlugins(QString(optarg));
 			break;
 
 		case 's':
@@ -103,19 +111,22 @@ int main(int argc, char **argv)
 
 	if (!fromSession) {
 		if ((argc - optind) >= 1) {
-			if (input_file)
+			if (prior_input_file)
 				usage(argv[0]);
-			input_file = argv[optind];
+			prior_input_file = argv[optind];
 		}
 
-		if (!input_file) {
+		if (!prior_input_file) {
 			struct stat st;
 			if (stat(default_input_file, &st) == 0)
-				input_file = default_input_file;
+				prior_input_file = default_input_file;
 		}
 
-		if (input_file)
-			ks.loadDataFile(QString(input_file));
+		if (prior_input_file)
+			ks.loadDataFile(QString(prior_input_file));
+
+		for (auto const &f: appInputFiles)
+			ks.appendDataFile(f);
 	}
 
 	auto lamOrderIds = [] (QVector<int> &ids) {
@@ -126,10 +137,10 @@ int main(int argc, char **argv)
 	};
 
 	if (cpuPlots.count() || taskPlots.count()) {
-		ks.setCPUPlots(lamOrderIds(cpuPlots));
-		ks.setTaskPlots(lamOrderIds(taskPlots));
+		ks.setCPUPlots(0, lamOrderIds(cpuPlots));
+		ks.setTaskPlots(0, lamOrderIds(taskPlots));
 	}
 
-	ks.show();
+	ks.raise();
 	return a.exec();
 }

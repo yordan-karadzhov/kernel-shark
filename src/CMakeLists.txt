@@ -74,7 +74,7 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
                         KsWidgetsLib.hpp
                         KsTraceGraph.hpp
                         KsTraceViewer.hpp
-#                         KsMainWindow.hpp
+                        KsMainWindow.hpp
                         KsCaptureDialog.hpp
                         KsQuickContextMenu.hpp
                         KsAdvFilteringDialog.hpp)
@@ -90,7 +90,7 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
                                                             KsWidgetsLib.cpp
                                                             KsTraceGraph.cpp
                                                             KsTraceViewer.cpp
-#                                                             KsMainWindow.cpp
+                                                            KsMainWindow.cpp
                                                             KsCaptureDialog.cpp
                                                             KsQuickContextMenu.cpp
                                                             KsAdvFilteringDialog.cpp)
@@ -102,20 +102,19 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
 
     set_target_properties(kshark-gui PROPERTIES  SUFFIX ".so.${KS_VERSION_STRING}")
 
-#     message(STATUS ${KS_APP_NAME})
-#     add_executable(${KS_APP_NAME}          kernelshark.cpp)
-#     target_link_libraries(${KS_APP_NAME}   kshark-gui)
+    message(STATUS ${KS_APP_NAME})
+    add_executable(${KS_APP_NAME}          kernelshark.cpp)
+    target_link_libraries(${KS_APP_NAME}   kshark-gui)
 
     message(STATUS "kshark-record")
     add_executable(kshark-record        kshark-record.cpp)
     target_link_libraries(kshark-record kshark-gui)
 
-#     install(TARGETS ${KS_APP_NAME} kshark-record kshark-gui
-#             RUNTIME DESTINATION       ${_INSTALL_PREFIX}/bin/
-#                 COMPONENT                 kernelshark
-#             LIBRARY DESTINATION       ${_LIBDIR}
-#                 COMPONENT                 kernelshark)
-
+    install(TARGETS ${KS_APP_NAME} kshark-record kshark-gui
+            RUNTIME DESTINATION       ${_INSTALL_PREFIX}/bin/
+                COMPONENT                 kernelshark
+            LIBRARY DESTINATION       ${_LIBDIR}
+                COMPONENT                 kernelshark)
 
     install(FILES "${KS_DIR}/${KS_APP_NAME}.desktop"
             DESTINATION ${_INSTALL_PREFIX}/share/applications/
