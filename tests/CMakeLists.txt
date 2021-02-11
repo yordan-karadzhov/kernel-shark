@@ -38,13 +38,17 @@ add_test(NAME              "libkshark_tests"
          COMMAND           ${KS_TEST_DIR}/kshark-tests --log_format=HRF
          WORKING_DIRECTORY ${KS_TEST_DIR})
 
-add_executable(kshark-gui-tests          libkshark-gui-tests.cpp)
-target_include_directories(kshark-gui-tests PRIVATE ${Boost_INCLUDE_DIRS})
-target_compile_definitions(kshark-gui-tests PRIVATE "BOOST_TEST_DYN_LINK=1")
-target_link_libraries(kshark-gui-tests   kshark-gui
-                                     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+if (Qt5Widgets_FOUND AND TT_FONT_FILE)
 
-message(STATUS "libkshark-gui_tests")
-add_test(NAME              "libkshark-gui_tests"
-         COMMAND           ${KS_TEST_DIR}/kshark-gui-tests --log_format=HRF
-         WORKING_DIRECTORY ${KS_TEST_DIR})
+    add_executable(kshark-gui-tests          libkshark-gui-tests.cpp)
+    target_include_directories(kshark-gui-tests PRIVATE ${Boost_INCLUDE_DIRS})
+    target_compile_definitions(kshark-gui-tests PRIVATE "BOOST_TEST_DYN_LINK=1")
+    target_link_libraries(kshark-gui-tests   kshark-gui
+                          ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+
+    message(STATUS "libkshark-gui_tests")
+    add_test(NAME              "libkshark-gui_tests"
+             COMMAND           ${KS_TEST_DIR}/kshark-gui-tests --log_format=HRF
+             WORKING_DIRECTORY ${KS_TEST_DIR})
+
+endif (Qt5Widgets_FOUND AND TT_FONT_FILE)

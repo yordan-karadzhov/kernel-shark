@@ -63,7 +63,7 @@ if (OPENGL_FOUND)
 
 endif (OPENGL_FOUND)
 
-if (Qt5Widgets_FOUND AND Qt5Network_FOUND)
+if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
 
     message(STATUS "libkshark-gui")
     set (ks-guiLib_hdr  KsUtils.hpp
@@ -134,7 +134,7 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND)
             DESTINATION ${_INSTALL_PREFIX}/bin/
                 COMPONENT                 kernelshark)
 
-endif (Qt5Widgets_FOUND AND Qt5Network_FOUND)
+endif (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
 
 add_subdirectory(plugins)
 set(PLUGINS ${PLUGINS} PARENT_SCOPE)

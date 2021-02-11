@@ -26,6 +26,9 @@
 /** GLUT has been found. */
 #cmakedefine GLUT_FOUND
 
+/** Truetype font file. */
+#cmakedefine TT_FONT_FILE "@TT_FONT_FILE@"
+
 /** Qt - old version detected. */
 #cmakedefine QT_VERSION_LESS_5_11
 

@@ -24,7 +24,7 @@ message(STATUS "dataplot")
 add_executable(dplot          dataplot.cpp)
 target_link_libraries(dplot   kshark-plot)
 
-if (Qt5Widgets_FOUND)
+if (Qt5Widgets_FOUND AND TT_FONT_FILE)
 
     message(STATUS "widgetdemo")
     add_executable(widgetdemo          widgetdemo.cpp)
@@ -34,4 +34,4 @@ if (Qt5Widgets_FOUND)
     add_executable(cmd_split           cmd_split.cpp)
     target_link_libraries(cmd_split    kshark-gui)
 
-endif (Qt5Widgets_FOUND)
+endif (Qt5Widgets_FOUND AND TT_FONT_FILE)

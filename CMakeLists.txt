@@ -49,6 +49,20 @@ set(OpenGL_GL_PREFERENCE LEGACY)
 find_package(OpenGL)
 find_package(GLUT)
 
+set(KS_FONT FreeSans)
+execute_process(COMMAND  bash "-c" "fc-list '${KS_FONT}' |grep ${KS_FONT}.ttf | cut -d':' -f 1 -z"
+                OUTPUT_VARIABLE TT_FONT_FILE)
+
+if (TT_FONT_FILE)
+
+  message(STATUS "Found font: ${TT_FONT_FILE}")
+
+else (TT_FONT_FILE)
+
+  message(WARNING "\nCould not find font ${KS_FONT}!\n")
+
+endif (TT_FONT_FILE)
+
 find_package(Qt5Widgets 5.7.1)
 find_package(Qt5Network)
 if (Qt5Widgets_FOUND)

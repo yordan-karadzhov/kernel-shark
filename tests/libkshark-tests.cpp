@@ -435,3 +435,12 @@ BOOST_AUTO_TEST_CASE(readout_plugins)
 
 	kshark_free(kshark_ctx);
 }
+
+BOOST_AUTO_TEST_CASE(check_font_found)
+{
+#ifdef TT_FONT_FILE
+BOOST_REQUIRE(true);
+#else
+BOOST_REQUIRE(false);
+#endif
+}
