@@ -66,9 +66,7 @@ public:
 
 	bool set(const KsDataStore &data,
 		 kshark_trace_histo *histo,
-		 size_t pos,
-		 int cpuGraph,
-		 int taskGraph);
+		 ssize_t pos, int sd);
 
 	bool update(const KsDataStore &data, kshark_trace_histo *histo);
 
@@ -83,24 +81,20 @@ public:
 
 	void remove();
 
-public:
 	/** Is this marker set. */
 	bool		_isSet;
 
 	/** The number of the bin this marker points to. */
 	int		_bin;
 
-	/** The index of the CPU Graph this marker points to. */
-	int		_cpu;
-
-	/** The  index of the Task Graph this marker points to. */
-	int		_task;
+	/** Data stream identifier of the Graph this marker points to. */
+	int		_sd;
 
 	/** The index inside the data array this marker points to. */
-	size_t		_pos;
+	ssize_t		_pos;
 
 	/** The timestamp of the marker. */
-	uint64_t	_ts;
+	int64_t		_ts;
 
 	/** The RGB color of the marker. */
 	QColor		_color;

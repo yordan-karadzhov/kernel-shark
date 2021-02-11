@@ -68,9 +68,9 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
     message(STATUS "libkshark-gui")
     set (ks-guiLib_hdr  KsUtils.hpp
                         KsModels.hpp
-#                         KsGLWidget.hpp
+                        KsGLWidget.hpp
                         KsSearchFSM.hpp
-#                         KsDualMarker.hpp
+                        KsDualMarker.hpp
                         KsWidgetsLib.hpp)
 #                         KsTraceGraph.hpp
 #                         KsTraceViewer.hpp
@@ -84,9 +84,9 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
     add_library(kshark-gui  SHARED  ${ks-guiLib_hdr_moc}    KsUtils.cpp
                                                             KsModels.cpp
 #                                                             KsSession.cpp
-#                                                             KsGLWidget.cpp
+                                                            KsGLWidget.cpp
                                                             KsSearchFSM.cpp
-#                                                             KsDualMarker.cpp
+                                                            KsDualMarker.cpp
                                                             KsWidgetsLib.cpp)
 #                                                             KsTraceGraph.cpp
 #                                                             KsTraceViewer.cpp

@@ -17,9 +17,50 @@
 
 // KernelShark
 #include "KsUtils.hpp"
+#include "KsWidgetsLib.hpp"
 #include "KsPlotTools.hpp"
 #include "KsModels.hpp"
 #include "KsDualMarker.hpp"
+
+/** Structure describing all graphs to be plotted for a given Data stream. */
+struct KsPerStreamPlots {
+	/** CPUs to be plotted. */
+	QVector<int>			_cpuList;
+
+	/** "Y" coordinates of the bases of all CPU plots for this stream. */
+	QVector<KsPlot::Graph *>	_cpuGraphs;
+
+	/** Tasks to be plotted. */
+	QVector<int>			_taskList;
+
+	/** "Y" coordinates of the bases of all CPU plots for this stream. */
+	QVector<KsPlot::Graph *>	_taskGraphs;
+};
+
+/** Structure describing a plot. */
+struct KsPlotEntry {
+	/** The Data stream identifier of the plot. */
+	int	_streamId;
+
+	/** Plotting action identifier (Task or CPU plot). */
+	int	_type;
+
+	/** Identifier of the plot (can be PID or CPU number). */
+	int	_id;
+
+	/** Graph pointer. */
+	KsPlot::Graph	*_graph;
+
+	/** "Y" coordinates of the bases of the plot. */
+	int base() const {return _graph->base();}
+};
+
+KsPlotEntry &operator <<(KsPlotEntry &plot, QVector<int> &v);
+
+void operator >>(const KsPlotEntry &plot, QVector<int> &v);
+
+/** Vector of KsPlotEntry used to describe a Combo plot. */
+typedef QVector<KsPlotEntry>	KsComboPlot;
 
 /**
  * The KsGLWidget class provides a widget for rendering OpenGL graphics used
@@ -39,9 +80,9 @@ public:
 
 	void paintGL() override;
 
-	void reset();
+	void render();
 
-	bool isEmpty() const;
+	void reset();
 
 	/** Reprocess all graphs. */
 	void update() {resizeGL(width(), height());}
@@ -65,24 +106,6 @@ public:
 	void loadColors();
 
 	/**
-	 * Reimplementing the event handler of the focus event, in order to
-	 * avoid the update (redrawing) of the graphs every time when the
-	 * widget grabs the focus of the keyboard. This is done because we do
-	 * not need to redraw, while on the other hand on large data-sets,
-	 * redrawing can take a lot of time.
-	 */
-	void focusInEvent(QFocusEvent* e) override {}
-
-	/**
-	 * Reimplementing the event handler of the focus event, in order to
-	 * avoid the update (redrawing) of the graphs every time when the
-	 * widget releases the focus of the keyboard. This is done because we
-	 * do not need to redraw, while on the other hand on large data-sets,
-	 * redrawing can take a lot of time.
-	 */
-	void focusOutEvent(QFocusEvent* e) override {}
-
-	/**
 	 * Provide the widget with a pointer to the Dual Marker state machine
 	 * object.
 	 */
@@ -91,19 +114,68 @@ public:
 	/** Get the KsGraphModel object. */
 	KsGraphModel *model() {return &_model;}
 
-	/** Get the number of CPU graphs. */
-	int cpuGraphCount() const {return _cpuList.count();}
+	/** Get the number of CPU graphs for a given Data stream. */
+	int cpuGraphCount(int sd) const
+	{
+		auto it = _streamPlots.find(sd);
+		if (it != _streamPlots.end())
+			return it.value()._cpuList.count();
+		return 0;
+	}
 
-	/** Get the number of Task graphs. */
-	int taskGraphCount() const {return _taskList.count();}
+	/** Get the number of Task graphs for a given Data stream. */
+	int taskGraphCount(int sd) const
+	{
+		auto it = _streamPlots.find(sd);
+		if (it != _streamPlots.end())
+			return it.value()._taskList.count();
+		return 0;
+	}
 
-	/** Get the total number of graphs. */
-	int graphCount() const {return _cpuList.count() + _taskList.count();}
+	/** Get the total number of graphs for a given Data stream. */
+	int graphCount(int sd) const
+	{
+		auto it = _streamPlots.find(sd);
+		if (it != _streamPlots.end())
+			return it.value()._taskList.count() +
+			       it.value()._cpuList.count();
+		return 0;
+	}
+
+	/**
+	 * Get the total number of graphs for all Data stream. The Combo plots
+	 * are not counted.
+	 */
+	int totGraphCount() const
+	{
+		int count(0);
+		for (auto const &s: _streamPlots)
+			count += s._taskList.count() +
+				 s._cpuList.count();
+		return count;
+	}
+
+	/** Get the number of plots in Combos. */
+	int comboGraphCount() const {
+		int count(0);
+		for (auto const &c: _comboPlots)
+			count += c.count();
+		return count;
+	}
+
+	/** Check if the widget is empty (not showing anything). */
+	bool isEmpty() const
+	{
+		return !_data || !_data->size() ||
+		       (!totGraphCount() && !comboGraphCount());
+	}
 
 	/** Get the height of the widget. */
 	int height() const
 	{
-		return graphCount() * (KS_GRAPH_HEIGHT + _vSpacing) +
+		return totGraphCount() * (KS_GRAPH_HEIGHT + _vSpacing) +
+		       comboGraphCount() * KS_GRAPH_HEIGHT +
+		       _comboPlots.count() * _vSpacing +
 		       _vMargin * 2;
 	}
 
@@ -119,24 +191,27 @@ public:
 	/** Get the size of the vertical spaceing between the graphs. */
 	int vSpacing()	const {return _vSpacing;}
 
-	void setMark(KsGraphMark *mark);
-
-	void findGraphIds(const kshark_entry &e,
-			  int *graphCPU,
-			  int *graphTask);
+	void setMarkPoints(const KsDataStore &data, KsGraphMark *mark);
 
 	bool find(const QPoint &point, int variance, bool joined,
 		  size_t *index);
 
-	int getPlotCPU(const QPoint &point);
+	bool getPlotInfo(const QPoint &point, int *sd, int *cpu, int *pid);
 
-	int getPlotPid(const QPoint &point);
+	/** CPUs and Tasks graphs (per data stream) to be plotted. */
+	QMap<int, KsPerStreamPlots>	_streamPlots;
 
-	/** CPUs to be plotted. */
-	QVector<int>	_cpuList;
+	/** Combo graphs to be plotted. */
+	QVector<KsComboPlot>		_comboPlots;
 
-	/** Tasks to be plotted. */
-	QVector<int>	_taskList;
+	/** Set the pointer to the WorkInProgress widget. */
+	void setWipPtr(KsWidgetsLib::KsWorkInProgress *wip)
+	{
+		_workInProgress = wip;
+	}
+
+	/** Free the list of plugin-defined shapes. */
+	void freePluginShapes();
 
 signals:
 	/**
@@ -149,7 +224,7 @@ signals:
 	 * This signal is emitted when the mouse moves but there is no visible
 	 * KernelShark entry under the cursor.
 	 */
-	void notFound(uint64_t ts, int cpu, int pid);
+	void notFound(uint64_t ts, int sd, int cpu, int pid);
 
 	/** This signal is emitted when the Plus key is pressed. */
 	void zoomIn();
@@ -182,7 +257,7 @@ signals:
 	void updateView(size_t pos, bool mark);
 
 private:
-	QVector<KsPlot::Graph*>	_graphs;
+	QMap<int, QVector<KsPlot::Graph *>>	_graphs;
 
 	KsPlot::PlotObjList	_shapes;
 
@@ -190,7 +265,11 @@ private:
 
 	KsPlot::ColorTable	_cpuColors;
 
-	int		_hMargin, _vMargin;
+	KsPlot::ColorTable	_streamColors;
+
+	KsWidgetsLib::KsWorkInProgress	*_workInProgress;
+
+	int	_labelSize, _hMargin, _vMargin;
 
 	unsigned int	_vSpacing;
 
@@ -210,15 +289,21 @@ private:
 
 	int 		_dpr;
 
+	ksplot_font	_font;
+
+	void _freeGraphs();
+
 	void _drawAxisX(float size);
 
-	void _makeGraphs(QVector<int> cpuMask, QVector<int> taskMask);
+	int _getMaxLabelSize();
 
-	KsPlot::Graph *_newCPUGraph(int cpu);
+	void _makeGraphs();
 
-	KsPlot::Graph *_newTaskGraph(int pid);
+	KsPlot::Graph *_newCPUGraph(int sd, int cpu);
 
-	void _makePluginShapes(QVector<int> cpuMask, QVector<int> taskMask);
+	KsPlot::Graph *_newTaskGraph(int sd, int pid);
+
+	void _makePluginShapes();
 
 	int _posInRange(int x);
 
@@ -230,16 +315,20 @@ private:
 
 	bool _findAndSelect(QMouseEvent *event);
 
-	bool _find(int bin, int cpu, int pid,
+	bool _find(int bin, int sd, int cpu, int pid,
 		   int variance, bool joined, size_t *row);
 
-	int _getNextCPU(int pid, int bin);
+	int _getNextCPU(int bin, int sd, int pid);
 
-	int _getLastTask(struct kshark_trace_histo *histo, int bin, int cpu);
+	int _getLastTask(struct kshark_trace_histo *histo,
+			 int bin, int sd, int cpu);
 
-	int _getLastCPU(struct kshark_trace_histo *histo, int bin, int pid);
+	int _getLastCPU(struct kshark_trace_histo *histo,
+			int bin, int sd, int pid);
 
 	void _deselect();
+
+	int _bin0Offset() {return _labelSize + 2 * _hMargin;}
 };
 
 #endif

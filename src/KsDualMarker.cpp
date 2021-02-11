@@ -59,10 +59,8 @@ void KsGraphMark::reset()
 {
 	_isSet = false;
 	_bin = -1;
-	_cpu = -1;
-	_task = -1;
 	_pos = 0;
-
+	_sd = 0;
 	_mark._visible = false;
 }
 
@@ -72,17 +70,17 @@ void KsGraphMark::reset()
  * @param data: Input location for the Data Store object.
  * @param histo: Input location for the model descriptor.
  * @param pos: The index inside the data array this marker will points to.
- * @param cpuGraph: The index of the CPU Graph this marker points to.
- * @param taskGraph: The index of the Task Graph this marker points to.
+ * @param sd: Data stream identifier.
  */
 bool KsGraphMark::set(const KsDataStore &data,
 		      kshark_trace_histo *histo,
-		      size_t pos, int cpuGraph, int taskGraph)
+		      ssize_t pos, int sd)
 {
 	uint8_t visFlags;
 
 	_isSet = true;
 	_pos = pos;
+	_sd = sd;
 	_ts = data.rows()[_pos]->ts;
 	visFlags = data.rows()[_pos]->visible;
 
@@ -91,9 +89,6 @@ bool KsGraphMark::set(const KsDataStore &data,
 		_mark.setDashed(false);
 	else
 		_mark.setDashed(true);
-
-	_cpu = cpuGraph;
-	_task = taskGraph;
 
 	if (_ts > histo->max || _ts < histo->min) {
 		_bin = -1;
@@ -119,7 +114,7 @@ bool KsGraphMark::update(const KsDataStore &data, kshark_trace_histo *histo)
 	if (!_isSet)
 		return false;
 
-	return set(data, histo, this->_pos, this->_cpu, this->_task);
+	return set(data, histo, this->_pos, this->_sd);
 }
 
 /** Unset the Marker and make it invisible. */
@@ -151,8 +146,8 @@ KsDualMarkerSM::KsDualMarkerSM(QWidget *parent)
 {
 	QString styleSheetA, styleSheetB;
 
-	_buttonA.setFixedWidth(STRING_WIDTH(" Marker A "));
-	_buttonB.setFixedWidth(STRING_WIDTH(" Marker B "));
+	_buttonA.setFixedWidth(STRING_WIDTH(" Marker A ") + FONT_WIDTH);
+	_buttonB.setFixedWidth(STRING_WIDTH(" Marker B ") + FONT_WIDTH);
 
 	for (auto const &l: {&_labelMA, &_labelMB, &_labelDelta}) {
 		l->setFrameStyle(QFrame::Panel | QFrame::Sunken);
@@ -318,10 +313,10 @@ void KsDualMarkerSM::updateMarkers(const KsDataStore &data,
 				   KsGLWidget *glw)
 {
 	if(_markA.update(data, glw->model()->histo()))
-		glw->setMark(&_markA);
+		glw->setMarkPoints(data, &_markA);
 
 	if(_markB.update(data, glw->model()->histo()))
-		glw->setMark(&_markB);
+		glw->setMarkPoints(data, &_markB);
 
 	updateLabels();
 }
