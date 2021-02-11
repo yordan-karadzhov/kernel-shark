@@ -45,7 +45,15 @@ static auto stringWidth = [](QString s)
 	QFont font;
 	QFontMetrics fm(font);
 
+#ifdef QT_VERSION_LESS_5_11
+
+	return fm.width(s);
+
+#else
+
 	return fm.horizontalAdvance(s);
+
+#endif // QT_VERSION_LESS_5_11
 };
 
 //! @endcond
@@ -54,13 +62,13 @@ static auto stringWidth = [](QString s)
 #define FONT_HEIGHT		fontHeight()
 
 /** Macro providing the width of the font in pixels. */
-#define FONT_WIDTH 		stringWidth("4")
+#define FONT_WIDTH 		(stringWidth("KernelShark") / 11)
 
 /** Macro providing the width of a string in pixels. */
 #define STRING_WIDTH(s)		stringWidth(s)
 
 /** Macro providing the height of the KernelShark graphs in pixels. */
-#define KS_GRAPH_HEIGHT	(FONT_HEIGHT*2)
+#define KS_GRAPH_HEIGHT		(FONT_HEIGHT * 2)
 
 //! @cond Doxygen_Suppress
 
@@ -82,16 +90,27 @@ std::chrono::high_resolution_clock::now() - t0).count()
 
 namespace KsUtils {
 
-QVector<int> getCPUList();
+QVector<int> getCPUList(int sd);
 
-QVector<int> getPidList();
+QVector<int> getPidList(int sd);
 
-QVector<int> getEventIdList(tep_event_sort_type sortType=TEP_EVENT_SORT_ID);
+QVector<int> getEventIdList(int sd);
 
-QVector<int> getFilterIds(tracecmd_filter_id *filter);
+int getEventId(int sd, const QString &eventName);
 
-/** @brief Geat the list of plugins. */
-inline QStringList getPluginList() {return plugins.split(";");}
+QString getEventName(int sd, int eventId);
+
+QStringList getEventFieldsList(int sd, int eventId);
+
+kshark_event_field_format getEventFieldType(int sd, int eventId,
+					    const QString &fieldName);
+
+QVector<int> getStreamIdList(kshark_context *kshark_ctx);
+
+QVector<int> getFilterIds(kshark_hash_id *filter);
+
+/** @brief Geat the list of plugins provided by the package. */
+inline QStringList getPluginList() {return QString(KS_BUILTIN_PLUGINS).split(";");}
 
 void listFilterSync(bool state);
 
@@ -113,8 +132,8 @@ inline QString Ts2String(int64_t ts, int prec)
 	return QString::number(ts * 1e-9, 'f', prec);
 }
 
-bool matchCPUVisible(struct kshark_context *kshark_ctx,
-			      struct kshark_entry *e, int cpu);
+bool matchCPUVisible(kshark_context *kshark_ctx,
+		     kshark_entry *e, int sd, int *cpu);
 
 bool isInstalled();
 
@@ -134,9 +153,32 @@ QString getSaveFile(QWidget *parent,
 		    const QString &extension,
 		    QString &lastFilePath);
 
+void setElidedText(QLabel* label, QString text,
+		   enum Qt::TextElideMode mode,
+		   int labelWidth);
+
 QStringList splitArguments(QString cmd);
 
 QVector<int> parseIdList(QString v_str);
+
+QStringList getTepEvtName(int sd, int eventId);
+
+/** Get a string to be used as a standard name of a CPU graph. */
+inline QString cpuPlotName(int cpu) {return QString("CPU %1").arg(cpu);}
+
+QString taskPlotName(int sd, int pid);
+
+/** Get the total number of Data streams. */
+inline int getNStreams()
+{
+	kshark_context *kshark_ctx(nullptr);
+
+	if (!kshark_instance(&kshark_ctx))
+		return -1;
+	return kshark_ctx->n_streams;
+}
+
+QString streamDescription(kshark_data_stream *stream);
 
 }; // KsUtils
 
@@ -158,18 +200,24 @@ public:
 
 	~KsDataStore();
 
-	void loadDataFile(const QString &file);
+	int loadDataFile(const QString &file,
+			 QVector<kshark_dpi *> plugins);
+
+	int appendDataFile(const QString &file, int64_t shift);
 
 	void clear();
 
-	/** Get the trace event parser. */
-	tep_handle *tep() const {return _tep;}
+	/** Get the trace data array. */
+	kshark_entry **rows() const {return _rows;}
 
-	/** Get the trace data array.. */
-	struct kshark_entry **rows() const {return _rows;}
+	/** Get a reference of the trace data array. */
+	kshark_entry ***rows_r() {return &_rows;}
 
 	/** Get the size of the data array. */
 	ssize_t size() const {return _dataSize;}
+
+	/** Set the size of the data (number of entries). */
+	void setSize(ssize_t s) {_dataSize = s;}
 
 	void reload();
 
@@ -177,19 +225,23 @@ public:
 
 	void registerCPUCollections();
 
-	void applyPosTaskFilter(QVector<int>);
+	void unregisterCPUCollections();
 
-	void applyNegTaskFilter(QVector<int>);
+	void applyPosTaskFilter(int sd, QVector<int> vec);
 
-	void applyPosEventFilter(QVector<int>);
+	void applyNegTaskFilter(int sd, QVector<int> vec);
 
-	void applyNegEventFilter(QVector<int>);
+	void applyPosEventFilter(int sd, QVector<int> vec);
 
-	void applyPosCPUFilter(QVector<int>);
+	void applyNegEventFilter(int sd, QVector<int> vec);
 
-	void applyNegCPUFilter(QVector<int>);
+	void applyPosCPUFilter(int sd, QVector<int> vec);
+
+	void applyNegCPUFilter(int sd, QVector<int> vec);
 
 	void clearAllFilters();
+
+	void setClockOffset(int sd, int64_t offset);
 
 signals:
 	/**
@@ -199,75 +251,84 @@ signals:
 	void updateWidgets(KsDataStore *);
 
 private:
-	/** Page event used to parse the page. */
-	tep_handle		*_tep;
-
 	/** Trace data array. */
-	struct kshark_entry	**_rows;
+	kshark_entry		**_rows;
 
 	/** The size of the data array. */
 	ssize_t			_dataSize;
 
+	int _openDataFile(kshark_context *kshark_ctx, const QString &file);
+
 	void _freeData();
-	void _unregisterCPUCollections();
-	void _applyIdFilter(int filterId, QVector<int> vec);
+
+	void _applyIdFilter(int filterId, QVector<int> vec, int sd);
+
+	void _addPluginsToStream(kshark_context *kshark_ctx, int sd,
+				 QVector<kshark_dpi *> plugins);
 };
 
-/** A Plugin Manage class. */
+/** A Plugin Manager class. */
 class KsPluginManager : public QObject
 {
 	Q_OBJECT
 public:
 	explicit KsPluginManager(QWidget *parent = nullptr);
 
-	/** A list of available built-in plugins. */
-	QStringList	_ksPluginList;
+	QStringList getStreamPluginList(int sd) const;
 
-	/** A list of registered built-in plugins. */
-	QVector<bool>	_registeredKsPlugins;
+	QVector<int> getActivePlugins(int sd) const;
 
-	/** A list of available user plugins. */
-	QStringList	_userPluginList;
+	QVector<int> getPluginsByStatus(int sd, int status) const;
 
-	/** A list of registered user plugins. */
-	QVector<bool>	_registeredUserPlugins;
+	/** Get a list of all plugins added by the user. */
+	const QVector<kshark_plugin_list *>
+	getUserPlugins() const {return _userPlugins;}
 
-	void registerFromList(kshark_context *kshark_ctx);
-	void unregisterFromList(kshark_context *kshark_ctx);
+	void registerPluginMenues();
 
-	void registerPlugin(const QString &plugin);
-	void unregisterPlugin(const QString &plugin);
+	void updatePlugins(int sd, QVector<int> pluginStates);
 
-	void addPlugins(const QStringList &fileNames);
+	void addPlugins(const QStringList &fileNames, QVector<int> streams);
 
-	void unloadAll();
+	void registerPlugins(const QString &pluginNames);
 
-	void updatePlugins(QVector<int> pluginId);
+	void unregisterPlugins(const QString &pluginNames);
+
+	void registerPluginToStream(const QString &pluginName,
+				    QVector<int> streamId);
+
+	void unregisterPluginFromStream(const QString &pluginName,
+					QVector<int> streamId);
+
+	void deletePluginDialogs();
+
+	/** Append to the list of User plugin. */
+	void addUserPluginToList(kshark_plugin_list *p) {_userPlugins.append(p);}
 
 signals:
 	/** This signal is emitted when a plugin is loaded or unloaded. */
 	void dataReload();
 
 private:
-	void _parsePluginList();
+	QVector<kshark_plugin_list *>	_userPlugins;
 
-	char *_pluginLibFromName(const QString &plugin, int &n);
+	/** Plugin dialogs. */
+	QVector<QWidget *>		_pluginDialogs;
 
-	template <class T>
-	void _forEachInList(const QStringList &pl,
-			    const QVector<bool> &reg,
-			    T action)
-	{
-		int nPlugins;
-		nPlugins = pl.count();
-		for (int i = 0; i < nPlugins; ++i) {
-			if (reg[i]) {
-				action(pl[i]);
-			}
-		}
-	}
+	QVector<kshark_plugin_list *>
+	_loadPluginList(const QStringList &plugins);
+
+	std::string _pluginLibFromName(const QString &plugin);
+
+	std::string _pluginNameFromLib(const QString &plugin);
+
+	void _pluginToStream(const QString &pluginName,
+			     QVector<int> streamId,
+			     bool reg);
 };
 
 KsPlot::Color& operator <<(KsPlot::Color &thisColor, const QColor &c);
+
+QColor& operator <<(QColor &thisColor, const KsPlot::Color &c);
 
 #endif

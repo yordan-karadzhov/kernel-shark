@@ -49,11 +49,17 @@ set(OpenGL_GL_PREFERENCE LEGACY)
 find_package(OpenGL)
 find_package(GLUT)
 
-# find_package(Qt5Widgets 5.7.1)
-# find_package(Qt5Network)
+find_package(Qt5Widgets 5.7.1)
+find_package(Qt5Network)
 if (Qt5Widgets_FOUND)
 
     message(STATUS "Found Qt5Widgets:  (version ${Qt5Widgets_VERSION})")
+
+    if(Qt5Widgets_VERSION VERSION_LESS "5.11")
+
+        set(QT_VERSION_LESS_5_11 TRUE)
+
+    endif()
 
 endif (Qt5Widgets_FOUND)
 

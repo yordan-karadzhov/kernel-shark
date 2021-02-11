@@ -46,6 +46,7 @@ BOOST_AUTO_TEST_CASE(add_remove_streams)
 	BOOST_CHECK_EQUAL(sd, -ENODEV);
 
 	kshark_close_all(kshark_ctx);
+	kshark_free(kshark_ctx);
 }
 
 #define ARRAY_DEFAULT_SIZE	1000

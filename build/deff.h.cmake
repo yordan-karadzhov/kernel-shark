@@ -26,6 +26,9 @@
 /** GLUT has been found. */
 #cmakedefine GLUT_FOUND
 
+/** Qt - old version detected. */
+#cmakedefine QT_VERSION_LESS_5_11
+
 /** Semicolon-separated list of plugin names. */
 #define KS_BUILTIN_PLUGINS "@PLUGINS@"
 
