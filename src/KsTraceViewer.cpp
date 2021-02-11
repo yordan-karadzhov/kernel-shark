@@ -9,7 +9,7 @@
  *  @brief   KernelShark Trace Viewer widget.
  */
 
-// C++11
+// C++
 #include <thread>
 #include <future>
 #include <queue>
@@ -50,11 +50,10 @@ void KsTableView::scrollTo(const QModelIndex &index, ScrollHint hint)
 
 /** Create a default (empty) Trace viewer widget. */
 KsTraceViewer::KsTraceViewer(QWidget *parent)
-: QWidget(parent),
+: KsWidgetsLib::KsDataWidget(parent),
   _view(this),
   _model(this),
   _proxyModel(this),
-  _tableHeader(_model.header()),
   _toolbar(this),
   _labelSearch("Search: Column", this),
   _labelGrFollows("Graph follows  ", this),
@@ -72,7 +71,7 @@ KsTraceViewer::KsTraceViewer(QWidget *parent)
 
 	/* On the toolbar make two Combo boxes for the search settings. */
 	_toolbar.addWidget(&_labelSearch);
-	_searchFSM._columnComboBox.addItems(_tableHeader);
+	_searchFSM._columnComboBox.addItems(_model.header());
 
 	/*
 	 * Using the old Signal-Slot syntax because
@@ -163,6 +162,9 @@ void KsTraceViewer::loadData(KsDataStore *data)
 	_model.fill(data);
 	this->_resizeToContents();
 
+	_searchFSM._columnComboBox.clear();
+	_searchFSM._columnComboBox.addItems(_model.header());
+
 	this->setMinimumHeight(SCREEN_HEIGHT / 5);
 }
 
@@ -172,8 +174,8 @@ void KsTraceViewer::setMarkerSM(KsDualMarkerSM *m)
 	QString styleSheetA, styleSheetB;
 
 	_mState = m;
-	_model.setColors(_mState->markerA()._color,
-			 _mState->markerB()._color);
+	_model.setMarkerColors(_mState->markerA()._color,
+			       _mState->markerB()._color);
 
 	/*
 	 * Assign a property to State A of the Dual marker state machine. When
@@ -234,6 +236,7 @@ void KsTraceViewer::update(KsDataStore *data)
 	_data = data;
 	if (_mState->activeMarker()._isSet)
 		showRow(_mState->activeMarker()._pos, true);
+	_resizeToContents();
 }
 
 void KsTraceViewer::_onCustomContextMenu(const QPoint &point)
@@ -246,7 +249,7 @@ void KsTraceViewer::_onCustomContextMenu(const QPoint &point)
 		 * of the row number in the source model.
 		 */
 		size_t row = _proxyModel.mapRowFromSource(i.row());
-		KsQuickContextMenu menu(_data, row, _mState, this);
+		KsQuickContextMenu menu(_mState, _data, row, this);
 
 		/*
 		 * Note that this slot was connected to the
@@ -290,7 +293,7 @@ void KsTraceViewer::_graphFollowsChanged(int state)
 
 	_graphFollows = (bool) state;
 	if (_graphFollows && row != KS_NO_ROW_SELECTED)
-		emit select(row); // Send a signal to the Graph widget.
+		emit select(*_it); // Send a signal to the Graph widget.
 }
 
 void KsTraceViewer::_search()
@@ -459,7 +462,7 @@ void KsTraceViewer::clearSelection()
 /** Switch the Dual marker. */
 void KsTraceViewer::markSwitch()
 {
-	int row;
+	ssize_t row;
 
 	/* The state of the Dual marker has changed. Get the new active marker. */
 	DualMarkerState state = _mState->getState();
@@ -490,7 +493,7 @@ void KsTraceViewer::markSwitch()
 		 * The index in the source model is used to retrieve the value
 		 * of the row number in the proxy model.
 		 */
-		size_t row =_mState->getMarker(state)._pos;
+		row =_mState->getMarker(state)._pos;
 
 		QModelIndex index =
 			_proxyModel.mapFromSource(_model.index(row, 0));
@@ -525,7 +528,7 @@ void KsTraceViewer::markSwitch()
  */
 void KsTraceViewer::resizeEvent(QResizeEvent* event)
 {
-	int nColumns = _tableHeader.count();
+	int nColumns = _model.header().count();
 	int tableSize(0), viewSize, freeSpace;
 
 	_resizeToContents();
@@ -564,7 +567,7 @@ void KsTraceViewer::keyReleaseEvent(QKeyEvent *event)
 
 void KsTraceViewer::_resizeToContents()
 {
-	int rows, columnSize, markRow = selectedRow();
+	int col, rows, columnSize, markRow = selectedRow();
 
 	_view.setVisible(false);
 	_view.resizeColumnsToContents();
@@ -579,13 +582,22 @@ void KsTraceViewer::_resizeToContents()
 		_view.clearSelection();
 
 	/*
-	 * Because of some unknown reason the first column doesn't get
+	 * Because of some unknown reason some of the columns doesn't get
 	 * resized properly by the code above. We will resize this
 	 * column by hand.
 	 */
+	col = KsViewModel::TRACE_VIEW_COL_STREAM;
+	columnSize = STRING_WIDTH(_model.header()[col]) + FONT_WIDTH;
+	_view.setColumnWidth(col, columnSize);
+
+	col = KsViewModel::TRACE_VIEW_COL_CPU;
+	columnSize = STRING_WIDTH(_model.header()[col]) + FONT_WIDTH * 2;
+	_view.setColumnWidth(col, columnSize);
+
+	col = KsViewModel::TRACE_VIEW_COL_INDEX;
 	rows = _model.rowCount({});
 	columnSize = STRING_WIDTH(QString("%1").arg(rows)) + FONT_WIDTH;
-	_view.setColumnWidth(0, columnSize);
+	_view.setColumnWidth(col, columnSize);
 }
 
 //! @cond Doxygen_Suppress
@@ -598,7 +610,16 @@ size_t KsTraceViewer::_searchItems()
 {
 	int column = _searchFSM._columnComboBox.currentIndex();
 	QString searchText = _searchFSM._searchLineEdit.text();
-	int count, dataRow;
+	int count, dataRow, columnIndex = column;
+
+	if (_model.singleStream()) {
+		/*
+		 * If only one Data stream (file) is loaded, the first column
+		 * (TRACE_VIEW_COL_STREAM) is not shown. The column index has
+		 * to be corrected.
+		 */
+		++columnIndex;
+	}
 
 	if (searchText.isEmpty()) {
 		/*
@@ -620,8 +641,8 @@ size_t KsTraceViewer::_searchItems()
 	} else {
 		_searchFSM.handleInput(sm_input_t::Start);
 
-		if (column == KsViewModel::TRACE_VIEW_COL_INFO ||
-		    column == KsViewModel::TRACE_VIEW_COL_LAT)
+		if (columnIndex == KsViewModel::TRACE_VIEW_COL_INFO ||
+		    columnIndex == KsViewModel::TRACE_VIEW_COL_AUX)
 			_searchItemsST();
 		else
 			_searchItemsMT();
@@ -761,7 +782,7 @@ void KsTraceViewer::_searchItemsMT()
 		};
 
 		for (int i = 0; i < mapList.size(); ++i)
-			if ( mapList[i].count()) {
+			if (mapList[i].count()) {
 				queue.push(std::make_pair(i, mapList[i].front()));
 				mapList[i].pop_front();
 			}

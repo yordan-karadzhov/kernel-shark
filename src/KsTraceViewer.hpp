@@ -20,6 +20,7 @@
 #include "KsModels.hpp"
 #include "KsSearchFSM.hpp"
 #include "KsDualMarker.hpp"
+#include "KsWidgetsLib.hpp"
 
 /**
  * Table View class, needed in order to reimplemented the handler for mouse
@@ -42,7 +43,7 @@ public:
  * The KsTraceViewer class provides a widget for browsing in the trace data
  * shown in a text form.
  */
-class KsTraceViewer : public QWidget
+class KsTraceViewer : public KsWidgetsLib::KsDataWidget
 {
 	Q_OBJECT
 public:
@@ -74,6 +75,12 @@ public:
 
 	void update(KsDataStore *data);
 
+	/** Update the color scheme used by the model. */
+	void loadColors()
+	{
+		_model.loadColors();
+	}
+
 signals:
 	/** Signal emitted when new row is selected. */
 	void select(size_t);
@@ -82,7 +89,7 @@ signals:
 	 * This signal is used to re-emitted the addTaskPlot signal of the
 	 * KsQuickContextMenu.
 	 */
-	void addTaskPlot(int pid);
+	void addTaskPlot(int sd, int pid);
 
 	/**
 	 * This signal is used to re-emitted the deselect signal of the
@@ -98,8 +105,6 @@ private:
 	KsViewModel		_model;
 
 	KsFilterProxyModel	_proxyModel;
-
-	QStringList	_tableHeader;
 
 	QToolBar	_toolbar;
 
