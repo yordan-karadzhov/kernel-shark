@@ -24,6 +24,7 @@
 static char *input_file = nullptr;
 
 using namespace std;
+using namespace KsWidgetsLib;
 
 void usage(const char *prog)
 {
@@ -37,13 +38,11 @@ void usage(const char *prog)
 
 struct TaskPrint : public QObject
 {
-	tep_handle	*_pevent;
-
-	void print(QVector<int> pids)
+	void print(int sd, QVector<int> pids)
 	{
 		for (auto const &pid: pids)
 			cout << "task: "
-			     << tep_data_comm_from_pid(_pevent, pid)
+			     << kshark_comm_from_pid(sd, pid)
 			     << "  pid: " << pid << endl;
 	}
 };
@@ -51,11 +50,12 @@ struct TaskPrint : public QObject
 int main(int argc, char **argv)
 {
 	kshark_context *kshark_ctx(nullptr);
+	kshark_data_stream *stream;
 	QApplication a(argc, argv);
 	KsPluginManager plugins;
+	int c, i(0), sd(-1);
 	KsDataStore data;
 	size_t nRows(0);
-	int c;
 
 	if (!kshark_instance(&kshark_ctx))
 		return 1;
@@ -71,11 +71,11 @@ int main(int argc, char **argv)
 			break;
 
 		case 'p':
-			plugins.registerPlugin(QString(optarg));
+			plugins.registerPlugins(QString(optarg));
 			break;
 
 		case 'u':
-			plugins.unregisterPlugin(QString(optarg));
+			plugins.unregisterPlugins(QString(optarg));
 			break;
 
 		case 'h':
@@ -91,7 +91,7 @@ int main(int argc, char **argv)
 	}
 
 	if (input_file) {
-		data.loadDataFile(input_file);
+		sd = data.loadDataFile(input_file, {});
 		nRows = data.size();
 	} else {
 		cerr << "No input file is provided.\n";
@@ -99,54 +99,51 @@ int main(int argc, char **argv)
 
 	cout << nRows << " entries loaded\n";
 
-	auto lamPrintPl = [&]()
-	{
-		kshark_plugin_list *pl;
-		for (pl = kshark_ctx->plugins; pl; pl = pl->next)
-			cout << pl->file << endl;
-	};
+	if (!nRows)
+		return 1;
+
+	stream = kshark_get_data_stream(kshark_ctx, sd);
+	if (!stream)
+		return 1;
 
 	cout << "\n\n";
-	lamPrintPl();
+	for (kshark_plugin_list *pl = kshark_ctx->plugins; pl; pl = pl->next)
+			cout << pl->file << endl;
 	sleep(1);
 
-	QVector<bool> registeredPlugins;
 	QStringList pluginsList;
+	QVector<int> streamIds, enabledPlugins, failedPlugins;
 
-	pluginsList << plugins._ksPluginList
-		    << plugins._userPluginList;
-
-	registeredPlugins << plugins._registeredKsPlugins
-			  << plugins._registeredUserPlugins;
+	pluginsList = plugins.getStreamPluginList(sd);
+	enabledPlugins = plugins.getActivePlugins(sd);
+	failedPlugins = plugins.getPluginsByStatus(sd, KSHARK_PLUGIN_FAILED);
 
 	KsCheckBoxWidget *pluginCBD
-		= new KsPluginCheckBoxWidget(pluginsList);
+		= new KsPluginCheckBoxWidget(sd, pluginsList);
+	pluginCBD->set(enabledPlugins);
 
-	pluginCBD->set(registeredPlugins);
-
-	KsCheckBoxDialog *dialog1 = new KsCheckBoxDialog(pluginCBD);
+	KsCheckBoxDialog *dialog1 = new KsCheckBoxDialog({pluginCBD});
+	dialog1->applyStatus();
 	QObject::connect(dialog1,	&KsCheckBoxDialog::apply,
-			&plugins,	&KsPluginManager::updatePlugins);
+			 &plugins,	&KsPluginManager::updatePlugins);
 
 	dialog1->show();
 	a.exec();
 
 	cout << "\n\nYou selected\n";
-	lamPrintPl();
+	enabledPlugins = plugins.getActivePlugins(sd);
+	for (auto const &p: pluginsList)
+		qInfo() << p << (bool) enabledPlugins[i++];
+
 	sleep(1);
 
-	if (!nRows)
-		return 1;
-
 	KsCheckBoxWidget *tasks_cbd =
-		new KsTasksCheckBoxWidget(data.tep(), true);
+		new KsTasksCheckBoxWidget(stream, true);
 
 	tasks_cbd->setDefault(false);
 
 	TaskPrint p;
-	p._pevent = data.tep();
-
-	KsCheckBoxDialog *dialog2 = new KsCheckBoxDialog(tasks_cbd);
+	KsCheckBoxDialog *dialog2 = new KsCheckBoxDialog({tasks_cbd});
 	QObject::connect(dialog2,	&KsCheckBoxDialog::apply,
 			 &p,		&TaskPrint::print);
 

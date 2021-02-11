@@ -15,6 +15,13 @@
 // Qt
 #include <QtWidgets>
 
+// KernelShark
+#include "libkshark.h"
+#include "KsUtils.hpp"
+
+namespace KsWidgetsLib
+{
+
 /**
  * The KsProgressBar class provides a visualization of the progress of a
  * running job.
@@ -30,17 +37,133 @@ class KsProgressBar : public QWidget
 public:
 	KsProgressBar(QString message, QWidget *parent = nullptr);
 
+	virtual ~KsProgressBar();
+
 	void setValue(int i);
+
+	void workInProgress();
+
+private:
+	bool	_notDone;
 };
 
 /** Defines the progress bar's maximum value. */
 #define KS_PROGRESS_BAR_MAX 200
 
 /** The height of the KsProgressBar widget. */
-#define KS_BROGBAR_HEIGHT (FONT_HEIGHT * 5)
+#define KS_PROGBAR_HEIGHT (FONT_HEIGHT * 5)
 
 /** The width of the KsProgressBar widget. */
-#define KS_BROGBAR_WIDTH  (FONT_WIDTH * 50)
+#define KS_PROGBAR_WIDTH  (FONT_WIDTH * 50)
+
+/** Data Work identifiers. */
+enum class KsDataWork
+{
+	AnyWork,
+	EditPlotList,
+	ZoomIn,
+	QuickZoomIn,
+	ZoomOut,
+	QuickZoomOut,
+	ScrollLeft,
+	ScrollRight,
+	JumpTo,
+	GraphUpdateGeom,
+	UpdatePlugins,
+	ResizeGL,
+	RenderGL,
+};
+
+/** Defines hash function needed by the QSet tempate container class. */
+inline uint qHash(KsDataWork key, uint seed)
+{
+	/*
+	 * Cast the enum class to uint and use the definition of qHash outside
+	 * the current scope.
+	 */
+	return ::qHash(static_cast<uint>(key), seed);
+}
+
+/**
+ * The KsWorkInProgress class provides a widget showing the
+ * "work in progress" notification.
+ */
+class KsWorkInProgress : public QWidget
+{
+public:
+	explicit KsWorkInProgress(QWidget *parent = nullptr);
+
+	void show(KsDataWork w);
+
+	void hide(KsDataWork w);
+
+	bool isBusy(KsDataWork w = KsDataWork::AnyWork) const;
+
+	void addToStatusBar(QStatusBar *sb);
+
+private:
+	QLabel	_icon, _message;
+
+	QSet<KsDataWork>	_works;
+};
+
+/**
+ * The KsDataWidget class provides a base widget that provides the capability
+ * to show the "work in progress" notification. The class must be inherited by
+ * the widgets performing heavy data processing operations.
+ */
+class KsDataWidget : public QWidget
+{
+public:
+	/**
+	 * @brief Create KsDataWidget.
+	 *
+	 * @param parent: The parent of this widget.
+	 */
+	explicit KsDataWidget(QWidget *parent = nullptr)
+	: QWidget(parent), _workInProgress(nullptr) {}
+
+	/** Set a pointer to the KsWorkInProgress widget. */
+	const KsWorkInProgress *wipPtr(KsWorkInProgress *wip) const
+	{
+		return _workInProgress;
+	}
+
+	/** Set the pointer to the KsWorkInProgress widget. */
+	void setWipPtr(KsWorkInProgress *wip)
+	{
+		_workInProgress = wip;
+	}
+
+	/**
+	 * Call this function when a given work is about to start in order to
+	 * show the "work in progress" notification.
+	 */
+	void startOfWork(KsDataWork w)
+	{
+		if (_workInProgress)
+			_workInProgress->show(w);
+	}
+
+	/**
+	 * Call this function when a given work is done in order to hide the
+	 * "work in progress" notification.
+	 */
+	void endOfWork(KsDataWork w)
+	{
+		if (_workInProgress)
+			_workInProgress->hide(w);
+	}
+
+	/** Check if the GUI is busy processing data. */
+	bool isBusy(KsDataWork w = KsDataWork::AnyWork) const
+	{
+		return _workInProgress ? _workInProgress->isBusy(w) : false;
+	}
+
+private:
+	KsWorkInProgress	*_workInProgress;
+};
 
 /**
  * The KsMessageDialog class provides a widget showing a message and having
@@ -66,12 +189,32 @@ public:
 /** The width of the KsMessageDialog widget. */
 #define KS_MSG_DIALOG_WIDTH  (SCREEN_WIDTH / 10)
 
-namespace KsWidgetsLib
-{
-
 bool fileExistsDialog(QString fileName);
 
-}; // KsWidgetsLib
+/**
+ * The KsTimeOffsetDialog class provides a dialog used to enter the value of
+ * the time offset between two Data streams.
+ */
+class KsTimeOffsetDialog : public QDialog
+{
+	Q_OBJECT
+public:
+	explicit KsTimeOffsetDialog(QWidget *parent = nullptr);
+
+	static double getValueNanoSec(QString dataFile, bool *ok);
+
+signals:
+	/** Signal emitted when the "Apply" button is pressed. */
+	void apply(int sd, double val);
+
+private:
+	QInputDialog	_input;
+
+	QComboBox	_streamCombo;
+
+private slots:
+	void _setDefault(int index);
+};
 
 /**
  * The KsCheckBoxWidget class is the base class of all CheckBox widget used
@@ -81,7 +224,7 @@ class KsCheckBoxWidget : public QWidget
 {
 	Q_OBJECT
 public:
-	KsCheckBoxWidget(const QString &name = "",
+	KsCheckBoxWidget(int sd, const QString &name = "",
 			 QWidget *parent = nullptr);
 
 	/** Get the name of the widget. */
@@ -95,9 +238,12 @@ public:
 		return false;
 	}
 
+	/** The "all" checkboxe to be visible or not. */
+	void setVisibleCbAll(bool v) {_allCbAction->setVisible(v);}
+
 	void setDefault(bool);
 
-	void set(QVector<bool> v);
+	void set(QVector<int> v);
 
 	/**
 	 * Get a vector containing all Ids (can be PID CPU Ids etc.) managed
@@ -107,10 +253,35 @@ public:
 
 	QVector<int> getCheckedIds();
 
+	QVector<int> getStates();
+
+	/**
+	 * Get the identifier of the Data stream for which the selection
+	 * applies.
+	 */
+	int sd() const {return _sd;}
+
+	/**
+	 * Reimplemented event handler used to update the geometry of the widget on
+	 * resize events.
+	 */
+	void resizeEvent(QResizeEvent* event)
+	{
+		KsUtils::setElidedText(&_streamLabel, _streamName,
+				       Qt::ElideLeft, width());
+		QApplication::processEvents();
+	}
+
+	/** The user provided an input. The widget has been modified. */
+	bool _userInput;
+
 private:
 	QToolBar _tb;
 
 protected:
+	/** Identifier of the Data stream for which the selection applies. */
+	int		_sd;
+
 	/** The "all" checkboxe. */
 	QCheckBox	_allCb;
 
@@ -126,13 +297,25 @@ protected:
 	/** The top level layout of this widget. */
 	QVBoxLayout	_topLayout;
 
+private:
+	QAction		*_allCbAction;
+
+	/**
+	 * The name of this Data stream. Typically this will be the name of
+	 * the data file.
+	 */
+	QString		_streamName;
+	/**
+	 * A label to show the name of the Data stream for which the selection
+	 * applies. */
+	QLabel		_streamLabel;
+
 	/** The name of this widget. */
 	QString		_name;
 
 	/** A label to show the name of the widget. */
 	QLabel		_nameLabel;
 
-private:
 	virtual void _setCheckState(int i, Qt::CheckState st) = 0;
 
 	virtual Qt::CheckState _checkState(int i) const = 0;
@@ -140,6 +323,8 @@ private:
 	virtual void _verify() {};
 
 	void _checkAll(bool);
+
+	void _setStream(int8_t sd);
 };
 
 /**
@@ -152,24 +337,63 @@ class KsCheckBoxDialog : public QDialog
 public:
 	KsCheckBoxDialog() = delete;
 
-	KsCheckBoxDialog(KsCheckBoxWidget *cbw, QWidget *parent = nullptr);
+	KsCheckBoxDialog(QVector<KsCheckBoxWidget *> cbws,
+			 QWidget *parent = nullptr);
+
+	/**
+	 * The "apply" signal will emit a vector containing the Ids of all
+	 * checked checkboxe.
+	 */
+	void applyIds(bool v = true) {_applyIds = v;}
+
+	/**
+	 * The "apply" signal will emit a vector containing the statuse of all
+	 * checkboxe.
+	 */
+	void applyStatus(bool v = true) {_applyIds = !v;}
 
 signals:
 	/** Signal emitted when the "Apply" button is pressed. */
-	void apply(QVector<int>);
+	void apply(int sd, QVector<int>);
 
 private:
 	void _applyPress();
 
-	QVBoxLayout		_topLayout;
+	virtual void _preApplyAction() {}
 
-	QHBoxLayout		_buttonLayout;
+	virtual void _postApplyAction() {}
 
-	KsCheckBoxWidget	*_checkBoxWidget;
+	bool _applyIds;
 
-	QPushButton		_applyButton, _cancelButton;
+	QVBoxLayout			_topLayout;
+
+	QHBoxLayout			_cbLayout, _buttonLayout;
+
+	QVector<KsCheckBoxWidget *>	_checkBoxWidgets;
+
+	QPushButton			_applyButton, _cancelButton;
 
 	QMetaObject::Connection		_applyButtonConnection;
+};
+
+/**
+ * The KsPluginsCheckBoxDialog provides dialog for selecting plugins.
+ * used by KernelShark. The class is used to override _postApplyAction().
+ */
+class KsPluginsCheckBoxDialog : public KsCheckBoxDialog
+{
+public:
+	KsPluginsCheckBoxDialog() = delete;
+
+	/** Create KsPluginsCheckBoxDialog. */
+	KsPluginsCheckBoxDialog(QVector<KsCheckBoxWidget *> cbws,
+				KsDataStore *d, QWidget *parent = nullptr)
+	: KsCheckBoxDialog(cbws, parent), _data(d) {}
+
+private:
+	virtual void _postApplyAction() override;
+
+	KsDataStore	*_data;
 };
 
 /** The KsCheckBoxTable class provides a table of checkboxes. */
@@ -205,8 +429,15 @@ class KsCheckBoxTableWidget : public KsCheckBoxWidget
 {
 	Q_OBJECT
 public:
-	KsCheckBoxTableWidget(const QString &name = "",
+	KsCheckBoxTableWidget(int sd, const QString &name = "",
 			      QWidget *parent = nullptr);
+
+	/** Only one checkboxe at the time can be checked. */
+	void setSingleSelection()
+	{
+		_table.setSelectionMode(QAbstractItemView::SingleSelection);
+		setVisibleCbAll(false);
+	}
 
 protected:
 	void _adjustSize();
@@ -266,8 +497,15 @@ class KsCheckBoxTreeWidget : public KsCheckBoxWidget
 public:
 	KsCheckBoxTreeWidget() = delete;
 
-	KsCheckBoxTreeWidget(const QString &name = "",
+	KsCheckBoxTreeWidget(int sd, const QString &name = "",
 			     QWidget *parent = nullptr);
+
+	/** Only one checkboxe at the time can be checked. */
+	void setSingleSelection()
+	{
+		_tree.setSelectionMode(QAbstractItemView::SingleSelection);
+		setVisibleCbAll(false);
+	}
 
 protected:
 	void _adjustSize();
@@ -304,7 +542,7 @@ struct KsCPUCheckBoxWidget : public KsCheckBoxTreeWidget
 {
 	KsCPUCheckBoxWidget() = delete;
 
-	KsCPUCheckBoxWidget(struct tep_handle *pe,
+	KsCPUCheckBoxWidget(kshark_data_stream *stream,
 			    QWidget *parent = nullptr);
 };
 
@@ -316,7 +554,7 @@ struct KsTasksCheckBoxWidget : public KsCheckBoxTableWidget
 {
 	KsTasksCheckBoxWidget() = delete;
 
-	KsTasksCheckBoxWidget(struct tep_handle *pe,
+	KsTasksCheckBoxWidget(kshark_data_stream *stream,
 			      bool cond = true,
 			      QWidget *parent = nullptr);
 
@@ -336,12 +574,17 @@ struct KsEventsCheckBoxWidget : public KsCheckBoxTreeWidget
 {
 	KsEventsCheckBoxWidget() = delete;
 
-	KsEventsCheckBoxWidget(struct tep_handle *pe,
+	KsEventsCheckBoxWidget(kshark_data_stream *stream,
 			       QWidget *parent = nullptr);
 
 	QStringList getCheckedEvents(bool option);
 
 	void removeSystem(QString name);
+
+private:
+	void _makeItems(kshark_data_stream *stream, QVector<int> eventIds);
+
+	void _makeTepEventItems(kshark_data_stream *stream, QVector<int> eventIds);
 };
 
 /**
@@ -351,8 +594,56 @@ struct KsPluginCheckBoxWidget : public KsCheckBoxTableWidget
 {
 	KsPluginCheckBoxWidget() = delete;
 
-	KsPluginCheckBoxWidget(QStringList pluginList,
+	KsPluginCheckBoxWidget(int sd, QStringList pluginList,
 			       QWidget *parent = nullptr);
+
+	void setInfo(int row, QString info);
+
+	void setActive(QVector<int> rows, bool a);
 };
+
+/**
+ * The KsDStreamCheckBoxWidget class provides a widget for selecting Data streams.
+ */
+struct KsDStreamCheckBoxWidget : public KsCheckBoxTableWidget
+{
+	explicit KsDStreamCheckBoxWidget(QWidget *parent = nullptr);
+};
+
+/**
+ * The KsEventFieldSelectWidget class provides a widget for selecting a data
+ * field of the trace event.
+ */
+class KsEventFieldSelectWidget : public QWidget
+{
+	Q_OBJECT
+public:
+	explicit KsEventFieldSelectWidget(QWidget *parent = nullptr);
+
+	/** Get the currently selected stream Id. */
+	int streamId() const {return _streamComboBox.currentData().toInt();}
+
+	/** Get the currently selected event name. */
+	QString eventName() const {return _eventComboBox.currentText();}
+
+	/** Get the currently selected field name. */
+	QString fieldName() const {return _fieldComboBox.currentText();}
+
+	void setStreamCombo();
+
+private slots:
+	void _streamChanged(const QString &stream);
+
+	void _eventChanged(const QString &event);
+
+private:
+	QVBoxLayout	_topLayout;
+
+	QComboBox	_streamComboBox, _eventComboBox, _fieldComboBox;
+
+	QLabel		_streamLabel, _eventLabel, _fieldLabel;
+};
+
+}; // KsWidgetsLib
 
 #endif

@@ -13,6 +13,7 @@
 #include "libkshark-plugin.h"
 #include "libkshark-tepdata.h"
 #include "KsUtils.hpp"
+#include "KsWidgetsLib.hpp"
 
 namespace KsUtils {
 
@@ -449,6 +450,34 @@ QStringList getFiles(QWidget *parent,
 		     QString &lastFilePath)
 {
 	return getFilesDialog(parent, windowName, filter, lastFilePath);
+}
+
+/**
+ * @brief Open a standard Qt getFileName dialog and return the name of the
+ *	  selected file. Only one file can be selected.
+ */
+QString getSaveFile(QWidget *parent,
+		    const QString &windowName,
+		    const QString &filter,
+		    const QString &extension,
+		    QString &lastFilePath)
+{
+	QString fileName = getFileDialog(parent,
+					 windowName,
+					 filter,
+					 lastFilePath,
+					 true);
+
+	if (!fileName.isEmpty() && !fileName.endsWith(extension)) {
+		fileName += extension;
+
+		if (QFileInfo(fileName).exists()) {
+			if (!KsWidgetsLib::fileExistsDialog(fileName))
+				fileName.clear();
+		}
+	}
+
+	return fileName;
 }
 
 /**
