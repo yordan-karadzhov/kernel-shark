@@ -37,6 +37,7 @@ static bool kshark_default_context(struct kshark_context **context)
 	kshark_ctx->stream = calloc(KS_DEFAULT_NUM_STREAMS,
 				    sizeof(*kshark_ctx->stream));
 	kshark_ctx->stream_info.array_size = KS_DEFAULT_NUM_STREAMS;
+	kshark_ctx->stream_info.next_free_stream_id = 0;
 	kshark_ctx->stream_info.max_stream_id = -1;
 
 	/* Will free kshark_context_handler. */
@@ -484,10 +485,22 @@ int kshark_close(struct kshark_context *kshark_ctx, int sd)
  */
 void kshark_close_all(struct kshark_context *kshark_ctx)
 {
+	size_t mem_reset_size;
 	int i;
+
+	if (kshark_ctx->stream_info.max_stream_id < 0)
+		return;
 
 	for (i = 0; i <= kshark_ctx->stream_info.max_stream_id; ++i)
 		kshark_close(kshark_ctx, i);
+
+	/* Reset the array of data stream descriptors. */
+	mem_reset_size = (kshark_ctx->stream_info.max_stream_id + 1 ) *
+			 sizeof(*kshark_ctx->stream);
+	memset(kshark_ctx->stream, 0, mem_reset_size);
+
+	kshark_ctx->stream_info.next_free_stream_id = 0;
+	kshark_ctx->stream_info.max_stream_id = -1;
 }
 
 /**
