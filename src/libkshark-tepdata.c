@@ -1587,7 +1587,7 @@ int kshark_tep_init_input(struct kshark_data_stream *stream)
 	tep_plugin_add_option("ftrace:parent", "1");
 	tep_plugin_add_option("ftrace:indent", "0");
 
-	input = tracecmd_open_head(stream->file);
+	input = tracecmd_open_head(stream->file, 0);
 	if (!input)
 		return -EEXIST;
 
