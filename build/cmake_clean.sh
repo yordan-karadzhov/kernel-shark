@@ -9,6 +9,7 @@ rm -rf src/
 rm -rf examples/
 rm -rf tests/
 rm -rf Testing/
+rm -f ../tests/*.dat
 rm -f ../lib/*
 rm ../kernelshark.desktop
 rm ../org.freedesktop.kshark-record.policy

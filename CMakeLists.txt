@@ -123,8 +123,9 @@ add_subdirectory(${KS_DIR}/examples)
 
 if (Boost_FOUND)
 
+    set(KS_TEST_DIR                      "${KS_DIR}/tests")
     enable_testing()
-    add_subdirectory(${KS_DIR}/tests)
+    add_subdirectory(${KS_TEST_DIR})
 
 endif()
 

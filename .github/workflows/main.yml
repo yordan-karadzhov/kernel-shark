@@ -35,6 +35,7 @@ jobs:
         make
         sudo make install
         sudo make install_libs
+
     - name: Create Build Environment
       # Some projects don't allow in-source building, so create a separate build directory
       # We'll use this as our working directory for all subsequent commands
@@ -61,3 +62,10 @@ jobs:
       shell: bash
       # Execute tests defined by the CMake configuration.
       run: ctest -C $BUILD_TYPE
+
+    - name: Upload Artifacts
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: artifacts-download
+        path: ${{runner.workspace}}/build/Testing/
