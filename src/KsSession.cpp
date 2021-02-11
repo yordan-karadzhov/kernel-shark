@@ -11,14 +11,13 @@
 
 // KernelShark
 #include "libkshark.h"
+#include "libkshark-tepdata.h"
 #include "KsSession.hpp"
-#include "KsMainWindow.hpp"
 
 /** Create a KsSession object. */
 KsSession::KsSession()
 {
-	_config = kshark_config_new("kshark.config.session",
-				      KS_CONFIG_JSON);
+	_config = kshark_session_config_new(KS_CONFIG_JSON);
 }
 
 /** Destroy a KsSession object. */
@@ -79,10 +78,11 @@ void KsSession::loadVisModel(KsGraphModel *model)
 }
 
 /** Save the trace data file. */
-void KsSession::saveDataFile(QString fileName)
+void KsSession::saveDataFile(QString fileName, QString dataSetName)
 {
 	kshark_config_doc *file =
 		kshark_export_trace_file(fileName.toStdString().c_str(),
+					 dataSetName.toStdString().c_str(),
 					 KS_CONFIG_JSON);
 
 	kshark_config_doc_add(_config, "Data", file);
@@ -92,54 +92,51 @@ void KsSession::saveDataFile(QString fileName)
 QString KsSession::getDataFile(kshark_context *kshark_ctx)
 {
 	kshark_config_doc *file = kshark_config_alloc(KS_CONFIG_JSON);
-	const char *file_str;
+	int sd;
 
 	if (!kshark_config_doc_get(_config, "Data", file))
 		return QString();
 
-	file_str = kshark_import_trace_file(kshark_ctx, file);
-	if (file_str)
-		return QString(file_str);
+	sd = kshark_import_trace_file(kshark_ctx, file);
+	if (sd)
+		return QString(kshark_ctx->stream[sd]->file);
 
 	return QString();
 }
 
 /**
- * @brief Save the configuration of the filters.
+ * @brief Save the configuration information for all load Data streams.
  *
  * @param kshark_ctx: Input location for context pointer.
  */
-void KsSession::saveFilters(kshark_context *kshark_ctx)
+void KsSession::saveDataStreams(kshark_context *kshark_ctx)
 {
-	kshark_config_doc *filters =
-		kshark_export_all_filters(kshark_ctx, KS_CONFIG_JSON);
-
-	kshark_config_doc_add(_config, "Filters", filters);
+	kshark_export_all_dstreams(kshark_ctx, &_config);
 }
 
 /**
- * @brief Load the configuration of the filters and filter the data.
+ * @brief Load Data streams.
  *
  * @param kshark_ctx: Input location for context pointer.
- * @param data: Input location for KsDataStore object;
+ * @param data:  Input location for KsDataStore object;
  */
-void KsSession::loadFilters(kshark_context *kshark_ctx, KsDataStore *data)
+void KsSession::loadDataStreams(kshark_context *kshark_ctx,
+				KsDataStore *data)
 {
-	kshark_config_doc *filters = kshark_config_alloc(KS_CONFIG_JSON);
+	ssize_t dataSize;
 
-	if (!kshark_config_doc_get(_config, "Filters", filters))
+	data->unregisterCPUCollections();
+
+	dataSize = kshark_import_all_dstreams(kshark_ctx,
+					      _config,
+					      data->rows_r());
+	if (dataSize < 0) {
+		data->clear();
 		return;
+	}
 
-	kshark_import_all_filters(kshark_ctx, filters);
-
-	if (kshark_ctx->advanced_event_filter->filters)
-		data->reload();
-	else
-		kshark_filter_entries(kshark_ctx, data->rows(), data->size());
-
+	data->setSize(dataSize);
 	data->registerCPUCollections();
-
-	emit data->updateWidgets(data);
 }
 
 /**
@@ -152,7 +149,7 @@ void KsSession::saveTable(const KsTraceViewer &view) {
 	int64_t r = view.getTopRow();
 
 	topRow->conf_doc = json_object_new_int64(r);
-	kshark_config_doc_add(_config, "ViewTop",topRow);
+	kshark_config_doc_add(_config, "ViewTop", topRow);
 }
 
 /**
@@ -197,39 +194,6 @@ void KsSession::saveMainWindowSize(const QMainWindow &window)
 }
 
 /**
- * @brief Load the KernelShark Main window size.
- *
- * @param window: Input location for the KsMainWindow widget.
- */
-void KsSession::loadMainWindowSize(KsMainWindow *window)
-{
-	kshark_config_doc *windowConf = kshark_config_alloc(KS_CONFIG_JSON);
-	json_object *jwindow, *jwidth, *jheight;
-	int width, height;
-
-	if (!kshark_config_doc_get(_config, "MainWindow", windowConf))
-		return;
-
-	if (_config->format == KS_CONFIG_JSON) {
-		jwindow = KS_JSON_CAST(windowConf->conf_doc);
-		if (json_object_get_type(jwindow) == json_type_string &&
-		    QString(json_object_get_string(jwindow)) == "FullScreen") {
-			window->setFullScreenMode(true);
-			return;
-		}
-
-		jwidth = json_object_array_get_idx(jwindow, 0);
-		jheight = json_object_array_get_idx(jwindow, 1);
-
-		width = json_object_get_int(jwidth);
-		height = json_object_get_int(jheight);
-
-		window->setFullScreenMode(false);
-		window->resize(width, height);
-	}
-}
-
-/**
  * @brief Save the state of the Main window spliter.
  *
  * @param splitter: Input location for the splitter widget.
@@ -269,6 +233,7 @@ void KsSession::loadSplitterSize(QSplitter *splitter)
 
 		graphSize = json_object_get_int(jgraphsize);
 		viewSize = json_object_get_int(jviewsize);
+
 		if (graphSize == 0 && viewSize == 0) {
 			/* 0/0 spliter ratio is undefined. Make it 1/1. */
 			viewSize = graphSize = 1;
@@ -282,7 +247,7 @@ void KsSession::loadSplitterSize(QSplitter *splitter)
 /** @brief Save the Color scheme used. */
 void KsSession::saveColorScheme() {
 	kshark_config_doc *colSch = kshark_config_alloc(KS_CONFIG_JSON);
-	double s = KsPlot::Color::getRainbowFrequency();
+	double s = KsPlot::Color::rainbowFrequency();
 
 	colSch->conf_doc = json_object_new_double(s);
 	kshark_config_doc_add(_config, "ColorScheme", colSch);
@@ -307,97 +272,235 @@ float KsSession::getColorScheme() {
 /**
  * @brief Save the list of the graphs plotted.
  *
- * @param glw: Input location for the KsGLWidget widget.
+ * @param kshark_ctx: Input location for context pointer.
+ * @param graphs: Input location for the KsTraceGraph widget..
  */
-void KsSession::saveGraphs(const KsGLWidget &glw)
+void KsSession::saveGraphs(kshark_context *kshark_ctx,
+			   KsTraceGraph &graphs)
 {
-	_saveCPUPlots(glw._cpuList);
-	_saveTaskPlots(glw._taskList);
+	QVector<int> streamIds = KsUtils::getStreamIdList(kshark_ctx);
+	for (auto const &sd: streamIds) {
+		_saveCPUPlots(sd, graphs.glPtr());
+		_saveTaskPlots(sd, graphs.glPtr());
+	}
+
+	_saveComboPlots(graphs.glPtr());
 }
 
 /**
  * @brief Load the list of the graphs and plot.
  *
+ * @param kshark_ctx: Input location for context pointer.
  * @param graphs: Input location for the KsTraceGraph widget.
  */
-void KsSession::loadGraphs(KsTraceGraph *graphs)
+void KsSession::loadGraphs(kshark_context *kshark_ctx,
+			   KsTraceGraph &graphs)
 {
-	graphs->cpuReDraw(_getCPUPlots());
-	graphs->taskReDraw(_getTaskPlots());
-}
+	QVector<int> combos, streamIds;
+	int nCombos;
 
-void KsSession::_saveCPUPlots(const QVector<int> &cpus)
-{
-	kshark_config_doc *cpuPlts = kshark_config_alloc(KS_CONFIG_JSON);
-	json_object *jcpus = json_object_new_array();
-
-	for (int i = 0; i < cpus.count(); ++i) {
-		json_object *jcpu = json_object_new_int(cpus[i]);
-		json_object_array_put_idx(jcpus, i, jcpu);
+	streamIds = KsUtils::getStreamIdList(kshark_ctx);
+	for (auto const &sd: streamIds) {
+		graphs.cpuReDraw(sd, _getCPUPlots(sd));
+		graphs.taskReDraw(sd, _getTaskPlots(sd));
 	}
 
-	cpuPlts->conf_doc = jcpus;
-	kshark_config_doc_add(_config, "CPUPlots", cpuPlts);
+	combos = _getComboPlots(&nCombos);
+	if (nCombos > 0)
+		graphs.comboReDraw(nCombos, combos);
 }
 
-QVector<int> KsSession::_getCPUPlots()
+void KsSession::_savePlots(int sd, KsGLWidget *glw, bool cpu)
 {
-	kshark_config_doc *cpuPlts = kshark_config_alloc(KS_CONFIG_JSON);
-	json_object *jcpus;
-	QVector<int> cpus;
-	size_t length;
+	kshark_config_doc *streamsConf = kshark_config_alloc(KS_CONFIG_JSON);
+	json_object *jallStreams, *jstream, *jstreamId, *jplots;
+	QVector<int> plotIds;
+	int nStreams;
 
-	if (!kshark_config_doc_get(_config, "CPUPlots", cpuPlts))
-		return cpus;
+	if (cpu) {
+		plotIds = glw->_streamPlots[sd]._cpuList;
+	} else {
+		plotIds = glw->_streamPlots[sd]._taskList;
+	}
+
+	if (!kshark_config_doc_get(_config, "data streams", streamsConf) ||
+	    streamsConf->format != KS_CONFIG_JSON)
+		return;
+
+	jallStreams = KS_JSON_CAST(streamsConf->conf_doc);
+	if (json_object_get_type(jallStreams) != json_type_array)
+		return;
+
+	nStreams = json_object_array_length(jallStreams);
+	for (int i = 0; i < nStreams; ++i) {
+		jstream = json_object_array_get_idx(jallStreams, i);
+		if (json_object_object_get_ex(jstream, "stream id", &jstreamId) &&
+		    json_object_get_int(jstreamId) == sd)
+			break;
+
+		jstream = nullptr;
+	}
+
+	free(streamsConf);
+	if (!jstream)
+		return;
+
+	jplots = json_object_new_array();
+	for (int i = 0; i < plotIds.count(); ++i) {
+		json_object *jcpu = json_object_new_int(plotIds[i]);
+		json_object_array_put_idx(jplots, i, jcpu);
+	}
+
+	if (cpu)
+		json_object_object_add(jstream, "CPUPlots", jplots);
+	else
+		json_object_object_add(jstream, "TaskPlots", jplots);
+}
+
+void KsSession::_saveCPUPlots(int sd, KsGLWidget *glw)
+{
+	_savePlots(sd, glw, true);
+}
+
+void KsSession::_saveTaskPlots(int sd, KsGLWidget *glw)
+{
+	_savePlots(sd, glw, false);
+}
+
+void KsSession::_saveComboPlots(KsGLWidget *glw)
+{
+	kshark_config_doc *combos = kshark_config_alloc(KS_CONFIG_JSON);
+	json_object *jcombos, *jplots, *jplt;
+	int var;
+
+	jcombos = json_object_new_array();
+	for (auto const &c: glw->_comboPlots) {
+		jplots = json_object_new_array();
+		for (auto const &p: c) {
+			jplt = json_object_new_array();
+			var = p._streamId;
+			json_object_array_put_idx(jplt, 0,
+						  json_object_new_int(var));
+
+			var = p._type;
+			json_object_array_put_idx(jplt, 1,
+						  json_object_new_int(var));
+
+			var = p._id;
+			json_object_array_put_idx(jplt, 2,
+						  json_object_new_int(var));
+
+			json_object_array_add(jplots, jplt);
+		}
+
+		json_object_array_add(jcombos, jplots);
+	}
+
+	combos->conf_doc = jcombos;
+	kshark_config_doc_add(_config, "ComboPlots", combos);
+}
+
+QVector<int> KsSession::_getPlots(int sd, bool cpu)
+{
+	kshark_config_doc *streamsConf = kshark_config_alloc(KS_CONFIG_JSON);
+	json_object *jallStreams, *jstream, *jstreamId, *jplots;
+	int nStreams, nPlots, id;
+	const char *plotKey;
+	QVector<int> plots;
+
+	if (!kshark_config_doc_get(_config, "data streams", streamsConf) ||
+	    streamsConf->format != KS_CONFIG_JSON)
+		return plots;
+
+	jallStreams = KS_JSON_CAST(streamsConf->conf_doc);
+	if (json_object_get_type(jallStreams) != json_type_array)
+		return plots;
+
+	nStreams = json_object_array_length(jallStreams);
+	for (int i = 0; i < nStreams; ++i) {
+		jstream = json_object_array_get_idx(jallStreams, i);
+		if (json_object_object_get_ex(jstream, "stream id", &jstreamId) &&
+		    json_object_get_int(jstreamId) == sd)
+			break;
+
+		jstream = nullptr;
+	}
+
+	if (!jstream)
+		return plots;
+
+	if (cpu)
+		plotKey = "CPUPlots";
+	else
+		plotKey = "TaskPlots";
+
+	if (!json_object_object_get_ex(jstream, plotKey, &jplots) ||
+	    json_object_get_type(jplots) != json_type_array)
+		return plots;
+
+	nPlots = json_object_array_length(jplots);
+	for (int i = 0; i < nPlots; ++i) {
+		id = json_object_get_int(json_object_array_get_idx(jplots, i));
+		plots.append(id);
+	}
+
+	return plots;
+}
+
+QVector<int> KsSession::_getCPUPlots(int sd)
+{
+	return _getPlots(sd, true);
+}
+
+QVector<int> KsSession::_getTaskPlots(int sd)
+{
+	return _getPlots(sd, false);
+}
+
+QVector<int> KsSession::_getComboPlots(int *n)
+{
+	kshark_config_doc *combos = kshark_config_alloc(KS_CONFIG_JSON);
+	int nCombos, nPlots, sd, type, id;
+	json_object *jcombos, *jplots, *jplt, *jvar;
+	QVector<int> vec;
+
+	*n = 0;
+	if (!kshark_config_doc_get(_config, "ComboPlots", combos))
+		return {};
 
 	if (_config->format == KS_CONFIG_JSON) {
-		jcpus = KS_JSON_CAST(cpuPlts->conf_doc);
-		length = json_object_array_length(jcpus);
-		for (size_t i = 0; i < length; ++i) {
-			int cpu = json_object_get_int(json_object_array_get_idx(jcpus,
-										i));
-			cpus.append(cpu);
+		jcombos = KS_JSON_CAST(combos->conf_doc);
+		if (json_object_get_type(jcombos) != json_type_array)
+			return {};
+
+		*n = nCombos = json_object_array_length(jcombos);
+		for (int i = 0; i < nCombos; ++i) {
+			jplots = json_object_array_get_idx(jcombos, i);
+			if (json_object_get_type(jplots) != json_type_array)
+				return {};
+
+			nPlots =  json_object_array_length(jplots);
+			vec.append(nPlots);
+			for (int j = 0; j < nPlots; ++j) {
+				jplt = json_object_array_get_idx(jplots, j);
+				if (json_object_get_type(jplt) != json_type_array)
+					return {};
+
+				jvar = json_object_array_get_idx(jplt, 0);
+				sd = json_object_get_int(jvar);
+
+				jvar = json_object_array_get_idx(jplt, 1);
+				type = json_object_get_int(jvar);
+
+				jvar = json_object_array_get_idx(jplt, 2);
+				id = json_object_get_int(jvar);
+
+				vec.append({sd, type, id});
+			}
 		}
 	}
 
-	return cpus;
-}
-
-void KsSession::_saveTaskPlots(const QVector<int> &tasks)
-{
-	kshark_config_doc *taskPlts = kshark_config_alloc(KS_CONFIG_JSON);
-	json_object *jtasks = json_object_new_array();
-
-	for (int i = 0; i < tasks.count(); ++i) {
-		json_object *jtask = json_object_new_int(tasks[i]);
-		json_object_array_put_idx(jtasks, i, jtask);
-	}
-
-	taskPlts->conf_doc = jtasks;
-	kshark_config_doc_add(_config, "TaskPlots", taskPlts);
-}
-
-QVector<int> KsSession::_getTaskPlots()
-{
-	kshark_config_doc *taskPlts = kshark_config_alloc(KS_CONFIG_JSON);
-	json_object *jtasks;
-	QVector<int> tasks;
-	size_t length;
-
-	if (!kshark_config_doc_get(_config, "TaskPlots", taskPlts))
-		return tasks;
-
-	if (_config->format == KS_CONFIG_JSON) {
-		jtasks = KS_JSON_CAST(taskPlts->conf_doc);
-		length = json_object_array_length(jtasks);
-		for (size_t i = 0; i < length; ++i) {
-			int pid = json_object_get_int(json_object_array_get_idx(jtasks,
-										i));
-			tasks.append(pid);
-		}
-	}
-
-	return tasks;
+	return vec;
 }
 
 /**
@@ -407,7 +510,7 @@ QVector<int> KsSession::_getTaskPlots()
  */
 void KsSession::saveDualMarker(KsDualMarkerSM *dm)
 {
-	struct kshark_config_doc *markers =
+	kshark_config_doc *markers =
 		kshark_config_new("kshark.config.markers", KS_CONFIG_JSON);
 	json_object *jd_mark = KS_JSON_CAST(markers->conf_doc);
 
@@ -450,7 +553,7 @@ void KsSession::saveDualMarker(KsDualMarkerSM *dm)
  */
 void KsSession::loadDualMarker(KsDualMarkerSM *dm, KsTraceGraph *graphs)
 {
-	size_t pos;
+	uint64_t pos;
 
 	dm->reset();
 	dm->setState(DualMarkerState::A);
@@ -476,7 +579,7 @@ void KsSession::loadDualMarker(KsDualMarkerSM *dm, KsTraceGraph *graphs)
 
 json_object *KsSession::_getMarkerJson()
 {
-	struct kshark_config_doc *markers =
+	kshark_config_doc *markers =
 		kshark_config_alloc(KS_CONFIG_JSON);
 
 	if (!kshark_config_doc_get(_config, "Markers", markers) ||
@@ -529,33 +632,23 @@ DualMarkerState KsSession::_getMarkerState()
  *
  * @param pm: Input location for the KsPluginManager object.
  */
-void KsSession::savePlugins(const KsPluginManager &pm)
+void KsSession::saveUserPlugins(const KsPluginManager &pm)
 {
-	struct kshark_config_doc *plugins =
+	kshark_config_doc *plugins =
 		kshark_config_new("kshark.config.plugins", KS_CONFIG_JSON);
 	json_object *jplugins = KS_JSON_CAST(plugins->conf_doc);
-	const QVector<bool> &registeredPlugins = pm._registeredKsPlugins;
-	const QStringList &pluginList = pm._ksPluginList;
-	int nPlugins = pluginList.length();
-	json_object *jlist, *jpl;
-	QByteArray array;
-	char* buffer;
-	bool active;
+	json_object *jplg, *jlist = json_object_new_array();
 
-	jlist = json_object_new_array();
-	for (int i = 0; i < nPlugins; ++i) {
-		array = pluginList[i].toLocal8Bit();
-		buffer = array.data();
-		jpl = json_object_new_array();
-		json_object_array_put_idx(jpl, 0, json_object_new_string(buffer));
-
-		active = registeredPlugins[i];
-		json_object_array_put_idx(jpl, 1, json_object_new_boolean(active));
-		json_object_array_put_idx(jlist, i, jpl);
+	for (auto const p: pm.getUserPlugins()) {
+		kshark_config_doc *lib =
+			kshark_export_plugin_file(p, KS_CONFIG_JSON);
+		jplg = KS_JSON_CAST(lib->conf_doc);
+		json_object_array_add(jlist, jplg);
+		free(lib);
 	}
 
-	json_object_object_add(jplugins, "Plugin List", jlist);
-	kshark_config_doc_add(_config, "Plugins", plugins);
+	json_object_object_add(jplugins, "obj. files", jlist);
+	kshark_config_doc_add(_config, "User Plugins", plugins);
 }
 
 /**
@@ -564,37 +657,21 @@ void KsSession::savePlugins(const KsPluginManager &pm)
  * @param kshark_ctx: Input location for context pointer.
  * @param pm: Input location for the KsPluginManager object.
  */
-void KsSession::loadPlugins(kshark_context *kshark_ctx, KsPluginManager *pm)
+void KsSession::loadUserPlugins(kshark_context *kshark_ctx, KsPluginManager *pm)
 {
-	kshark_config_doc *plugins = kshark_config_alloc(KS_CONFIG_JSON);
-	json_object *jplugins, *jlist, *jpl;
-	const char *pluginName;
-	QVector<int> pluginIds;
-	int length, index;
-	bool loaded;
+	kshark_config_doc *plugins =
+		kshark_config_alloc(KS_CONFIG_JSON);
+	kshark_plugin_list *list, **last;
 
-	if (!kshark_config_doc_get(_config, "Plugins", plugins) ||
-	    !kshark_type_check(plugins, "kshark.config.plugins"))
+	if (!kshark_config_doc_get(_config, "User Plugins", plugins))
 		return;
 
-	if (plugins->format == KS_CONFIG_JSON) {
-		jplugins = KS_JSON_CAST(plugins->conf_doc);
-		json_object_object_get_ex(jplugins, "Plugin List", &jlist);
-		if (!jlist ||
-	            json_object_get_type(jlist) != json_type_array ||
-		    !json_object_array_length(jlist))
-			return;
+	/* Get the list of already loaded plugins. */
+	list = kshark_ctx->plugins;
 
-		length = json_object_array_length(jlist);
-		for (int i = 0; i < length; ++i) {
-			jpl = json_object_array_get_idx(jlist, i);
-			pluginName = json_object_get_string(json_object_array_get_idx(jpl, 0));
-			index = pm->_ksPluginList.indexOf(pluginName);
-			loaded = json_object_get_boolean(json_object_array_get_idx(jpl, 1));
-			if (index >= 0 && loaded)
-				pluginIds.append(index);
-		}
-	}
+	kshark_import_all_plugins(kshark_ctx, plugins);
 
-	pm->updatePlugins(pluginIds);
+	/* Loop until the beginning of the old list. */
+	for (last = &kshark_ctx->plugins; *last != list; last = &(*last)->next)
+		pm->addUserPluginToList(*last);
 }

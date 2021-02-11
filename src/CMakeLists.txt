@@ -83,7 +83,7 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
 
     add_library(kshark-gui  SHARED  ${ks-guiLib_hdr_moc}    KsUtils.cpp
                                                             KsModels.cpp
-#                                                             KsSession.cpp
+                                                            KsSession.cpp
                                                             KsGLWidget.cpp
                                                             KsSearchFSM.cpp
                                                             KsDualMarker.cpp

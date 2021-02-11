@@ -20,8 +20,6 @@
 #include "KsTraceGraph.hpp"
 #include "KsTraceViewer.hpp"
 
-class KsMainWindow;
-
 /**
  * The KsSession class provides instruments for importing/exporting the state
  * of the different components of the GUI from/to Json documents. These
@@ -41,7 +39,7 @@ public:
 
 	void exportToFile(QString jfileName);
 
-	void saveDataFile(QString fileName);
+	void saveDataFile(QString fileName, QString dataSetName);
 
 	QString getDataFile(kshark_context *kshark_ctx);
 
@@ -49,17 +47,18 @@ public:
 
 	void loadVisModel(KsGraphModel *model);
 
-	void saveGraphs(const KsGLWidget &glw);
+	void saveGraphs(kshark_context *kshark_ctx,
+			KsTraceGraph &graphs);
 
-	void loadGraphs(KsTraceGraph *graphs);
+	void loadGraphs(kshark_context *kshark_ctx,
+			KsTraceGraph &graphs);
 
-	void saveFilters(kshark_context *kshark_ctx);
+	void saveDataStreams(kshark_context *kshark_ctx);
 
-	void loadFilters(kshark_context *kshark_ctx, KsDataStore *data);
+	void loadDataStreams(kshark_context *kshark_ctx,
+			     KsDataStore *data);
 
 	void saveMainWindowSize(const QMainWindow &window);
-
-	void loadMainWindowSize(KsMainWindow *window);
 
 	void saveSplitterSize(const QSplitter &splitter);
 
@@ -69,9 +68,9 @@ public:
 
 	void loadDualMarker(KsDualMarkerSM *dmm, KsTraceGraph *graphs);
 
-	void savePlugins(const KsPluginManager &pm);
+	void saveUserPlugins(const KsPluginManager &pm);
 
-	void loadPlugins(kshark_context *kshark_ctx, KsPluginManager *pm);
+	void loadUserPlugins(kshark_context *kshark_ctx, KsPluginManager *pm);
 
 	void saveTable(const KsTraceViewer &view);
 
@@ -86,13 +85,21 @@ private:
 
 	json_object *_getMarkerJson();
 
-	void _saveCPUPlots(const QVector<int> &cpus);
+	void _savePlots(int sd, KsGLWidget *glw, bool cpu);
 
-	QVector<int> _getCPUPlots();
+	QVector<int> _getPlots(int sd, bool cpu);
 
-	void _saveTaskPlots(const QVector<int> &tasks);
+	void _saveCPUPlots(int sd, KsGLWidget *glw);
 
-	QVector<int> _getTaskPlots();
+	QVector<int> _getCPUPlots(int sd);
+
+	void _saveTaskPlots(int sd, KsGLWidget *glw);
+
+	QVector<int> _getTaskPlots(int sd);
+
+	void _saveComboPlots(KsGLWidget *glw);
+
+	QVector<int> _getComboPlots(int *nCombos);
 
 	bool _getMarker(const char* name, size_t *pos);
 
