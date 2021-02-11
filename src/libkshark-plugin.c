@@ -457,6 +457,7 @@ kshark_register_input(struct kshark_context *kshark_ctx,
 	input->interface = plugin;
 	input->next = kshark_ctx->inputs;
 	kshark_ctx->inputs = input;
+	kshark_ctx->n_inputs++;
 	return input;
 
  conflict:
@@ -489,6 +490,7 @@ void kshark_unregister_input(struct kshark_context *kshark_ctx,
 			*last = this_input->next;
 
 			free(this_input);
+			kshark_ctx->n_inputs--;
 
 			return;
 		}
