@@ -406,6 +406,16 @@ public:
 	/** If True, the Mark will be plotted as a dashed line. */
 	void setDashed(bool d) {_dashed = d;}
 
+	/** Get the Y coordinate of the Mark's Combo point. */
+	int comboY() const {return _combo.y();}
+
+	void setComboY(int yCombo);
+
+	/** Is the Combo point visible. */
+	bool comboIsVisible() const {return _combo._visible;}
+
+	void setComboVisible(bool v);
+
 private:
 	void _draw(const Color &col, float size = 1.) const override;
 
@@ -421,7 +431,10 @@ private:
 	/** A point indicating the position of the Mark in a Task graph. */
 	Point _task;
 
-	/* If True, plot the Mark as a dashed line. */
+	/** A point indicating the position of the Mark in a Combo graph. */
+	Point _combo;
+
+	/** If True, plot the Mark as a dashed line. */
 	bool _dashed;
 };
 

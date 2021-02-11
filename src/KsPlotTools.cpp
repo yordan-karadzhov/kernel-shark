@@ -701,7 +701,7 @@ void Mark::_draw(const Color &col, float size) const
 void Mark::setDPR(int dpr)
 {
 	_size = 1.5 * dpr;
-	_task._size = _cpu._size = 1.5 + 4.0 * dpr;
+	_task._size = _cpu._size = _combo._size = 1.5 + 4.0 * dpr;
 }
 
 /**
@@ -715,6 +715,7 @@ void Mark::setX(int x)
 	_b.setX(x);
 	_cpu.setX(x);
 	_task.setX(x);
+	_combo.setX(x);
 }
 
 /**
@@ -767,6 +768,26 @@ void Mark::setTaskY(int yTask)
 void Mark::setTaskVisible(bool v)
 {
 	_task._visible = v;
+}
+
+/**
+ * @brief Set the visiblity of the Mark's Combo point.
+ *
+ * @param v: If True, the Task point will be visible.
+ */
+void Mark::setComboVisible(bool v)
+{
+	_combo._visible = v;
+}
+
+/**
+ * @brief Set the Y coordinates (vertical) of the Mark's Combo points.
+ *
+ * @param yCombo: Y coordinate of the Mark's Task point.
+ */
+void Mark::setComboY(int yCombo)
+{
+	_combo.setY(yCombo);
 }
 
 /**
