@@ -3,7 +3,7 @@ rm CMakeCache.txt
 rm cmake_install.cmake
 rm Makefile
 rm CTestTestfile.cmake
-rm DartConfiguration.tcl
+rm -f DartConfiguration.tcl
 rm -rf CMakeFiles/
 rm -rf src/
 rm -rf examples/

@@ -29,6 +29,9 @@
 /** Qt - old version detected. */
 #cmakedefine QT_VERSION_LESS_5_11
 
+/** Location of the KernelShark tests. */
+#cmakedefine KS_TEST_DIR "@KS_TEST_DIR@"
+
 /** Semicolon-separated list of plugin names. */
 #define KS_BUILTIN_PLUGINS "@PLUGINS@"
 

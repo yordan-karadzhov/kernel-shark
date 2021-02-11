@@ -144,10 +144,13 @@ if (_DOXYGEN_DOC AND DOXYGEN_FOUND)
 
 endif ()
 
-configure_file( ${KS_DIR}/build/ks.desktop.cmake
-                ${KS_DIR}/${KS_APP_NAME}.desktop)
+configure_file(${KS_DIR}/build/deff.h.cmake
+               ${KS_DIR}/src/KsCmakeDef.hpp)
 
-configure_file( ${KS_DIR}/build/org.freedesktop.kshark-record.policy.cmake
-                ${KS_DIR}/org.freedesktop.kshark-record.policy)
+configure_file(${KS_DIR}/build/ks.desktop.cmake
+               ${KS_DIR}/${KS_APP_NAME}.desktop)
+
+configure_file(${KS_DIR}/build/org.freedesktop.kshark-record.policy.cmake
+               ${KS_DIR}/org.freedesktop.kshark-record.policy)
 
 message("")
