@@ -361,6 +361,17 @@ kshark_get_data_stream(struct kshark_context *kshark_ctx, int sd)
 	return NULL;
 }
 
+static struct kshark_data_stream *
+get_stream_object(struct kshark_context *kshark_ctx, int sd)
+{
+	if (sd >= 0 && sd <= kshark_ctx->stream_info.max_stream_id)
+		if (kshark_ctx->stream[sd] &&
+		    kshark_is_valid_stream(kshark_ctx->stream[sd]))
+			return kshark_ctx->stream[sd];
+
+	return NULL;
+}
+
 /**
  * @brief Get the Data stream object corresponding to a given entry
  *
@@ -443,7 +454,7 @@ int kshark_close(struct kshark_context *kshark_ctx, int sd)
 	struct kshark_data_stream *stream;
 	int ret;
 
-	stream = kshark_get_data_stream(kshark_ctx, sd);
+	stream = get_stream_object(kshark_ctx, sd);
 	if (!stream)
 		return -EFAULT;
 
@@ -1182,7 +1193,7 @@ bool kshark_filter_is_set(struct kshark_context *kshark_ctx, int sd)
 {
 	struct kshark_data_stream *stream;
 
-	stream = kshark_get_data_stream(kshark_ctx, sd);
+	stream = get_stream_object(kshark_ctx, sd);
 	if (!stream)
 		return false;
 
