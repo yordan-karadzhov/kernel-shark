@@ -14,6 +14,7 @@
 
 // KernelShark
 #include "libkshark.h"
+#include "libkshark-tepdata.h"
 #include "KsUtils.hpp"
 #include "KsCmakeDef.hpp"
 #include "KsCaptureDialog.hpp"
@@ -22,11 +23,6 @@ extern "C" {
   // To get access to geteuid()
   #include <unistd.h>
   #include <sys/types.h>
-}
-
-static inline tep_handle *local_events()
-{
-	return tracefs_local_events(tracefs_tracing_dir());
 }
 
 /**
@@ -48,11 +44,28 @@ QSize KsCommandLineEdit::sizeHint() const
 	return {FONT_WIDTH * 30, FONT_HEIGHT * 3};
 }
 
+static kshark_data_stream *_initLocalStream()
+{
+	kshark_context *kshark_ctx(nullptr);
+	kshark_data_stream *stream;
+	int sd;
+
+	if (!kshark_instance(&kshark_ctx))
+		return nullptr;
+
+	sd = kshark_add_stream(kshark_ctx);
+	stream = kshark_ctx->stream[sd];
+
+	kshark_tep_init_local(stream);
+
+	return stream;
+}
+
 /** @brief Create KsCaptureControl widget. */
 KsCaptureControl::KsCaptureControl(QWidget *parent)
 : QWidget(parent),
-  _localTEP(local_events()),
-  _eventsWidget(_localTEP, this),
+  _stream(_initLocalStream()),
+  _eventsWidget(_stream),
   _pluginsLabel("Plugin: ", this),
   _outputLabel("Output file: ", this),
   _commandLabel("Command: ", this),
@@ -80,7 +93,7 @@ KsCaptureControl::KsCaptureControl(QWidget *parent)
 		_topLayout.addWidget(line);
 	};
 
-	if (pluginList.count() == 0 || !_localTEP) {
+	if (pluginList.count() == 0 || !kshark_get_tep(_stream)) {
 		/*
 		 * No plugins or events have been found. Most likely this is
 		 * because the process has no Root privileges or because
@@ -88,7 +101,7 @@ KsCaptureControl::KsCaptureControl(QWidget *parent)
 		 */
 		QString message("Error: No events or plugins found.\n");
 
-		if (!_localTEP)
+		if (!kshark_get_tep(_stream))
 			message += "Cannot find or mount tracing directory.\n";
 
 		// geteuid() returns 0 if running as effective id of root
@@ -202,23 +215,19 @@ QStringList KsCaptureControl::getArgs()
 QStringList KsCaptureControl::_getPlugins()
 {
 	QStringList pluginList;
-	char **all_plugins;
+	char **all_tracers;
 
-	all_plugins = tracefs_tracers(tracefs_tracing_dir());
+	all_tracers = kshark_tracecmd_local_plugins();
 
-	if (!all_plugins)
+	if (!all_tracers)
 		return pluginList;
 
-	for (int i = 0; all_plugins[i]; ++i) {
-		/*
-		 * TODO plugin selection here.
-		 * printf("plugin %i %s\n", i, all_plugins[i]);
-		 */
-		pluginList << all_plugins[i];
-		free(all_plugins[i]);
+	for (int i = 0; all_tracers[i]; ++i) {
+		pluginList << all_tracers[i];
+		free(all_tracers[i]);
 	}
 
-	free (all_plugins);
+	free(all_tracers);
 	std::sort(pluginList.begin(), pluginList.end());
 
 	return pluginList;
@@ -226,19 +235,16 @@ QStringList KsCaptureControl::_getPlugins()
 
 void KsCaptureControl::_importSettings()
 {
-	int nEvts = tep_get_events_count(_localTEP), nIds;
+	QVector<int> event_ids = _eventsWidget.getIds();
+	QVector<int> status(_stream->n_events, 0);
 	kshark_config_doc *conf, *jevents, *temp;
-	QVector<bool> v(nEvts, false);
-	tracecmd_filter_id *eventHash;
-	QVector<int> eventIds;
+	kshark_hash_id *eventHash;
 	QString fileName;
+	int nIds;
 
 	auto lamImportError = [this] () {
 		emit print("ERROR: Unable to load the configuration file.\n");
 	};
-
-	/** Get all available events. */
-	eventIds = KsUtils::getEventIdList(TEP_EVENT_SORT_SYSTEM);
 
 	/* Get the configuration document. */
 	fileName = KsUtils::getFile(this, "Import from Filter",
@@ -267,8 +273,9 @@ void KsCaptureControl::_importSettings()
 		return;
 	}
 
-	eventHash = tracecmd_filter_id_hash_alloc();
-	nIds = kshark_import_event_filter(_localTEP, eventHash, "Events", jevents);
+	eventHash = kshark_get_filter(_stream, KS_SHOW_EVENT_FILTER);
+	nIds = kshark_import_event_filter(_stream, KS_SHOW_EVENT_FILTER,
+					  "Events", jevents);
 	if (nIds < 0) {
 		QString err("WARNING: ");
 		err += "Some of the imported events are not available on this system.\n";
@@ -276,13 +283,12 @@ void KsCaptureControl::_importSettings()
 		emit print(err);
 	}
 
-	for (int i = 0; i < nEvts; ++i) {
-		if (tracecmd_filter_id_find(eventHash, eventIds[i]))
-			v[i] = true;
+	for (int i = 0; i < _stream->n_events; ++i) {
+		if (kshark_hash_id_find(eventHash, event_ids[i]))
+			status[i] = true;
 	}
 
-	_eventsWidget.set(v);
-	tracecmd_filter_id_hash_free(eventHash);
+	_eventsWidget.set(status);
 
 	/** Get all available plugins. */
 	temp = kshark_string_config_alloc();
@@ -294,9 +300,9 @@ void KsCaptureControl::_importSettings()
 		if (pluginIndex >= 0) {
 			_pluginsComboBox.setCurrentText(KS_C_STR_CAST(temp->conf_doc));
 		} else {
-			QString err("WARNING: The traceer plugin \"");
+			QString err("WARNING: The tracer plugin \"");
 			err += plugin;
-			err += "\" is not available on this machine\n";
+			err += "\" is not available on this machine!\n";
 			emit print(err);
 		}
 	}
@@ -329,18 +335,20 @@ void KsCaptureControl::_exportSettings()
 	events = kshark_filter_config_new(KS_CONFIG_JSON);
 
 	/*
-	 * Use the tracecmd_filter_id to save all selected events in the
+	 * Use the kshark_hash_id to save all selected events in the
 	 * configuration file.
 	 */
 	ids = _eventsWidget.getCheckedIds();
-	tracecmd_filter_id *eventHash = tracecmd_filter_id_hash_alloc();
-	for (auto const &id: ids)
-		tracecmd_filter_id_add(eventHash, id);
+	kshark_hash_id *eventHash = kshark_get_filter(_stream,
+						      KS_SHOW_EVENT_FILTER);
 
-	kshark_export_event_filter(_localTEP, eventHash, "Events", events);
+	for (auto const &id: ids)
+		kshark_hash_id_add(eventHash, id);
+
+	kshark_export_event_filter(_stream, KS_SHOW_EVENT_FILTER, "Events", events);
 	kshark_config_doc_add(conf, "Events", events);
 
-	tracecmd_filter_id_hash_free(eventHash);
+	kshark_hash_id_free(eventHash);
 
 	/* Save the plugin. */
 	plugin = _pluginsComboBox.currentText();

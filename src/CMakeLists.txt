@@ -75,7 +75,7 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
                         KsTraceGraph.hpp
                         KsTraceViewer.hpp
 #                         KsMainWindow.hpp
-#                         KsCaptureDialog.hpp
+                        KsCaptureDialog.hpp
                         KsQuickContextMenu.hpp
                         KsAdvFilteringDialog.hpp)
 
@@ -91,7 +91,7 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
                                                             KsTraceGraph.cpp
                                                             KsTraceViewer.cpp
 #                                                             KsMainWindow.cpp
-#                                                             KsCaptureDialog.cpp
+                                                            KsCaptureDialog.cpp
                                                             KsQuickContextMenu.cpp
                                                             KsAdvFilteringDialog.cpp)
 
@@ -106,9 +106,9 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
 #     add_executable(${KS_APP_NAME}          kernelshark.cpp)
 #     target_link_libraries(${KS_APP_NAME}   kshark-gui)
 
-#     message(STATUS "kshark-record")
-#     add_executable(kshark-record        kshark-record.cpp)
-#     target_link_libraries(kshark-record kshark-gui)
+    message(STATUS "kshark-record")
+    add_executable(kshark-record        kshark-record.cpp)
+    target_link_libraries(kshark-record kshark-gui)
 
 #     install(TARGETS ${KS_APP_NAME} kshark-record kshark-gui
 #             RUNTIME DESTINATION       ${_INSTALL_PREFIX}/bin/

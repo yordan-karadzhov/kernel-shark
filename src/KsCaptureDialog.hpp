@@ -61,9 +61,9 @@ signals:
 	void print(const QString &message);
 
 private:
-	tep_handle		*_localTEP;
+	kshark_data_stream	*_stream;
 
-	KsEventsCheckBoxWidget	_eventsWidget;
+	KsWidgetsLib::KsEventsCheckBoxWidget	_eventsWidget;
 
 	QVBoxLayout	_topLayout;
 
