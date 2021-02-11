@@ -12,6 +12,7 @@
 #define _KS_TRACEGRAPH_H
 
 // KernelShark
+#include "KsWidgetsLib.hpp"
 #include "KsGLWidget.hpp"
 
 /**
@@ -35,7 +36,7 @@ public:
  * The KsTraceViewer class provides a widget for interactive visualization of
  * trace data shown as time-series.
  */
-class KsTraceGraph : public QWidget
+class KsTraceGraph : public KsWidgetsLib::KsDataWidget
 {
 	Q_OBJECT
 public:
@@ -52,17 +53,19 @@ public:
 
 	void markEntry(size_t);
 
-	void cpuReDraw(QVector<int>);
+	void cpuReDraw(int sd, QVector<int> cpus);
 
-	void taskReDraw(QVector<int>);
+	void taskReDraw(int sd, QVector<int> pids);
 
-	void addCPUPlot(int);
+	void comboReDraw(int sd, QVector<int> v);
 
-	void addTaskPlot(int);
+	void addCPUPlot(int sd, int cpu);
 
-	void removeCPUPlot(int);
+	void addTaskPlot(int sd, int pid);
 
-	void removeTaskPlot(int);
+	void removeCPUPlot(int sd, int cpu);
+
+	void removeTaskPlot(int sd, int pid);
 
 	void update(KsDataStore *data);
 
@@ -96,34 +99,24 @@ private:
 
 	void _stopUpdating();
 
-	void _resetPointer(uint64_t ts, int cpu, int pid);
+	void _resetPointer(int64_t ts, int sd, int cpu, int pid);
 
 	void _setPointerInfo(size_t);
-
-	void _updateTimeLegends();
-
-	void _updateGraphLegends();
 
 	void _selfUpdate();
 
 	void _markerReDraw();
 
-	QString _t2str(uint64_t sec, uint64_t usec);
-
-	enum class GraphActions {
-		ZoomIn,
-		ZoomOut,
-		ScrollLeft,
-		ScrollRight
-	};
-
-	void _updateGraphs(GraphActions action);
+	void _updateGraphs(KsWidgetsLib::KsDataWork action);
 
 	void _onCustomContextMenu(const QPoint &point);
+
+	QString _t2str(uint64_t sec, uint64_t usec);
 
 	QToolBar	_pointerBar, _navigationBar;
 
 	QPushButton	_zoomInButton, _quickZoomInButton;
+
 	QPushButton	_zoomOutButton, _quickZoomOutButton;
 
 	QPushButton	_scrollLeftButton, _scrollRightButton;
@@ -133,13 +126,7 @@ private:
 
 	KsGraphScrollArea	_scrollArea;
 
-	QWidget		_drawWindow, _legendWindow, _legendAxisX;
-
-	QLabel		_labelXMin, _labelXMid, _labelXMax;
-
 	KsGLWidget	_glWindow;
-
-	QGridLayout	_drawLayout;
 
 	QVBoxLayout	_layout;
 

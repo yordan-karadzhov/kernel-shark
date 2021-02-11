@@ -45,22 +45,22 @@ class KsQuickContextMenu : public KsQuickMarkerMenu {
 public:
 	KsQuickContextMenu() = delete;
 
-	KsQuickContextMenu(KsDataStore *data, size_t row,
-			   KsDualMarkerSM *dm,
+	KsQuickContextMenu(KsDualMarkerSM *dm,
+			   KsDataStore *data, size_t row,
 			   QWidget *parent = nullptr);
 
 signals:
 	/** Signal to add a task plot. */
-	void addTaskPlot(int);
+	void addTaskPlot(int sd, int pid);
 
 	/** Signal to add a CPU plot. */
-	void addCPUPlot(int);
+	void addCPUPlot(int sd, int cpu);
 
 	/** Signal to remove a task plot. */
-	void removeTaskPlot(int);
+	void removeTaskPlot(int sd, int pid);
 
 	/** Signal to remove a CPU plot. */
-	void removeCPUPlot(int);
+	void removeCPUPlot(int sd, int cpu);
 
 private:
 	void _hideTask();
@@ -83,13 +83,15 @@ private:
 
 	void _removeTaskPlot();
 
-	QVector<int> _getFilterVector(tracecmd_filter_id *filter, int newId);
+	QVector<int> _getFilterVector(kshark_hash_id *filter, int newId);
 
 	void _clearFilters() {_data->clearAllFilters();}
 
 	KsDataStore	*_data;
 
 	size_t		_row;
+
+	QWidgetAction	_rawTime, _rawEvent;
 
 	QCheckBox	*_graphSyncCBox, *_listSyncCBox;
 
@@ -118,7 +120,8 @@ class KsRmPlotContextMenu : public KsQuickMarkerMenu {
 public:
 	KsRmPlotContextMenu() = delete;
 
-	KsRmPlotContextMenu(KsDualMarkerSM *dm, QWidget *parent = nullptr);
+	KsRmPlotContextMenu(KsDualMarkerSM *dm, int sd,
+			    QWidget *parent = nullptr);
 
 signals:
 	/** Signal to remove a plot. */
@@ -127,13 +130,16 @@ signals:
 protected:
 	/** Menu action. */
 	QAction _removePlotAction;
+
+	/** Data stream identifier. */
+	int _sd;
 };
 
 /**
  * The KsQuickMarkerMenu class provides CPU Plot remove menus.
  */
 struct KsRmCPUPlotMenu : public KsRmPlotContextMenu {
-	KsRmCPUPlotMenu(KsDualMarkerSM *dm, int cpu,
+	KsRmCPUPlotMenu(KsDualMarkerSM *dm, int sd, int cpu,
 			QWidget *parent = nullptr);
 };
 
@@ -141,7 +147,7 @@ struct KsRmCPUPlotMenu : public KsRmPlotContextMenu {
  * The KsQuickMarkerMenu class provides Task Plot remove menus.
  */
 struct KsRmTaskPlotMenu : public KsRmPlotContextMenu {
-	KsRmTaskPlotMenu(KsDualMarkerSM *dm, int pid,
+	KsRmTaskPlotMenu(KsDualMarkerSM *dm, int sd, int pid,
 			 QWidget *parent = nullptr);
 };
 

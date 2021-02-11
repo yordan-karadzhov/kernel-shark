@@ -39,17 +39,19 @@ KsQuickMarkerMenu::KsQuickMarkerMenu(KsDualMarkerSM *dm, QWidget *parent)
 /**
  * @brief Create KsQuickContextMenu.
  *
+ * @param dm: The State machine of the Dual marker.
  * @param data: Input location for the KsDataStore object.
  * @param row: The index of the entry used to initialize the menu.
- * @param dm: The State machine of the Dual marker.
  * @param parent: The parent of this widget.
  */
-KsQuickContextMenu::KsQuickContextMenu(KsDataStore *data, size_t row,
-				       KsDualMarkerSM *dm,
+KsQuickContextMenu::KsQuickContextMenu(KsDualMarkerSM *dm,
+				       KsDataStore *data, size_t row,
 				       QWidget *parent)
 : KsQuickMarkerMenu(dm, parent),
   _data(data),
   _row(row),
+  _rawTime(this),
+  _rawEvent(this),
   _graphSyncCBox(nullptr),
   _listSyncCBox(nullptr),
   _hideTaskAction(this),
@@ -65,16 +67,50 @@ KsQuickContextMenu::KsQuickContextMenu(KsDataStore *data, size_t row,
   _clearAllFilters(this)
 {
 	typedef void (KsQuickContextMenu::*mfp)();
-	QString taskName, parentName, descr;
+	QString time, taskName, parentName, descr;
+	kshark_entry *entry = _data->rows()[_row];
+	kshark_context *kshark_ctx(nullptr);
+	kshark_data_stream *stream;
+	QStringList eventFields;
+	int pid, cpu, sd, ret;
 	KsTraceGraph *graphs;
-	int pid, cpu;
+	int64_t fieldVal;
 
 	if (!parent || !_data)
 		return;
 
-	taskName = kshark_get_task_easy(_data->rows()[_row]);
-	pid = kshark_get_pid_easy(_data->rows()[_row]);
-	cpu = _data->rows()[_row]->cpu;
+	if (!kshark_instance(&kshark_ctx))
+		return;
+
+	taskName = kshark_get_task(entry);
+	pid = kshark_get_pid(entry);
+	cpu = entry->cpu;
+	sd = entry->stream_id;
+
+	stream = kshark_get_data_stream(kshark_ctx, sd);
+	if (!stream)
+		return;
+
+	QString evtData("\t"), val;
+	eventFields =  KsUtils::getEventFieldsList(entry->stream_id,
+						   entry->event_id);
+
+	for (auto const &field: eventFields) {
+		std::string buff = field.toStdString();
+		ret = kshark_read_event_field_int(entry, buff.c_str(), &fieldVal);
+		if (ret < 0)
+			continue;
+
+		evtData += field + ":  " + val.setNum(fieldVal) + "\n\t";
+	}
+
+	addSection("Raw event");
+	time = QString("\ttime:  %1 [ns]").arg(entry->ts);
+
+	_rawTime.setDefaultWidget(new QLabel(time));
+	addAction(&_rawTime);
+	_rawEvent.setDefaultWidget(new QLabel(evtData));
+	addAction(&_rawEvent);
 
 	auto lamAddAction = [this, &descr] (QAction *action, mfp mf) {
 		action->setText(descr);
@@ -104,12 +140,12 @@ KsQuickContextMenu::KsQuickContextMenu(KsDataStore *data, size_t row,
 	lamAddAction(&_hideTaskAction, &KsQuickContextMenu::_hideTask);
 
 	descr = "Show event [";
-	descr += kshark_get_event_name_easy(_data->rows()[_row]);
+	descr += kshark_get_event_name(entry);
 	descr += "] only";
 	lamAddAction(&_showEventAction, &KsQuickContextMenu::_showEvent);
 
 	descr = "Hide event [";
-	descr += kshark_get_event_name_easy(_data->rows()[_row]);
+	descr += kshark_get_event_name(entry);
 	descr += "]";
 	lamAddAction(&_hideEventAction, &KsQuickContextMenu::_hideEvent);
 
@@ -118,7 +154,7 @@ KsQuickContextMenu::KsQuickContextMenu(KsDataStore *data, size_t row,
 		lamAddAction(&_showCPUAction, &KsQuickContextMenu::_showCPU);
 	}
 
-	descr = QString("Hide CPU [%1]").arg(_data->rows()[_row]->cpu);
+	descr = QString("Hide CPU [%1]").arg(entry->cpu);
 	lamAddAction(&_hideCPUAction, &KsQuickContextMenu::_hideCPU);
 
 	descr = "Clear all filters";
@@ -138,7 +174,7 @@ KsQuickContextMenu::KsQuickContextMenu(KsDataStore *data, size_t row,
 
 	if (parentName == "KsTraceGraph" &&
 	    (graphs = dynamic_cast<KsTraceGraph *>(parent))) {
-		if (graphs->glPtr()->_taskList.contains(pid)) {
+		if (graphs->glPtr()->_streamPlots[sd]._taskList.contains(pid)) {
 			descr = "Remove [";
 			descr += taskName;
 			descr += "-";
@@ -156,7 +192,7 @@ KsQuickContextMenu::KsQuickContextMenu(KsDataStore *data, size_t row,
 				     &KsQuickContextMenu::_addTaskPlot);
 		}
 
-		if (graphs->glPtr()->_cpuList.contains(cpu)) {
+		if (graphs->glPtr()->_streamPlots[sd]._cpuList.contains(cpu)) {
 			descr = "Remove [CPU ";
 			descr += QString("%1").arg(cpu);
 			descr += "] plot";
@@ -174,66 +210,86 @@ KsQuickContextMenu::KsQuickContextMenu(KsDataStore *data, size_t row,
 
 void KsQuickContextMenu::_hideTask()
 {
-	int pid = kshark_get_pid_easy(_data->rows()[_row]);
+	int pid = kshark_get_pid(_data->rows()[_row]);
+	int sd = _data->rows()[_row]->stream_id;
 	kshark_context *kshark_ctx(nullptr);
+	kshark_data_stream *stream;
 	QVector<int> vec;
 
 	if (!kshark_instance(&kshark_ctx))
 		return;
 
-	vec =_getFilterVector(kshark_ctx->hide_task_filter, pid);
-	_data->applyNegTaskFilter(vec);
+	stream = kshark_get_data_stream(kshark_ctx, sd);
+	if (!stream)
+		return;
+
+	vec =_getFilterVector(stream->hide_task_filter, pid);
+	_data->applyNegTaskFilter(sd, vec);
 }
 
 void KsQuickContextMenu::_showTask()
 {
-	int pid = kshark_get_pid_easy(_data->rows()[_row]);
-
-	_data->applyPosTaskFilter(QVector<int>(1, pid));
+	int pid = kshark_get_pid(_data->rows()[_row]);
+	int sd = _data->rows()[_row]->stream_id;
+	_data->applyPosTaskFilter(sd, QVector<int>(1, pid));
 }
 
 void KsQuickContextMenu::_hideEvent()
 {
-	int eventId = kshark_get_event_id_easy(_data->rows()[_row]);
+	int eventId = kshark_get_event_id(_data->rows()[_row]);
+	int sd = _data->rows()[_row]->stream_id;
 	kshark_context *kshark_ctx(nullptr);
+	kshark_data_stream *stream;
 	QVector<int> vec;
 
 	if (!kshark_instance(&kshark_ctx))
 		return;
 
-	vec =_getFilterVector(kshark_ctx->hide_event_filter, eventId);
-	_data->applyNegEventFilter(vec);
+	stream = kshark_get_data_stream(kshark_ctx, sd);
+	if (!stream)
+		return;
+
+	vec =_getFilterVector(stream->hide_event_filter, eventId);
+	_data->applyNegEventFilter(sd, vec);
 }
 
 void KsQuickContextMenu::_showEvent()
 {
-	int eventId = kshark_get_event_id_easy(_data->rows()[_row]);
+	int eventId = kshark_get_event_id(_data->rows()[_row]);
+	int sd = _data->rows()[_row]->stream_id;
 
-	_data->applyPosEventFilter(QVector<int>(1, eventId));
+	_data->applyPosEventFilter(sd, QVector<int>(1, eventId));
 }
 
 void KsQuickContextMenu::_showCPU()
 {
 	int cpu = _data->rows()[_row]->cpu;
+	int sd = _data->rows()[_row]->stream_id;
 
-	_data->applyPosCPUFilter(QVector<int>(1, cpu));
+	_data->applyPosCPUFilter(sd, QVector<int>(1, cpu));
 }
 
 void KsQuickContextMenu::_hideCPU()
 {
+	int sd = _data->rows()[_row]->stream_id;
 	kshark_context *kshark_ctx(nullptr);
+	kshark_data_stream *stream;
 	QVector<int> vec;
 
 	if (!kshark_instance(&kshark_ctx))
 		return;
 
-	vec =_getFilterVector(kshark_ctx->hide_cpu_filter,
+	stream = kshark_get_data_stream(kshark_ctx, sd);
+	if (!stream)
+		return;
+
+	vec =_getFilterVector(stream->hide_cpu_filter,
 			      _data->rows()[_row]->cpu);
 
-	_data->applyNegCPUFilter(vec);
+	_data->applyNegCPUFilter(sd, vec);
 }
 
-QVector<int> KsQuickContextMenu::_getFilterVector(tracecmd_filter_id *filter, int newId)
+QVector<int> KsQuickContextMenu::_getFilterVector(kshark_hash_id *filter, int newId)
 {
 	QVector<int> vec = KsUtils::getFilterIds(filter);
 	if (!vec.contains(newId))
@@ -244,38 +300,42 @@ QVector<int> KsQuickContextMenu::_getFilterVector(tracecmd_filter_id *filter, in
 
 void KsQuickContextMenu::_addTaskPlot()
 {
-	int pid = kshark_get_pid_easy(_data->rows()[_row]);
+	int pid = kshark_get_pid(_data->rows()[_row]);
+	int sd = _data->rows()[_row]->stream_id;
 
-	emit addTaskPlot(pid);
+	emit addTaskPlot(sd, pid);
 }
 
 void KsQuickContextMenu::_addCPUPlot()
 {
-	emit addCPUPlot(_data->rows()[_row]->cpu);
+	emit addCPUPlot(_data->rows()[_row]->stream_id, _data->rows()[_row]->cpu);
 }
 
 void KsQuickContextMenu::_removeTaskPlot()
 {
-	int pid = kshark_get_pid_easy(_data->rows()[_row]);
+	int pid = kshark_get_pid(_data->rows()[_row]);
+	int sd = _data->rows()[_row]->stream_id;
 
-	emit removeTaskPlot(pid);
+	emit removeTaskPlot(sd, pid);
 }
 
 void KsQuickContextMenu::_removeCPUPlot()
 {
-	emit removeCPUPlot(_data->rows()[_row]->cpu);
+	emit removeCPUPlot(_data->rows()[_row]->stream_id, _data->rows()[_row]->cpu);
 }
 
 /**
  * @brief Create KsRmPlotContextMenu.
  *
  * @param dm: The State machine of the Dual marker.
+ * @param sd: Data stream identifier.
  * @param parent: The parent of this widget.
  */
-KsRmPlotContextMenu::KsRmPlotContextMenu(KsDualMarkerSM *dm,
+KsRmPlotContextMenu::KsRmPlotContextMenu(KsDualMarkerSM *dm, int sd,
 					 QWidget *parent)
 : KsQuickMarkerMenu(dm, parent),
-  _removePlotAction(this)
+  _removePlotAction(this),
+  _sd(sd)
 {
 	addSection("Plots");
 
@@ -289,12 +349,13 @@ KsRmPlotContextMenu::KsRmPlotContextMenu(KsDualMarkerSM *dm,
  * @brief Create KsRmCPUPlotMenu.
  *
  * @param dm: The State machine of the Dual marker.
+ * @param sd: Data stream identifier.
  * @param cpu : CPU Id.
  * @param parent: The parent of this widget.
  */
-KsRmCPUPlotMenu::KsRmCPUPlotMenu(KsDualMarkerSM *dm, int cpu,
+KsRmCPUPlotMenu::KsRmCPUPlotMenu(KsDualMarkerSM *dm, int sd, int cpu,
 				 QWidget *parent)
-: KsRmPlotContextMenu(dm, parent)
+: KsRmPlotContextMenu(dm, sd, parent)
 {
 	_removePlotAction.setText(QString("Remove [CPU %1]").arg(cpu));
 }
@@ -303,20 +364,18 @@ KsRmCPUPlotMenu::KsRmCPUPlotMenu(KsDualMarkerSM *dm, int cpu,
  * @brief Create KsRmTaskPlotMenu.
  *
  * @param dm: The State machine of the Dual marker.
+ * @param sd: Data stream identifier.
  * @param pid: Process Id.
  * @param parent: The parent of this widget.
  */
-KsRmTaskPlotMenu::KsRmTaskPlotMenu(KsDualMarkerSM *dm, int pid,
+KsRmTaskPlotMenu::KsRmTaskPlotMenu(KsDualMarkerSM *dm, int sd, int pid,
 				   QWidget *parent)
-: KsRmPlotContextMenu(dm, parent)
+: KsRmPlotContextMenu(dm, sd, parent)
 {
-	kshark_context *kshark_ctx(nullptr);
-	QString descr("Remove [ ");
+	QString descr;
 
-	if (!kshark_instance(&kshark_ctx))
-		return;
-
-	descr += tep_data_comm_from_pid(kshark_ctx->pevent, pid);
+	descr = "Remove [ ";
+	descr += kshark_comm_from_pid(sd, pid);
 	descr += "-";
 	descr += QString("%1").arg(pid);
 	descr += "] plot";

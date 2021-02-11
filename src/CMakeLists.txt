@@ -71,12 +71,12 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
                         KsGLWidget.hpp
                         KsSearchFSM.hpp
                         KsDualMarker.hpp
-                        KsWidgetsLib.hpp)
-#                         KsTraceGraph.hpp
+                        KsWidgetsLib.hpp
+                        KsTraceGraph.hpp
 #                         KsTraceViewer.hpp
 #                         KsMainWindow.hpp
 #                         KsCaptureDialog.hpp
-#                         KsQuickContextMenu.hpp
+                        KsQuickContextMenu.hpp)
 #                         KsAdvFilteringDialog.hpp)
 
     QT5_WRAP_CPP(ks-guiLib_hdr_moc ${ks-guiLib_hdr})
@@ -87,12 +87,12 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
                                                             KsGLWidget.cpp
                                                             KsSearchFSM.cpp
                                                             KsDualMarker.cpp
-                                                            KsWidgetsLib.cpp)
-#                                                             KsTraceGraph.cpp
+                                                            KsWidgetsLib.cpp
+                                                            KsTraceGraph.cpp
 #                                                             KsTraceViewer.cpp
 #                                                             KsMainWindow.cpp
 #                                                             KsCaptureDialog.cpp
-#                                                             KsQuickContextMenu.cpp
+                                                            KsQuickContextMenu.cpp)
 #                                                             KsAdvFilteringDialog.cpp)
 
     target_link_libraries(kshark-gui kshark-plot
