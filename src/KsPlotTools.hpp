@@ -395,11 +395,23 @@ public:
 
 	void setY(int yA, int yB);
 
+	/** Get the Y coordinate of the Mark's CPU point. */
+	int cpuY() const {return _cpu.y();}
+
 	void setCPUY(int yCPU);
+
+	/** Is the CPU point visible. */
+	bool cpuIsVisible() const {return _cpu._visible;}
 
 	void setCPUVisible(bool v);
 
+	/** Get the Y coordinate of the Mark's Task point. */
+	int taskY() const {return _task.y();}
+
 	void setTaskY(int yTask);
+
+	/** Is the Task point visible. */
+	bool taskIsVisible() const {return _task._visible;}
 
 	void setTaskVisible(bool v);
 
