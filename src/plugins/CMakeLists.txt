@@ -22,9 +22,9 @@ BUILD_PLUGIN(NAME sched_events
              SOURCE sched_events.c SchedEvents.cpp)
 list(APPEND PLUGIN_LIST "sched_events")
 
-# BUILD_PLUGIN(NAME missed_events
-#              SOURCE missed_events.c MissedEvents.cpp)
-# list(APPEND PLUGIN_LIST "missed_events")
+BUILD_PLUGIN(NAME missed_events
+             SOURCE missed_events.c MissedEvents.cpp)
+list(APPEND PLUGIN_LIST "missed_events")
 
 install(TARGETS ${PLUGIN_LIST}
         LIBRARY DESTINATION ${KS_PLUGIN_INSTALL_PREFIX}

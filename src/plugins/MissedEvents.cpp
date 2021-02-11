@@ -26,12 +26,8 @@ using namespace KsPlot;
  */
 class MissedEventsMark : public PlotObject {
 public:
-	/** Create a default Missed events marker. */
-	MissedEventsMark() : _base(0, 0), _height(0)
-	{
-		_color = {0, 0, 255};
-		_size = 2;
-	}
+	/** No default constructor. */
+	MissedEventsMark() = delete;
 
 	/**
 	 * @brief Create and position a Missed events marker.
@@ -40,17 +36,7 @@ public:
 	 * @param h: vertical size (height) of the marker.
 	 */
 	MissedEventsMark(const Point &p, int h)
-	: _base(p.x(), p.y()), _height(h)
-	{
-		_color = {0, 0, 255};
-		_size = 2;
-	}
-
-	/** Set the Base point of the marker. */
-	void setBase(const Point &p) {_base.set(p.x(), p.y());}
-
-	/** Set the vertical size (height) point of the marker. */
-	void setHeight(int h) {_height = h;}
+	: _base(p.x(), p.y()), _height(h) {}
 
 private:
 	/** Base point of the Mark's line. */
@@ -76,61 +62,38 @@ void MissedEventsMark::_draw(const Color &col, float size) const
 	rec.draw();
 }
 
+static PlotObject *makeShape(std::vector<const Graph *> graph,
+			     std::vector<int> bin,
+			     std::vector<kshark_data_field_int64 *>,
+			     Color col, float size)
+{
+	MissedEventsMark *mark = new MissedEventsMark(graph[0]->bin(bin[0])._base,
+						      graph[0]->height());
+	mark->_size = size;
+	mark->_color = col;
+
+	return mark;
+}
+
 //! @cond Doxygen_Suppress
 
 #define PLUGIN_MAX_ENTRIES		10000
 
-#define KS_TASK_COLLECTION_MARGIN	25
-
 //! @endcond
-
-static void pluginDraw(kshark_context *kshark_ctx,
-		       KsCppArgV *argvCpp,
-		       int val, int draw_action)
-{
-	int height = argvCpp->_graph->getHeight();
-	const kshark_entry *entry(nullptr);
-	MissedEventsMark *mark;
-	ssize_t index;
-
-	int nBins = argvCpp->_graph->size();
-	for (int bin = 0; bin < nBins; ++bin) {
-		if (draw_action == KSHARK_PLUGIN_TASK_DRAW)
-			entry = ksmodel_get_task_missed_events(argvCpp->_histo,
-							       bin, val,
-							       nullptr,
-							       &index);
-		if (draw_action == KSHARK_PLUGIN_CPU_DRAW)
-			entry = ksmodel_get_cpu_missed_events(argvCpp->_histo,
-							      bin, val,
-							      nullptr,
-							      &index);
-
-		if (entry) {
-			mark = new MissedEventsMark(argvCpp->_graph->getBin(bin)._base,
-						    height);
-
-			argvCpp->_shapes->push_front(mark);
-		}
-	}
-}
 
 /**
  * @brief Plugin's draw function.
  *
  * @param argv_c: A C pointer to be converted to KsCppArgV (C++ struct).
+ * @param sd: Data stream identifier.
  * @param val: Process or CPU Id value.
  * @param draw_action: Draw action identifier.
  */
 void draw_missed_events(kshark_cpp_argv *argv_c,
-			int val, int draw_action)
+			int sd, int val, int draw_action)
 {
-	kshark_context *kshark_ctx(NULL);
-
-	if (!kshark_instance(&kshark_ctx))
-		return;
-
 	KsCppArgV *argvCpp = KS_ARGV_TO_CPP(argv_c);
+	IsApplicableFunc checkEntry;
 
 	/*
 	 * Plotting the "Missed events" makes sense only in the case of a deep
@@ -141,9 +104,29 @@ void draw_missed_events(kshark_cpp_argv *argv_c,
 	if (argvCpp->_histo->tot_count > PLUGIN_MAX_ENTRIES)
 		return;
 
-	try {
-		pluginDraw(kshark_ctx, argvCpp, val, draw_action);
-	} catch (const std::exception &exc) {
-		std::cerr << "Exception in MissedEvents\n" << exc.what();
-	}
+	if (!(draw_action & KSHARK_CPU_DRAW) &&
+	    !(draw_action & KSHARK_TASK_DRAW))
+		return;
+
+	if (draw_action & KSHARK_CPU_DRAW)
+		checkEntry = [=] (kshark_data_container *, ssize_t bin) {
+			return !!ksmodel_get_cpu_missed_events(argvCpp->_histo,
+							       bin, sd, val,
+							       nullptr,
+							       nullptr);
+		};
+
+	else if (draw_action & KSHARK_TASK_DRAW)
+		checkEntry = [=] (kshark_data_container *, ssize_t bin) {
+			return !!ksmodel_get_task_missed_events(argvCpp->_histo,
+								bin, sd, val,
+								nullptr,
+								nullptr);
+		};
+
+	eventPlot(argvCpp,
+		  checkEntry,
+		  makeShape,
+		  {0, 0, 255}, // Blue
+		  -1);         // Default size
 }

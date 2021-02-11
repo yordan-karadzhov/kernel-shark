@@ -146,7 +146,9 @@ BOOST_AUTO_TEST_CASE(KsUtils_KsDataStore)
 
 BOOST_AUTO_TEST_CASE(KsUtils_getPluginList)
 {
-	QStringList plugins{"sched_events"};
+	QStringList plugins{"sched_events",
+			    "missed_events"
+	};
 
 	BOOST_CHECK(getPluginList() == plugins);
 }
