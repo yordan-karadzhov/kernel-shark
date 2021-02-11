@@ -577,7 +577,8 @@ kshark_register_plugin_to_stream(struct kshark_data_stream *stream,
 			 * The plugin has been registered already. Check if it
 			 * is initialized and if this is the case, close the
 			 * existing initialization. This way we guarantee a
-			 * clean new initialization from.
+			 * clean new initialization from kshark_handle_dpi()
+			 * or kshark_handle_all_dpis().
 			 */
 			if (plugin_list->status & KSHARK_PLUGIN_LOADED)
 				kshark_handle_dpi(stream, plugin_list,
