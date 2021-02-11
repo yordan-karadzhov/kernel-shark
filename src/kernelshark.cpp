@@ -32,7 +32,8 @@ void usage(const char *prog)
 	printf("  -s	import a session\n");
 	printf("  -l	import the last session\n");
 	puts(" --cpu	show plots for CPU cores, default is \"show all\"");
-	puts(" --pid	show plots for tasks, default is \"do not show\"");
+	puts(" --pid	show plots for tasks (by PID), default is \"do not show\"");
+	puts(" --task	show plots for tasks (by name), default is \"do not show\"");
 	puts("\n example:");
 	puts("  kernelshark -i mytrace.dat --cpu 1,4-7 --pid 11 -p path/to/my/plugin/myplugin.so\n");
 }
@@ -42,6 +43,7 @@ static option longOptions[] = {
 	{"help", no_argument, nullptr, 'h'},
 	{"pid", required_argument, nullptr, KS_LONG_OPTS},
 	{"cpu", required_argument, nullptr, KS_LONG_OPTS},
+	{"task", required_argument, nullptr, KS_LONG_OPTS},
 	{nullptr, 0, nullptr, 0}
 };
 
@@ -50,6 +52,7 @@ int main(int argc, char **argv)
 	QVector<int> cpuPlots, taskPlots;
 	bool fromSession = false;
 	int optionIndex = 0;
+	QString taskList;
 	int c;
 
 	QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
@@ -67,7 +70,8 @@ int main(int argc, char **argv)
 				cpuPlots.append(KsUtils::parseIdList(QString(optarg)));
 			else if (strcmp(longOptions[optionIndex].name, "pid") == 0)
 				taskPlots.append(KsUtils::parseIdList(QString(optarg)));
-
+			else if (strcmp(longOptions[optionIndex].name, "task") == 0)
+				taskList = QString(optarg);
 			break;
 
 		case 'h':
@@ -136,9 +140,14 @@ int main(int argc, char **argv)
 		return ids;
 	};
 
-	if (cpuPlots.count() || taskPlots.count()) {
+	if (cpuPlots.count() || taskPlots.count() || taskList.size()) {
 		ks.setCPUPlots(0, lamOrderIds(cpuPlots));
-		ks.setTaskPlots(0, lamOrderIds(taskPlots));
+
+		auto pidMap = KsUtils::parseTaskList(taskList);
+		pidMap[0].append(taskPlots);
+		for (auto it = pidMap.begin(); it != pidMap.end(); ++it) {
+			ks.setTaskPlots(it.key(), lamOrderIds(it.value()));
+		}
 	}
 
 	ks.raise();

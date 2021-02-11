@@ -549,6 +549,38 @@ QVector<int> parseIdList(QString v_str)
 }
 
 /**
+ * @brief Convert a string containing task names into a list of PID numbers.
+ */
+QMap<int, QVector<int>> parseTaskList(QString v_str)
+{
+	QStringList taskList = v_str.split(",", QString::SkipEmptyParts);
+	QVector<int> streamIds, allPids;
+	kshark_context *kshark_ctx(nullptr);
+	QMap<int, QVector<int>> ret;
+	QString name;
+
+	if (!kshark_instance(&kshark_ctx))
+		return {};
+
+	streamIds = getStreamIdList(kshark_ctx);
+	for (auto const sd: streamIds) {
+		allPids = getPidList(sd);
+		for (auto const pid: allPids) {
+			name = kshark_comm_from_pid(sd, pid);
+			if (name.isEmpty())
+				continue;
+
+			for (auto const task: taskList) {
+				if(name == task)
+					ret[sd].append(pid);
+			}
+		}
+	}
+
+	return ret;
+}
+
+/**
  * @brief Split the ststem name from the actual name of the event itself.
  *
  * @param sd: Data stream identifier.

@@ -286,3 +286,28 @@ BOOST_AUTO_TEST_CASE(GraphModel)
 	model.reset();
 	BOOST_CHECK_EQUAL(model.rowCount({}), 0);
 }
+
+BOOST_AUTO_TEST_CASE(KsUtils_parseTasks)
+{
+	QVector<int> pids{28121, 28137, 28141, 28199, 28201, 205666, 267481};
+	kshark_context *kshark_ctx{nullptr};
+	kshark_entry **data{nullptr};
+	std::string file(KS_TEST_DIR);
+	ssize_t n_rows;
+	int sd;
+
+	kshark_instance(&kshark_ctx);
+	file += "/trace_test1.dat";
+	sd = kshark_open(kshark_ctx, file.c_str());
+	n_rows = kshark_load_entries(kshark_ctx, sd, &data);
+
+	auto pids_test = parseTaskList("zoom,sleep");
+	BOOST_CHECK(pids == pids_test[0]);
+
+	for (ssize_t r = 0; r < n_rows; ++r)
+		free(data[r]);
+	free(data);
+
+	kshark_close(kshark_ctx, sd);
+	kshark_free(kshark_ctx);
+}

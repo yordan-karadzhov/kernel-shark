@@ -161,6 +161,8 @@ QStringList splitArguments(QString cmd);
 
 QVector<int> parseIdList(QString v_str);
 
+QMap<int, QVector<int>> parseTaskList(QString v_str);
+
 QStringList getTepEvtName(int sd, int eventId);
 
 /** Get a string to be used as a standard name of a CPU graph. */
