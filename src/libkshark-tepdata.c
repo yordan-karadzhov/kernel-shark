@@ -1206,49 +1206,6 @@ static void kshark_tep_init_methods(struct kshark_generic_stream_interface *inte
 	interface->load_matrix = tepdata_load_matrix;
 }
 
-/** Find a host stream from the same tracing session, that has guest information */
-static struct tracecmd_input *
-kshark_tep_find_merge_peer(struct kshark_context *kshark_ctx,
-			   struct tracecmd_input *handle)
-{
-	struct tracecmd_input *peer_handle = NULL;
-	struct kshark_data_stream *peer_stream;
-	unsigned long long trace_id;
-	int *stream_ids = NULL;
-	int ret;
-	int i;
-
-	trace_id = tracecmd_get_traceid(handle);
-	if (!trace_id)
-		goto out;
-
-	stream_ids = kshark_all_streams(kshark_ctx);
-	if (!stream_ids)
-		goto out;
-
-	for (i = 0; i < kshark_ctx->n_streams - 1; i++) {
-		peer_stream = kshark_get_data_stream(kshark_ctx, stream_ids[i]);
-		if (!peer_stream || !kshark_is_tep(peer_stream))
-			continue;
-
-		peer_handle = kshark_get_tep_input(peer_stream);
-		if (!peer_handle)
-			continue;
-
-		ret = tracecmd_get_guest_cpumap(peer_handle, trace_id,
-						NULL, NULL, NULL);
-		if (!ret)
-			break;
-	}
-
-	if (i == kshark_ctx->n_streams)
-		peer_handle = NULL;
-
-out:
-	free(stream_ids);
-	return peer_handle;
-}
-
 /** A list of built in default plugins for FTRACE (trace-cmd) data. */
 const char *tep_plugin_names[] = {
 	"sched_events",
@@ -1574,7 +1531,6 @@ bool kshark_tep_check_data(const char *file_name)
 int kshark_tep_init_input(struct kshark_data_stream *stream)
 {
 	struct kshark_context *kshark_ctx = NULL;
-	struct tracecmd_input *merge_peer;
 	struct tracecmd_input *input;
 
 	if (!kshark_instance(&kshark_ctx) || !init_thread_seq())
@@ -1590,11 +1546,6 @@ int kshark_tep_init_input(struct kshark_data_stream *stream)
 	input = tracecmd_open_head(stream->file, 0);
 	if (!input)
 		return -EEXIST;
-
-	/* Find a merge peer from the same tracing session. */
-	merge_peer = kshark_tep_find_merge_peer(kshark_ctx, input);
-	if (merge_peer)
-		tracecmd_pair_peer(input, merge_peer);
 
 	/* Read the tracing data from the file. */
 	if (tracecmd_init_data(input) < 0)
