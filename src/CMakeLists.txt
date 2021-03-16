@@ -38,6 +38,15 @@ install(FILES "${KS_DIR}/src/libkshark.h"
         DESTINATION ${KS_INCLUDS_DESTINATION}
             COMPONENT libkshark-devel)
 
+if (NOT PKG_CONGIG_DIR)
+    execute_process(COMMAND  bash "-c" "pkg-config --variable pc_path pkg-config | cut -f 1 -d: -z"
+                    OUTPUT_VARIABLE PKG_CONGIG_DIR)
+endif (NOT PKG_CONGIG_DIR)
+
+install(FILES "${KS_DIR}/libkshark.pc"
+        DESTINATION ${PKG_CONGIG_DIR}
+            COMPONENT                 libkshark-devel)
+
 if (OPENGL_FOUND)
 
     message(STATUS "libkshark-plot")
@@ -133,14 +142,6 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
     install(PROGRAMS "${KS_DIR}/bin/kshark-su-record"
             DESTINATION ${_INSTALL_PREFIX}/bin/
                 COMPONENT                 kernelshark)
-
-    if (NOT PKG_CONGIG_DIR)
-        execute_process(COMMAND  bash "-c" "pkg-config --variable pc_path pkg-config | cut -f 1 -d: -z"
-          OUTPUT_VARIABLE PKG_CONGIG_DIR)
-    endif (NOT PKG_CONGIG_DIR)
-    install(FILES "${KS_DIR}/libkshark.pc"
-            DESTINATION ${PKG_CONGIG_DIR}
-                COMPONENT                 libkshark-devel)
 
     add_subdirectory(plugins)
     set(PLUGINS ${PLUGINS} PARENT_SCOPE)
