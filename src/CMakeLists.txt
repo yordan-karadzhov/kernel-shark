@@ -142,9 +142,9 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
             DESTINATION ${PKG_CONGIG_DIR}
                 COMPONENT                 libkshark-devel)
 
+    add_subdirectory(plugins)
+    set(PLUGINS ${PLUGINS} PARENT_SCOPE)
+
+    find_program(DO_AS_ROOT pkexec)
+
 endif (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
-
-add_subdirectory(plugins)
-set(PLUGINS ${PLUGINS} PARENT_SCOPE)
-
-find_program(DO_AS_ROOT pkexec)
