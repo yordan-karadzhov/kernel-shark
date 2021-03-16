@@ -20,9 +20,13 @@ message(STATUS "confogio")
 add_executable(confio          configio.c)
 target_link_libraries(confio   kshark)
 
-message(STATUS "dataplot")
-add_executable(dplot          dataplot.cpp)
-target_link_libraries(dplot   kshark-plot)
+if (OPENGL_FOUND AND GLUT_FOUND)
+
+    message(STATUS "dataplot")
+    add_executable(dplot          dataplot.cpp)
+    target_link_libraries(dplot   kshark-plot)
+
+endif (OPENGL_FOUND AND GLUT_FOUND)
 
 if (Qt5Widgets_FOUND AND TT_FONT_FILE)
 
