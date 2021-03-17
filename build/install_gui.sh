@@ -1,9 +1,9 @@
-if sudo cmake -DCOMPONENT=kernelshark -P cmake_install.cmake; then
+if cmake -DCOMPONENT=kernelshark -P cmake_install.cmake; then
     echo "Kernelshark installed correctly"
 else
     exit 1
 fi
 
-if ! sudo cmake -DCOMPONENT=polkit-policy -P cmake_install.cmake; then
+if ! cmake -DCOMPONENT=polkit-policy -P cmake_install.cmake; then
     echo >&2 "Warning: polkit policy not installed"
 fi

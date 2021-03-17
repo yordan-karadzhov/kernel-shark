@@ -51,7 +51,7 @@ Building:
     cd kernel-shark/build
     cmake ../
     make
-    sudo make install
+    sudo ./install_gui.sh
 
 2.1 In order to create a Doxygen documentation add -D_DOXYGEN_DOC=1
 as a CMake Command-Line option.
