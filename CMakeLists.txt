@@ -50,8 +50,10 @@ find_package(OpenGL)
 find_package(GLUT)
 
 set(KS_FONT FreeSans)
-execute_process(COMMAND  bash "-c" "fc-list '${KS_FONT}' |grep ${KS_FONT}.ttf | cut -d':' -f 1 -z"
-                OUTPUT_VARIABLE TT_FONT_FILE)
+if (NOT TT_FONT_FILE)
+    execute_process(COMMAND  bash "-c" "fc-list '${KS_FONT}' |grep ${KS_FONT}.ttf | cut -d':' -f 1 -z"
+                    OUTPUT_VARIABLE TT_FONT_FILE)
+endif (NOT TT_FONT_FILE)
 
 if (TT_FONT_FILE)
 
