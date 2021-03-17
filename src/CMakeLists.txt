@@ -127,8 +127,8 @@ if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)
                 COMPONENT                 kernelshark)
 
     install(FILES "${KS_DIR}/org.freedesktop.kshark-record.policy"
-            DESTINATION /usr/share/polkit-1/actions/
-                COMPONENT                 kernelshark)
+            DESTINATION ${_POLKIT_INSTALL_PREFIX}/share/polkit-1/actions/
+                COMPONENT                 polkit-policy)
 
     install(PROGRAMS "${KS_DIR}/bin/kshark-su-record"
             DESTINATION ${_INSTALL_PREFIX}/bin/

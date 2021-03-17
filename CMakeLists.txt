@@ -36,6 +36,12 @@ elseif (NOT _LIBDIR)
 
 endif ()
 
+if (NOT _POLKIT_INSTALL_PREFIX)
+
+    set(_POLKIT_INSTALL_PREFIX "/usr")
+
+endif ()
+
 set(CMAKE_MODULE_PATH "${KS_DIR}/build")
 find_package(TraceEvent REQUIRED)
 find_package(TraceFS    REQUIRED)
