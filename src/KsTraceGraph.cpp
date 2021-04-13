@@ -327,13 +327,18 @@ void KsTraceGraph::_setPointerInfo(size_t i)
 	QString aux(lanMakeString(kshark_get_aux_info(e)));
 	QString info(lanMakeString(kshark_get_info(e)));
 	QString comm(lanMakeString(kshark_get_task(e)));
-	QString pointer, elidedText;
+	QString elidedText;
 	int labelWidth;
 	uint64_t sec, usec;
+	char *pointer;
 
 	kshark_convert_nano(e->ts, &sec, &usec);
-	pointer.sprintf("%" PRIu64 ".%06" PRIu64 "", sec, usec);
+	labelWidth = asprintf(&pointer, "%" PRIu64 ".%06" PRIu64 "", sec, usec);
+	if (labelWidth <= 0)
+		return;
+
 	_labelP2.setText(pointer);
+	free(pointer);
 
 	comm.append("-");
 	comm.append(QString("%1").arg(kshark_get_pid(e)));

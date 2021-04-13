@@ -926,9 +926,9 @@ KsCPUCheckBoxWidget::KsCPUCheckBoxWidget(kshark_data_stream *stream, QWidget *pa
 		cpuItem->setText(0, "  ");
 		cpuItem->setText(1, QString("CPU %1").arg(i));
 		cpuItem->setCheckState(0, Qt::Checked);
-		cpuItem->setBackgroundColor(0, QColor(colors[i].r(),
-						      colors[i].g(),
-						      colors[i].b()));
+		cpuItem->setBackground(0, QColor(colors[i].r(),
+						 colors[i].g(),
+						 colors[i].b()));
 		_tree.addTopLevelItem(cpuItem);
 		_id[i] = i;
 		_cb[i] = cpuItem;
@@ -1115,12 +1115,12 @@ KsTasksCheckBoxWidget::KsTasksCheckBoxWidget(kshark_data_stream *stream,
 
 		comItem = new QTableWidgetItem(tr(comm));
 
-		pidItem->setBackgroundColor(QColor(colors[pid].r(),
-						   colors[pid].g(),
-						   colors[pid].b()));
+		pidItem->setBackground(QColor(colors[pid].r(),
+					      colors[pid].g(),
+					      colors[pid].b()));
 
 		if (_id[i] == 0)
-			pidItem->setTextColor(Qt::white);
+			pidItem->setForeground(Qt::white);
 
 		_table.setItem(i, 2, comItem);
 	}
