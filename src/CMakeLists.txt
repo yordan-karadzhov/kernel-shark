@@ -21,7 +21,6 @@ set_target_properties(kshark  PROPERTIES
                                   SOVERSION ${KS_VERSION_MAJOR}
                                   VERSION   ${KS_VERSION_STRING})
 
-
 install(TARGETS kshark
         LIBRARY DESTINATION    ${_LIBDIR}
             COMPONENT              kernelshark
@@ -58,18 +57,10 @@ if (OPENGL_FOUND)
                                        ${GLUT_LIBRARY}
                                        ${OPENGL_LIBRARIES})
 
-    set_target_properties(kshark-plot PROPERTIES
-                                          SOVERSION ${KS_VERSION_MAJOR}
-                                          VERSION   ${KS_VERSION_STRING})
-
+    set_target_properties(kshark-plot PROPERTIES  SUFFIX ".so.${KS_VERSION_STRING}")
     install(TARGETS kshark-plot
             LIBRARY DESTINATION    ${_LIBDIR}
-                COMPONENT              kernelshark
-                NAMELINK_COMPONENT     libkshark-devel
-            INCLUDES DESTINATION   ${_INSTALL_PREFIX}/include/${KS_APP_NAME}
-                COMPONENT              libkshark-devel
-            ARCHIVE DESTINATION    ${_LIBDIR}
-                COMPONENT              libkshark-devel)
+                COMPONENT              kernelshark)
 
 endif (OPENGL_FOUND)
 
