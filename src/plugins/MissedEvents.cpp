@@ -89,7 +89,7 @@ static PlotObject *makeShape(std::vector<const Graph *> graph,
  * @param val: Process or CPU Id value.
  * @param draw_action: Draw action identifier.
  */
-void draw_missed_events(kshark_cpp_argv *argv_c,
+__hidden void draw_missed_events(kshark_cpp_argv *argv_c,
 			int sd, int val, int draw_action)
 {
 	KsCppArgV *argvCpp = KS_ARGV_TO_CPP(argv_c);

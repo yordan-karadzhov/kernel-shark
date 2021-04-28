@@ -47,7 +47,7 @@ static void plugin_sched_set_pid(ks_num_field_t *field,
  *
  * @param field: Input location for the data field.
  */
-int plugin_sched_get_pid(ks_num_field_t field)
+__hidden int plugin_sched_get_pid(ks_num_field_t field)
 {
 	return field & PID_MASK;
 }
@@ -67,7 +67,7 @@ static void plugin_sched_set_prev_state(ks_num_field_t *field,
  *
  * @param field: Input location for the data field.
  */
-int plugin_sched_get_prev_state(ks_num_field_t field)
+__hidden int plugin_sched_get_prev_state(ks_num_field_t field)
 {
 	tep_num_field_t mask = PREV_STATE_MASK << PREV_STATE_SHIFT;
 	return (field & mask) >> PREV_STATE_SHIFT;

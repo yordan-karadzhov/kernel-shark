@@ -30,7 +30,7 @@ static KsMainWindow *ks_ptr;
  * @brief Provide the plugin with a pointer to the KsMainWindow object (the GUI
  * itself) such that the plugin can manipulate the GUI.
  */
-void *plugin_set_gui_ptr(void *gui_ptr)
+__hidden void *plugin_set_gui_ptr(void *gui_ptr)
 {
 	ks_ptr = static_cast<KsMainWindow *>(gui_ptr);
 	return nullptr;
@@ -152,7 +152,8 @@ static void secondPass(plugin_sched_context *plugin_ctx)
  * @param pid: Process Id.
  * @param draw_action: Draw action identifier.
  */
-void plugin_draw(kshark_cpp_argv *argv_c, int sd, int pid, int draw_action)
+__hidden void plugin_draw(kshark_cpp_argv *argv_c,
+			  int sd, int pid, int draw_action)
 {
 	plugin_sched_context *plugin_ctx;
 
