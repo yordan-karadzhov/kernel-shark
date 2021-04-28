@@ -181,7 +181,6 @@ static void plugin_sched_wakeup_action(struct kshark_data_stream *stream,
 /** Load this plugin. */
 int KSHARK_PLOT_PLUGIN_INITIALIZER(struct kshark_data_stream *stream)
 {
-	printf("--> sched init %i\n", stream->stream_id);
 	struct plugin_sched_context *plugin_ctx;
 
 	plugin_ctx = __init(stream->stream_id);
@@ -206,7 +205,6 @@ int KSHARK_PLOT_PLUGIN_INITIALIZER(struct kshark_data_stream *stream)
 /** Unload this plugin. */
 int KSHARK_PLOT_PLUGIN_DEINITIALIZER(struct kshark_data_stream *stream)
 {
-	printf("<-- sched close %i\n", stream->stream_id);
 	struct plugin_sched_context *plugin_ctx = __get_context(stream->stream_id);
 	int ret = 0;
 
@@ -232,6 +230,5 @@ int KSHARK_PLOT_PLUGIN_DEINITIALIZER(struct kshark_data_stream *stream)
 /** Initialize the control interface of the plugin. */
 void *KSHARK_MENU_PLUGIN_INITIALIZER(void *gui_ptr)
 {
-	printf("--> sched init menu\n");
 	return plugin_set_gui_ptr(gui_ptr);
 }
