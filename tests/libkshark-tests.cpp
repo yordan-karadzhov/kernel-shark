@@ -148,7 +148,7 @@ struct test_context {
 	char b;
 };
 
-KS_DEFINE_PLUGIN_CONTEXT(struct test_context);
+KS_DEFINE_PLUGIN_CONTEXT(struct test_context, free);
 
 BOOST_AUTO_TEST_CASE(init_close_plugin)
 {

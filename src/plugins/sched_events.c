@@ -73,8 +73,17 @@ int plugin_sched_get_prev_state(ks_num_field_t field)
 	return (field & mask) >> PREV_STATE_SHIFT;
 }
 
+static void sched_free_context(struct plugin_sched_context *plugin_ctx)
+{
+	if (!plugin_ctx)
+		return;
+
+	kshark_free_data_container(plugin_ctx->ss_data);
+	kshark_free_data_container(plugin_ctx->sw_data);
+}
+
 /** A general purpose macro is used to define plugin context. */
-KS_DEFINE_PLUGIN_CONTEXT(struct plugin_sched_context);
+KS_DEFINE_PLUGIN_CONTEXT(struct plugin_sched_context, sched_free_context);
 
 static bool plugin_sched_init_context(struct kshark_data_stream *stream,
 				      struct plugin_sched_context *plugin_ctx)

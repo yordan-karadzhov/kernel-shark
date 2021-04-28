@@ -373,7 +373,7 @@ int kshark_handle_all_dpis(struct kshark_data_stream *stream,
  * General purpose macro defining methods for adding plugin context.
  * Do not use this macro in header files.
  */
-#define KS_DEFINE_PLUGIN_CONTEXT(type)					\
+#define KS_DEFINE_PLUGIN_CONTEXT(type, type_free)			\
 static type **__context_handler;					\
 static ssize_t __n_streams = -1;					\
 __hidden type *__init(int sd)						\
@@ -412,7 +412,7 @@ __hidden void __close(int sd)						\
 	}								\
 	obj = __get_context(sd);					\
 	if (obj) {							\
-		free(__context_handler[sd]);				\
+		type_free(__context_handler[sd]);			\
 		__context_handler[sd] = NULL;				\
 	}								\
 }									\
