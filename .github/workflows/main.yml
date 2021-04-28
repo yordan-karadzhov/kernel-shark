@@ -1,6 +1,9 @@
 name: KernelShark CI (CMAKE)
 
-on: [push]
+on:
+  push:
+  schedule:
+    - cron:  '0 15 * * THU'
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
