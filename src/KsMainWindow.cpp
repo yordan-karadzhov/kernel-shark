@@ -1248,7 +1248,7 @@ void KsMainWindow::_load(const QString& fileName, bool append)
 	QString pbLabel("Loading    ");
 	bool loadDone = false;
 	struct stat st;
-	double shift;
+	double shift(.0);
 	int ret, sd;
 
 	ret = stat(fileName.toStdString().c_str(), &st);
@@ -1263,15 +1263,6 @@ void KsMainWindow::_load(const QString& fileName, bool append)
 	}
 
 	qInfo() << "Loading " << fileName;
-
-	if (append) {
-		bool ok;
-		shift = KsTimeOffsetDialog::getValueNanoSec(fileName, &ok);
-		if (ok)
-			shift *= 1000.;
-		else
-			shift = 0.;
-	}
 
 	if (fileName.size() < 40) {
 		pbLabel += fileName;
