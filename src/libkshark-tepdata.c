@@ -1210,7 +1210,6 @@ static void kshark_tep_init_methods(struct kshark_generic_stream_interface *inte
 const char *tep_plugin_names[] = {
 	"sched_events",
 	"missed_events",
-	"kvm_combo",
 };
 
 /**
