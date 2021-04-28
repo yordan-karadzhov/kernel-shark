@@ -53,8 +53,7 @@ struct plugin_sched_context {
 	struct kshark_data_container	*sw_data;
 };
 
-/** A general purpose macro is used to define plugin context. */
-KS_DEFINE_PLUGIN_CONTEXT(struct plugin_sched_context);
+KS_DECLARE_PLUGIN_CONTEXT_METHODS(struct plugin_sched_context)
 
 /** The type of the data field stored in the kshark_data_container object. */
 typedef int64_t ks_num_field_t;

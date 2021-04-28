@@ -24,6 +24,8 @@ extern "C" {
 /* Quiet warnings over documenting simple structures */
 //! @cond Doxygen_Suppress
 
+#define __hidden __attribute__((visibility ("hidden")))
+
 #define _MAKE_STR(x)	#x
 
 #define MAKE_STR(x)	_MAKE_STR(x)
@@ -364,11 +366,14 @@ int kshark_handle_all_dpis(struct kshark_data_stream *stream,
 	__ok;								\
 })									\
 
-/** General purpose macro defining methods for adding plugin context. */
+/**
+ * General purpose macro defining methods for adding plugin context.
+ * Do not use this macro in header files.
+ */
 #define KS_DEFINE_PLUGIN_CONTEXT(type)					\
 static type **__context_handler;					\
 static ssize_t __n_streams = -1;					\
-static inline type *__init(int sd)					\
+__hidden type *__init(int sd)						\
 {									\
 	type *obj;							\
 	if (__n_streams < 0 && sd < KS_DEFAULT_NUM_STREAMS) {		\
@@ -388,7 +393,7 @@ static inline type *__init(int sd)					\
 	__context_handler[sd] = obj;					\
 	return obj;							\
 }									\
-static inline void __close(int sd)					\
+__hidden void __close(int sd)						\
 {									\
 	if (sd < 0) {							\
 		free(__context_handler);				\
@@ -398,12 +403,21 @@ static inline void __close(int sd)					\
 	free(__context_handler[sd]);					\
 	__context_handler[sd] = NULL;					\
 }									\
-static inline type *__get_context(int sd)				\
+__hidden type *__get_context(int sd)					\
 {									\
 	if (sd < 0 || sd >= __n_streams)				\
 		return NULL;						\
 	return __context_handler[sd];					\
 }									\
+
+/**
+ * General purpose macro declaring the methods for adding plugin context.
+ * To be used in header files.
+ */
+#define KS_DECLARE_PLUGIN_CONTEXT_METHODS(type)		\
+type *__init(int sd);					\
+void __close(int sd);					\
+type *__get_context(int sd);				\
 
 #ifdef __cplusplus
 }
