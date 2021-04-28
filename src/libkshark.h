@@ -281,7 +281,7 @@ struct kshark_generic_stream_interface {
 /** Structure representing a stream of trace data. */
 struct kshark_data_stream {
 	/** Data stream identifier. */
-	uint16_t		stream_id;
+	int16_t			stream_id;
 
 	/** The number of CPUs presented in this data stream. */
 	int			n_cpus;

@@ -117,6 +117,9 @@ int kshark_unregister_event_handler(struct kshark_data_stream *stream,
 {
 	struct kshark_event_proc_handler **last;
 
+	if (stream->stream_id < 0)
+		return 0;
+
 	for (last = &stream->event_handlers; *last; last = &(*last)->next) {
 		if ((*last)->id == event_id &&
 		    (*last)->event_func == evt_func) {
@@ -181,6 +184,9 @@ void kshark_unregister_draw_handler(struct kshark_data_stream *stream,
 				    kshark_plugin_draw_handler_func draw_func)
 {
 	struct kshark_draw_handler **last;
+
+	if (stream->stream_id < 0)
+		return;
 
 	for (last = &stream->draw_handlers; *last; last = &(*last)->next) {
 		if ((*last)->draw_func == draw_func) {
@@ -410,12 +416,16 @@ void kshark_unregister_plugin(struct kshark_context *kshark_ctx,
  */
 void kshark_free_plugin_list(struct kshark_plugin_list *plugins)
 {
+	struct kshark_data_stream stream;
 	struct kshark_plugin_list *last;
 
+	stream.stream_id = KS_PLUGIN_CONTEXT_FREE;
 	while (plugins) {
 		last = plugins;
 		plugins = plugins->next;
 
+		if (last->process_interface)
+			last->process_interface->close(&stream);
 		free_plugin(last);
 	}
 }

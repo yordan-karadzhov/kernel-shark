@@ -366,6 +366,9 @@ int kshark_handle_all_dpis(struct kshark_data_stream *stream,
 	__ok;								\
 })									\
 
+/** Identifier used to free the plugin context. */
+#define KS_PLUGIN_CONTEXT_FREE	-1
+
 /**
  * General purpose macro defining methods for adding plugin context.
  * Do not use this macro in header files.
@@ -393,21 +396,25 @@ __hidden type *__init(int sd)						\
 	__context_handler[sd] = obj;					\
 	return obj;							\
 }									\
-__hidden void __close(int sd)						\
-{									\
-	if (sd < 0) {							\
-		free(__context_handler);				\
-		__n_streams = -1;					\
-		return;							\
-	}								\
-	free(__context_handler[sd]);					\
-	__context_handler[sd] = NULL;					\
-}									\
 __hidden type *__get_context(int sd)					\
 {									\
 	if (sd < 0 || sd >= __n_streams)				\
 		return NULL;						\
 	return __context_handler[sd];					\
+}									\
+__hidden void __close(int sd)						\
+{									\
+	type *obj;							\
+	if (sd == KS_PLUGIN_CONTEXT_FREE) {				\
+		free(__context_handler);				\
+		__n_streams = -1;					\
+		return;							\
+	}								\
+	obj = __get_context(sd);					\
+	if (obj) {							\
+		free(__context_handler[sd]);				\
+		__context_handler[sd] = NULL;				\
+	}								\
 }									\
 
 /**

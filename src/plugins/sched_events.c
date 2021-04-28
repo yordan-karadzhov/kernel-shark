@@ -198,26 +198,26 @@ int KSHARK_PLOT_PLUGIN_INITIALIZER(struct kshark_data_stream *stream)
 int KSHARK_PLOT_PLUGIN_DEINITIALIZER(struct kshark_data_stream *stream)
 {
 	printf("<-- sched close %i\n", stream->stream_id);
-	struct plugin_sched_context *plugin_ctx;
-	int sd = stream->stream_id;
+	struct plugin_sched_context *plugin_ctx = __get_context(stream->stream_id);
+	int ret = 0;
 
-	plugin_ctx = __get_context(sd);
-	if (!plugin_ctx)
-		return 0;
+	if (plugin_ctx) {
+		kshark_unregister_event_handler(stream,
+						plugin_ctx->sched_switch_event->id,
+						plugin_sched_swith_action);
 
-	kshark_unregister_event_handler(stream,
-					plugin_ctx->sched_switch_event->id,
-					plugin_sched_swith_action);
+		kshark_unregister_event_handler(stream,
+						plugin_ctx->sched_waking_event->id,
+						plugin_sched_wakeup_action);
 
-	kshark_unregister_event_handler(stream,
-					plugin_ctx->sched_waking_event->id,
-					plugin_sched_wakeup_action);
+		kshark_unregister_draw_handler(stream, plugin_draw);
 
-	kshark_unregister_draw_handler(stream, plugin_draw);
+		ret = 1;
+	}
 
-	__close(sd);
+	__close(stream->stream_id);
 
-	return 1;
+	return ret;
 }
 
 /** Initialize the control interface of the plugin. */
