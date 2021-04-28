@@ -567,7 +567,7 @@ static bool kshark_trace_file_from_json(const char **file, const char **name,
 	}
 
 	if (st.st_mtime != time) {
-		fprintf(stderr, "Timestamp mismatch! (%li!=%li)\nFile %s\n",
+		fprintf(stderr, "Timestamp mismatch! (%" PRIu64 "!=%li)\nFile %s\n",
 				time, st.st_mtime, file_str);
 		return false;
 	}

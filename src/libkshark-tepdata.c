@@ -1025,7 +1025,7 @@ static char *tepdata_dump_entry(struct kshark_data_stream *stream,
 			free(info);
 		} else {
 			n = asprintf(&entry_str,
-				     "%i; %li; [UNKNOWN TASK]-%i; CPU %i; ; [UNKNOWN EVENT]; [NO INFO]; 0x%x",
+				     "%i; %" PRIu64 "; [UNKNOWN TASK]-%i; CPU %i; ; [UNKNOWN EVENT]; [NO INFO]; 0x%x",
 				     entry->stream_id,
 				     entry->ts,
 				     interface->get_pid(stream, entry),
