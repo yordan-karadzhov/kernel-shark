@@ -49,6 +49,11 @@ if (Qt5Widgets_FOUND AND TT_FONT_FILE)
                      SOURCE event_field_plot.c EventFieldDialog.cpp EventFieldPlot.cpp)
     list(APPEND PLUGIN_LIST "event_field_plot")
 
+    BUILD_GUI_PLUGIN(NAME latency_plot
+                     MOC LatencyPlotDialog.hpp
+                     SOURCE latency_plot.c LatencyPlot.cpp LatencyPlotDialog.cpp)
+    list(APPEND PLUGIN_LIST "latency_plot")
+
 endif (Qt5Widgets_FOUND AND TT_FONT_FILE)
 
 BUILD_PLUGIN(NAME missed_events
