@@ -44,6 +44,11 @@ if (Qt5Widgets_FOUND AND TT_FONT_FILE)
                      SOURCE sched_events.c SchedEvents.cpp)
     list(APPEND PLUGIN_LIST "sched_events")
 
+    BUILD_GUI_PLUGIN(NAME event_field_plot
+                     MOC EventFieldDialog.hpp
+                     SOURCE event_field_plot.c EventFieldDialog.cpp EventFieldPlot.cpp)
+    list(APPEND PLUGIN_LIST "event_field_plot")
+
 endif (Qt5Widgets_FOUND AND TT_FONT_FILE)
 
 BUILD_PLUGIN(NAME missed_events
