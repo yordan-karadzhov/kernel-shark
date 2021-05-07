@@ -1280,7 +1280,7 @@ void Graph::fillTaskGraph(int sd, int pid)
 						 false,
 						 _collectionPtr,
 						 &index);
-		if (index >= 0)
+		if (cpuFront >= 0 && index >= 0)
 			eFront = _histoPtr->data[index];
 
 		cpuBack = ksmodel_get_cpu_back(_histoPtr, bin,
