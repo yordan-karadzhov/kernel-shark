@@ -324,6 +324,11 @@ struct kshark_data_stream {
 	/** Hash of CPUs to not display. */
 	struct kshark_hash_id	*hide_cpu_filter;
 
+	/**
+	 * Flag showing if some entries are filtered out (marked as invisible).
+	 */
+	bool			filter_is_applied;
+
 	/** The type of the data. */
 	char			data_format[KS_DATA_FORMAT_SIZE];
 

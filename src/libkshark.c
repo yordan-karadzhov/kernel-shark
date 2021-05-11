@@ -166,6 +166,7 @@ static struct kshark_data_stream *kshark_stream_alloc()
 		    goto fail;
 	}
 
+	stream->filter_is_applied = false;
 	kshark_set_data_format(stream->data_format, KS_INVALID_DATA);
 	stream->name = strdup(KS_UNNAMED);
 
@@ -1271,8 +1272,11 @@ static void filter_entries(struct kshark_context *kshark_ctx, int sd,
 			return;
 		}
 
-		if (!kshark_filter_is_set(kshark_ctx, sd))
+		if (!kshark_filter_is_set(kshark_ctx, sd) &&
+		    !stream->filter_is_applied) {
+			/* Nothing to be done. */
 			return;
+		}
 	}
 
 	/* Apply only the Id filters. */
@@ -1294,6 +1298,9 @@ static void filter_entries(struct kshark_context *kshark_ctx, int sd,
 
 		/* Apply Id filtering. */
 		kshark_apply_filters(kshark_ctx, stream, data[i]);
+
+		stream->filter_is_applied =
+			kshark_filter_is_set(kshark_ctx, sd)? true : false;
 	}
 }
 
@@ -1356,10 +1363,19 @@ void kshark_clear_all_filters(struct kshark_context *kshark_ctx,
 			      struct kshark_entry **data,
 			      size_t n_entries)
 {
-	int i;
+	struct kshark_data_stream *stream;
+	int *stream_ids, i;
 
 	for (i = 0; i < n_entries; ++i)
 		set_all_visible(&data[i]->visible);
+
+	stream_ids = kshark_all_streams(kshark_ctx);
+	for (i = 0; i < kshark_ctx->n_streams; i++) {
+		stream = kshark_get_data_stream(kshark_ctx, stream_ids[i]);
+		stream->filter_is_applied = false;
+	}
+
+	free(stream_ids);
 }
 
 /**
