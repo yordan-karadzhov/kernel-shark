@@ -149,6 +149,7 @@ BOOST_AUTO_TEST_CASE(KsUtils_getPluginList)
 	QStringList plugins{"sched_events",
 			    "event_field_plot",
 			    "latency_plot",
+			    "kvm_combo",
 			    "missed_events"
 	};
 

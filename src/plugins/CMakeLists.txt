@@ -54,6 +54,11 @@ if (Qt5Widgets_FOUND AND TT_FONT_FILE)
                      SOURCE latency_plot.c LatencyPlot.cpp LatencyPlotDialog.cpp)
     list(APPEND PLUGIN_LIST "latency_plot")
 
+    BUILD_GUI_PLUGIN(NAME kvm_combo
+                     MOC KVMComboDialog.hpp
+                     SOURCE kvm_combo.c KVMCombo.cpp KVMComboDialog.cpp)
+    list(APPEND PLUGIN_LIST "kvm_combo")
+
 endif (Qt5Widgets_FOUND AND TT_FONT_FILE)
 
 BUILD_PLUGIN(NAME missed_events
