@@ -128,6 +128,7 @@ void KsSession::loadDataStreams(kshark_context *kshark_ctx,
 
 	data->unregisterCPUCollections();
 
+	kshark_close_all(kshark_ctx);
 	dataSize = kshark_import_all_dstreams(kshark_ctx,
 					      _config,
 					      data->rows_r());
