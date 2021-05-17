@@ -571,8 +571,15 @@ void KsMainWindow::markEntry(ssize_t row, DualMarkerState st)
 /** Select given kshark_entry with a given maker. */
 void KsMainWindow::markEntry(const kshark_entry *e, DualMarkerState st)
 {
-	ssize_t row = kshark_find_entry_by_time(e->ts, _data.rows(),
-						0, _data.size() - 1);
+	ssize_t row;
+
+	if (!e) {
+		_mState.getMarker(st).reset();
+		return;
+	}
+
+	row = kshark_find_entry_by_time(e->ts, _data.rows(),
+					0, _data.size() - 1);
 
 	markEntry(row, st);
 }
@@ -1341,7 +1348,20 @@ void KsMainWindow::loadDataFile(const QString& fileName)
 /** Append trace data for file. */
 void KsMainWindow::appendDataFile(const QString& fileName)
 {
+	kshark_entry *eMarkA(nullptr), *eMarkB(nullptr);
+	int rowA = _mState.markerAPos();
+	int rowB = _mState.markerBPos();
+
+	if (rowA >= 0)
+		eMarkA = _data.rows()[rowA];
+
+	if (rowB >= 0)
+		eMarkB = _data.rows()[rowB];
+
 	_load(fileName, true);
+
+	markEntry(eMarkA, DualMarkerState::A);
+	markEntry(eMarkB, DualMarkerState::B);
 }
 
 void KsMainWindow::_error(const QString &mesg,

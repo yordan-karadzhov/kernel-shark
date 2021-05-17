@@ -154,6 +154,12 @@ public:
 
 	void updateLabels();
 
+	/** Get the index inside the data array marker A points to. */
+	ssize_t markerAPos() {return markerA()._isSet ? markerA()._pos : -1;}
+
+	/** Get the index inside the data array marker B points to. */
+	ssize_t markerBPos() {return markerB()._isSet ? markerB()._pos : -1;}
+
 signals:
 	/**
 	 * This signal is emitted when the Table View has to switch the color
