@@ -677,8 +677,7 @@ int KsDataStore::_openDataFile(kshark_context *kshark_ctx,
 
 	if (kshark_is_tep(kshark_ctx->stream[sd])) {
 		kshark_tep_init_all_buffers(kshark_ctx, sd);
-		for (int i = 0; i < kshark_ctx->n_streams; ++i)
-			kshark_tep_handle_plugins(kshark_ctx, i);
+		kshark_tep_handle_plugins(kshark_ctx, sd);
 	}
 
 	return sd;
