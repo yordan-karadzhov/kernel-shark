@@ -680,6 +680,8 @@ Mark::Mark()
 	_cpu._size = 5.5f;
 	_task._color = Color(0, 255, 0);
 	_task._size = 5.5f;
+	_combo._color = Color(100, 150, 255);
+	_combo._size = 5.5f;
 }
 
 void Mark::_draw(const Color &col, float size) const
@@ -691,6 +693,7 @@ void Mark::_draw(const Color &col, float size) const
 
 	_cpu.draw();
 	_task.draw();
+	_combo.draw();
 }
 
 /**
