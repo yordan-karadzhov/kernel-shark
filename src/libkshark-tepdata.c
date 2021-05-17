@@ -1615,8 +1615,10 @@ int kshark_tep_close_interface(struct kshark_data_stream *stream)
 	if (!tep_handle)
 		return -EFAULT;
 
-	if (seq.buffer)
+	if (seq.buffer) {
 		trace_seq_destroy(&seq);
+		seq.buffer = NULL;
+	}
 
 	if (tep_handle->advanced_event_filter) {
 		tep_filter_reset(tep_handle->advanced_event_filter);
