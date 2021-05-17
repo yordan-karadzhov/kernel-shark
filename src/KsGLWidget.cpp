@@ -409,25 +409,12 @@ void KsGLWidget::keyReleaseEvent(QKeyEvent *event)
  */
 #define KS_MAX_START_PLOTS 16
 
-/**
- * @brief Load and show trace data.
- *
- * @param data: Input location for the KsDataStore object.
- *	  KsDataStore::loadDataFile() must be called first.
- */
-void KsGLWidget::loadData(KsDataStore *data)
+void KsGLWidget::_defaultPlots(kshark_context *kshark_ctx)
 {
-	kshark_context *kshark_ctx(nullptr);
 	QVector<int> streamIds, plotVec;
 	uint64_t tMin, tMax;
 	int nCPUs, nBins;
 
-	if (!kshark_instance(&kshark_ctx) || !kshark_ctx->n_streams)
-		return;
-
-	loadColors();
-
-	_data = data;
 	_model.reset();
 	_streamPlots.clear();
 
@@ -463,6 +450,31 @@ void KsGLWidget::loadData(KsDataStore *data)
 	tMin = _data->rows()[0]->ts;
 	tMax = _data->rows()[_data->size() - 1]->ts;
 	ksmodel_set_bining(_model.histo(), nBins, tMin, tMax);
+}
+
+/**
+ * @brief Load and show trace data.
+ *
+ * @param data: Input location for the KsDataStore object.
+ *		KsDataStore::loadDataFile() must be called first.
+ * @param resetPlots: If true, all existing graphs are closed
+ *		      and a default configuration of graphs is displayed
+ *		      (all CPU plots). If false, the current set of graphs
+ *		      is preserved.
+ */
+void KsGLWidget::loadData(KsDataStore *data, bool resetPlots)
+{
+	kshark_context *kshark_ctx(nullptr);
+
+	if (!kshark_instance(&kshark_ctx) || !kshark_ctx->n_streams)
+		return;
+
+	loadColors();
+
+	_data = data;
+	if (resetPlots)
+		_defaultPlots(kshark_ctx);
+
 	_model.fill(_data);
 }
 

@@ -45,7 +45,7 @@ class KsTraceGraph : public KsWidgetsLib::KsDataWidget
 public:
 	explicit KsTraceGraph(QWidget *parent = nullptr);
 
-	void loadData(KsDataStore *data);
+	void loadData(KsDataStore *data, bool resetPlots);
 
 	void setMarkerSM(KsDualMarkerSM *m);
 

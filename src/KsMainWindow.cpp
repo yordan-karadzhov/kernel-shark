@@ -1283,7 +1283,8 @@ void KsMainWindow::_load(const QString& fileName, bool append)
 	QApplication::processEvents();
 
 	_view.reset();
-	_graph.reset();
+	if (!append)
+		_graph.reset();
 
 	auto lamLoadJob = [&, this] () {
 		QVector<kshark_dpi *> v;
@@ -1333,7 +1334,10 @@ void KsMainWindow::_load(const QString& fileName, bool append)
 	_view.loadData(&_data);
 	pb.setValue(175);
 
-	_graph.loadData(&_data);
+	_graph.loadData(&_data, !append);
+	if (append)
+		_graph.cpuReDraw(sd, KsUtils::getCPUList(sd));
+
 	pb.setValue(195);
 }
 
@@ -1454,7 +1458,7 @@ void KsMainWindow::loadSession(const QString &fileName)
 	_view.loadData(&_data);
 	pb.setValue(155);
 
-	_graph.loadData(&_data);
+	_graph.loadData(&_data, true);
 	_filterSyncCBoxUpdate(kshark_ctx);
 	pb.setValue(175);
 

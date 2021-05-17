@@ -785,6 +785,7 @@ int KsDataStore::appendDataFile(const QString &file, int64_t offset)
 	_rows = mergedRows;
 
 	registerCPUCollections();
+	emit updateWidgets(this);
 
 	return sd;
 }

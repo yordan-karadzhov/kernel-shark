@@ -101,7 +101,7 @@ public:
 
 	void keyReleaseEvent(QKeyEvent *event);
 
-	void loadData(KsDataStore *data);
+	void loadData(KsDataStore *data, bool resetPlots);
 
 	void loadColors();
 
@@ -325,6 +325,8 @@ private:
 
 	int _getLastCPU(struct kshark_trace_histo *histo,
 			int bin, int sd, int pid);
+
+	void _defaultPlots(kshark_context *kshark_ctx);
 
 	void _deselect();
 

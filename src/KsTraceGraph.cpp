@@ -148,12 +148,16 @@ KsTraceGraph::KsTraceGraph(QWidget *parent)
  * @brief Load and show trace data.
  *
  * @param data: Input location for the KsDataStore object.
- *	  KsDataStore::loadDataFile() must be called first.
+ *	  	KsDataStore::loadDataFile() must be called first.
+ * @param resetPlots: If true, all existing graphs are closed
+ *		      and a default configuration of graphs is displayed
+ *		      (all CPU plots). If false, the current set of graphs
+ *		      is preserved.
  */
-void KsTraceGraph::loadData(KsDataStore *data)
+void KsTraceGraph::loadData(KsDataStore *data, bool resetPlots)
 {
 	_data = data;
-	_glWindow.loadData(data);
+	_glWindow.loadData(data, resetPlots);
 	updateGeom();
 }
 
