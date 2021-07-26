@@ -132,8 +132,7 @@ else (CMAKE_BUILD_TYPE MATCHES Package)
 endif (CMAKE_BUILD_TYPE MATCHES Package)
 
 include_directories(${KS_DIR}/src/
-                    ${KS_DIR}/build/src/
-                    ${TRACECMD_INCLUDE_DIR})
+                    ${KS_DIR}/build/src/)
 
 message("")
 message(STATUS "C flags      : " ${CMAKE_C_FLAGS})
