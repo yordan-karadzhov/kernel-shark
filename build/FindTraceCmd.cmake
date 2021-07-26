@@ -42,7 +42,7 @@ pkg_check_modules(PC_TraceCmd QUIET libtracecmd)
 set(TraceCmd_VERSION     ${PC_TraceCmd_VERSION})
 set(TraceCmd_DEFINITIONS ${PC_TraceCmd_CFLAGS_OTHER})
 
-find_path(TraceCmd_INCLUDE_DIR NAMES trace-cmd/trace-cmd.h
+find_path(TraceCmd_INCLUDE_DIR NAMES trace-cmd.h
                                HINTS ${PC_TraceCmd_INCLUDE_DIRS}
                                      ${PC_TraceCmd_INCLUDEDIR})
 

@@ -42,7 +42,7 @@ pkg_check_modules(PC_TraceFS QUIET libtracefs)
 set(TraceFS_VERSION     ${PC_TraceFS_VERSION})
 set(TraceFS_DEFINITIONS ${PC_TraceFS_CFLAGS_OTHER})
 
-find_path(TraceFS_INCLUDE_DIR  NAMES tracefs/tracefs.h
+find_path(TraceFS_INCLUDE_DIR  NAMES tracefs.h
                                HINTS ${PC_TraceFS_INCLUDE_DIRS}
                                      ${PC_TraceFS_INCLUDEDIR})
 

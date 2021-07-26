@@ -21,8 +21,7 @@
 #include <string.h>
 
 // trace-cmd
-#include "trace-cmd/trace-cmd.h"
-#include "tracefs/tracefs.h"
+#include <trace-cmd.h>
 
 // KernelShark
 #include "libkshark.h"

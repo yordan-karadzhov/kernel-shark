@@ -42,7 +42,7 @@ pkg_check_modules(PC_TraceEvent QUIET libtraceevent)
 set(TraceEvent_VERSION     ${PC_TraceEvent_VERSION})
 set(TraceEvent_DEFINITIONS ${PC_TraceEvent_CFLAGS_OTHER})
 
-find_path(TraceEvent_INCLUDE_DIR  NAMES traceevent/event-parse.h
+find_path(TraceEvent_INCLUDE_DIR  NAMES event-parse.h
                                   HINTS ${PC_TraceEvent_INCLUDE_DIRS}
                                         ${PC_TraceEvent_INCLUDEDIR})
 

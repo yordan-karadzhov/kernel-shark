@@ -14,7 +14,7 @@
 #include <stdio.h>
 
 // trace-cmd
-#include "trace-cmd/trace-cmd.h"
+#include <trace-cmd.h>
 
 // KernelShark
 #include "plugins/sched_events.h"
