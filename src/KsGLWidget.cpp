@@ -345,10 +345,18 @@ void KsGLWidget::wheelEvent(QWheelEvent * event)
 		 * Use the position of the mouse as a focus point for the
 		 * zoom.
 		 */
-		zoomFocus = event->pos().x() - _bin0Offset();
+#ifdef QT_VERSION_LESS_5_15
+
+	zoomFocus = event->pos().x() - _bin0Offset();
+
+#else
+
+	zoomFocus = event->position().x() - _bin0Offset();
+
+#endif // QT_VERSION_LESS_5_15
 	}
 
-	if (event->delta() > 0) {
+	if (event->angleDelta().y() > 0) {
 		_model.zoomIn(.05, zoomFocus);
 	} else {
 		_model.zoomOut(.05, zoomFocus);

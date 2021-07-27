@@ -83,6 +83,12 @@ if (Qt5Widgets_FOUND)
 
     endif()
 
+    if(Qt5Widgets_VERSION VERSION_LESS "5.15")
+
+        set(QT_VERSION_LESS_5_15 TRUE)
+
+    endif()
+
 endif (Qt5Widgets_FOUND)
 
 find_package (Boost COMPONENTS unit_test_framework)

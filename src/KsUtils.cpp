@@ -486,7 +486,7 @@ QString getSaveFile(QWidget *parent,
  */
 QStringList splitArguments(QString cmd)
 {
-	QString::SplitBehavior opt = QString::SkipEmptyParts;
+	auto opt = KS_SPLIT_SkipEmptyParts;
 	int i, progress = 0, size;
 	QStringList argv;
 	QChar quote = 0;
@@ -527,7 +527,7 @@ QStringList splitArguments(QString cmd)
  */
 QVector<int> parseIdList(QString v_str)
 {
-	QStringList list = v_str.split(",", QString::SkipEmptyParts);
+	QStringList list = v_str.split(",", KS_SPLIT_SkipEmptyParts);
 	QVector<int> v;
 
 	for (auto item: list) {
@@ -553,7 +553,7 @@ QVector<int> parseIdList(QString v_str)
  */
 QMap<int, QVector<int>> parseTaskList(QString v_str)
 {
-	QStringList taskList = v_str.split(",", QString::SkipEmptyParts);
+	QStringList taskList = v_str.split(",", KS_SPLIT_SkipEmptyParts);
 	QVector<int> streamIds, allPids;
 	kshark_context *kshark_ctx(nullptr);
 	QMap<int, QVector<int>> ret;

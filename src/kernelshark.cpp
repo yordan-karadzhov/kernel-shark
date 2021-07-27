@@ -87,7 +87,7 @@ int main(int argc, char **argv)
 			break;
 
 		case 'a':
-			appInputFiles << QString(optarg).split(" ", QString::SkipEmptyParts);
+			appInputFiles << QString(optarg).split(" ", KS_SPLIT_SkipEmptyParts);
 			break;
 
 		case 'p':
