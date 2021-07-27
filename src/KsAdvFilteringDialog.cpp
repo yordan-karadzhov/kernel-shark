@@ -9,9 +9,6 @@
  *  @brief   GUI Dialog for Advanced filtering settings.
  */
 
-// trace-cmd
-#include <trace-cmd.h>
-
 // KernelShark
 #include "libkshark.h"
 #include "libkshark-tepdata.h"
