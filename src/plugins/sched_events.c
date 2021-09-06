@@ -193,9 +193,11 @@ int KSHARK_PLOT_PLUGIN_INITIALIZER(struct kshark_data_stream *stream)
 				      plugin_ctx->sched_switch_event->id,
 				      plugin_sched_swith_action);
 
-	kshark_register_event_handler(stream,
-				      plugin_ctx->sched_waking_event->id,
-				      plugin_sched_wakeup_action);
+	if (plugin_ctx->sched_waking_event) {
+		kshark_register_event_handler(stream,
+					      plugin_ctx->sched_waking_event->id,
+					      plugin_sched_wakeup_action);
+	}
 
 	kshark_register_draw_handler(stream, plugin_draw);
 
@@ -213,9 +215,11 @@ int KSHARK_PLOT_PLUGIN_DEINITIALIZER(struct kshark_data_stream *stream)
 						plugin_ctx->sched_switch_event->id,
 						plugin_sched_swith_action);
 
-		kshark_unregister_event_handler(stream,
-						plugin_ctx->sched_waking_event->id,
-						plugin_sched_wakeup_action);
+		if (plugin_ctx->sched_waking_event) {
+			kshark_unregister_event_handler(stream,
+							plugin_ctx->sched_waking_event->id,
+							plugin_sched_wakeup_action);
+		}
 
 		kshark_unregister_draw_handler(stream, plugin_draw);
 
