@@ -1868,9 +1868,14 @@ int kshark_tep_find_top_stream(struct kshark_context *kshark_ctx,
 static bool find_wakeup_event(struct tep_handle *tep, const char *wakeup_name,
 			      struct tep_event **waking_event_ptr)
 {
-	*waking_event_ptr = tep_find_event_by_name(tep, "sched", wakeup_name);
+	struct tep_event *event;
 
-	return (*waking_event_ptr)? true : false;
+	event = tep_find_event_by_name(tep, "sched", wakeup_name);
+
+	if (event)
+		*waking_event_ptr = event;
+
+	return !!event;
 }
 
 /**
