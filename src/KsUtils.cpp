@@ -570,7 +570,7 @@ QMap<int, QVector<int>> parseTaskList(QString v_str)
 			if (name.isEmpty())
 				continue;
 
-			for (auto const task: taskList) {
+			for (auto const &task: taskList) {
 				if(name == task)
 					ret[sd].append(pid);
 			}
