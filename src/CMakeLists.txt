@@ -46,6 +46,11 @@ install(FILES "${KS_DIR}/libkshark.pc"
         DESTINATION ${PKG_CONGIG_DIR}
             COMPONENT                 libkshark-devel)
 
+install(CODE "message(\"-- Executing: ldconfig ${_LIBDIR}\")
+              execute_process(COMMAND bash \"-c\" \"ldconfig ${_INSTALL_PREFIX}\"
+                              ECHO_ERROR_VARIABLE)"
+        COMPONENT libkshark-devel)
+
 if (OPENGL_FOUND)
 
     message(STATUS "libkshark-plot")
