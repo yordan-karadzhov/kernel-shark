@@ -2,7 +2,7 @@ make clean
 rm CMakeCache.txt
 rm cmake_install.cmake
 rm Makefile
-rm CTestTestfile.cmake
+rm -f CTestTestfile.cmake
 rm -f DartConfiguration.tcl
 rm -rf CMakeFiles/
 rm -rf src/
