@@ -13,7 +13,8 @@ KernelShark has the following external dependencies:
 1. In order to install the packages on Ubuntu do the following:
     sudo apt-get install build-essential git cmake libjson-c-dev -y
     sudo apt-get install freeglut3-dev libxmu-dev libxi-dev -y
-    sudo apt-get install fonts-freefont-ttf
+    sudo apt-get install flex bison -y
+    sudo apt-get install fonts-freefont-ttf -y
     sudo apt-get install qtbase5-dev -y
 
 1.1 If you want to be able to generate Doxygen documentation:
@@ -21,12 +22,14 @@ KernelShark has the following external dependencies:
 
 
 2. In order to install the packages on Fedora, as root do the following:
-    dnf install gcc gcc-c++ git cmake json-c-devel -y
-    dnf install freeglut-devel redhat-rpm-config -y
-    dnf install qt5-qtbase-devel -y
+    sudo dnf install gcc gcc-c++ git cmake json-c-devel -y
+    sudo dnf install freeglut-devel redhat-rpm-config -y
+    sudo dnf install flex bison -y
+    sudo dnf install gnu-free-sans-fonts -y
+    sudo dnf install qt5-qtbase-devel -y
 
 2.1 If you want to be able to generate Doxygen documentation:
-    dnf install graphviz doxygen -y
+    sudo dnf install graphviz doxygen -y
 
 
 3. In order to install the final dependencies do the following:
@@ -43,6 +46,8 @@ KernelShark has the following external dependencies:
     git clone https://git.kernel.org/pub/scm/utils/trace-cmd/trace-cmd.git/
     cd trace-cmd
     make
+    make libs
+    sudo make install
     sudo make install_libs
 
 Building:
