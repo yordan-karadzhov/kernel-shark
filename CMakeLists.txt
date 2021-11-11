@@ -42,6 +42,8 @@ if (NOT _POLKIT_INSTALL_PREFIX)
 
 endif ()
 
+set(LIBTRACECMD_MIN_VERSION 1.0)
+
 set(CMAKE_MODULE_PATH "${KS_DIR}/build")
 find_package(TraceEvent REQUIRED)
 find_package(TraceFS    REQUIRED)
