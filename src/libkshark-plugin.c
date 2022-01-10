@@ -219,9 +219,10 @@ void kshark_free_draw_handler_list(struct kshark_draw_handler *handlers)
 /** Close and free this plugin. */
 static void free_plugin(struct kshark_plugin_list *plugin)
 {
-	dlclose(plugin->handle);
+	if (plugin->handle)
+		dlclose(plugin->handle);
 
-	if (plugin->process_interface){
+	if (plugin->process_interface) {
 		free(plugin->process_interface->name);
 		free(plugin->process_interface);
 	}
