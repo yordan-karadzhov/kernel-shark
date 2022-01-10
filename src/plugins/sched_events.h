@@ -9,8 +9,8 @@
  *  @brief   Plugin for Sched events.
  */
 
-#ifndef _KS_PLUGIN_SHED_H
-#define _KS_PLUGIN_SHED_H
+#ifndef _KS_PLUGIN_SCHED_H
+#define _KS_PLUGIN_SCHED_H
 
 // KernelShark
 #include "libkshark.h"
