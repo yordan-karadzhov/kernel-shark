@@ -59,8 +59,8 @@ if (OPENGL_FOUND)
                                      KsPlugins.cpp)
 
     target_link_libraries(kshark-plot  kshark
-                                       ${GLUT_LIBRARY}
-                                       ${OPENGL_LIBRARIES})
+                                       GLUT::GLUT
+                                       OpenGL::GLU)
 
     set_target_properties(kshark-plot PROPERTIES  SUFFIX ".so.${KS_VERSION_STRING}")
     install(TARGETS kshark-plot
