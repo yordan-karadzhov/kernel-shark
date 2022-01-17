@@ -22,36 +22,6 @@
 
 /** Plugin context instance. */
 
-//! @cond Doxygen_Suppress
-
-typedef unsigned long long tep_num_field_t;
-
-#define PREV_STATE_SHIFT	((int) ((sizeof(ks_num_field_t) - 1) * 8))
-
-#define PREV_STATE_MASK		(((ks_num_field_t) 1 << 8) - 1)
-
-#define PID_MASK		(((ks_num_field_t) 1 << PREV_STATE_SHIFT) - 1)
-
-//! @endcond
-
-static void plugin_sched_set_pid(ks_num_field_t *field,
-				 tep_num_field_t pid)
-{
-	*field &= ~PID_MASK;
-	*field = pid & PID_MASK;
-}
-
-/**
- * @brief Retrieve the PID value from the data field stored in the
- *	  kshark_data_container object.
- *
- * @param field: Input location for the data field.
- */
-__hidden int plugin_sched_get_pid(ks_num_field_t field)
-{
-	return field & PID_MASK;
-}
-
 /* Use the most significant byte to store the value of "prev_state". */
 static void plugin_sched_set_prev_state(ks_num_field_t *field,
 					tep_num_field_t prev_state)
@@ -135,7 +105,7 @@ static void plugin_sched_swith_action(struct kshark_data_stream *stream,
 	struct tep_record *record = (struct tep_record *) rec;
 	struct plugin_sched_context *plugin_ctx;
 	unsigned long long next_pid, prev_state;
-	ks_num_field_t ks_field;
+	ks_num_field_t ks_field = 0;
 	int ret;
 
 	plugin_ctx = __get_context(stream->stream_id);

@@ -11,6 +11,7 @@
 
 // C++
 #include<iostream>
+#include <limits>
 
 // KernelShark
 #include "KsPlugins.hpp"
@@ -413,4 +414,25 @@ void eventFieldIntervalPlot(KsCppArgV *argvCpp,
 		std::cerr << "Exception in eventFieldIntervalPlot\n"
 			  << exc.what() << std::endl;
 	}
+}
+
+/**
+ * @brief Distance between the click and the shape. Used to decide if
+ *	  the double click action must be executed.
+ *
+ * @param x: X coordinate of the click.
+ * @param y: Y coordinate of the click.
+ *
+ * @returns If the click is inside the box, the distance is zero.
+ *	    Otherwise infinity.
+ */
+double LatencyBox::distance(int x, int y) const
+{
+	if (x < pointX(0) || x > pointX(2))
+		return std::numeric_limits<double>::max();
+
+	if (y < pointY(0) || y > pointY(1))
+		return std::numeric_limits<double>::max();
+
+	return 0;
 }

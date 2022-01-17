@@ -11,9 +11,6 @@
  *	     preempted by another task.
  */
 
-// C++
-#include <vector>
-
 // KernelShark
 #include "libkshark.h"
 #include "libkshark-plugin.h"
@@ -24,7 +21,7 @@
 
 using namespace KsPlot;
 
-static KsMainWindow *ks_ptr;
+static KsMainWindow *ks4sched_ptr;
 
 /**
  * @brief Provide the plugin with a pointer to the KsMainWindow object (the GUI
@@ -32,72 +29,24 @@ static KsMainWindow *ks_ptr;
  */
 __hidden void *plugin_set_gui_ptr(void *gui_ptr)
 {
-	ks_ptr = static_cast<KsMainWindow *>(gui_ptr);
+	ks4sched_ptr = static_cast<KsMainWindow *>(gui_ptr);
 	return nullptr;
 }
 
 /**
- * This class represents the graphical element visualizing the latency between
- *  sched_waking and sched_switch events.
+ * This child class represents the graphical element visualizing the latency
+ * between sched_waking and sched_switch events. It is defined to re-implement
+ * the handler for double-click.
  */
-class LatencyBox : public Rectangle
+class SchedLatencyBox : public LatencyBox
 {
 	/** On double click do. */
 	void _doubleClick() const override
 	{
-		ks_ptr->markEntry(_data[1]->entry, DualMarkerState::B);
-		ks_ptr->markEntry(_data[0]->entry, DualMarkerState::A);
+		ks4sched_ptr->markEntry(_data[1]->entry, DualMarkerState::B);
+		ks4sched_ptr->markEntry(_data[0]->entry, DualMarkerState::A);
 	}
 
-public:
-	/** The trace record data that corresponds to this LatencyBox. */
-	std::vector<kshark_data_field_int64 *>	_data;
-
-	/**
-	 * @brief Distance between the click and the shape. Used to decide if
-	 *	  the double click action must be executed.
-	 *
-	 * @param x: X coordinate of the click.
-	 * @param y: Y coordinate of the click.
-	 *
-	 * @returns If the click is inside the box, the distance is zero.
-	 *	    Otherwise infinity.
-	 */
-	double distance(int x, int y) const override
-	{
-		if (x < pointX(0) || x > pointX(2))
-			return std::numeric_limits<double>::max();
-
-		if (y < pointY(0) || y > pointY(1))
-			return std::numeric_limits<double>::max();
-
-		return 0;
-	}
-};
-
-static PlotObject *makeShape(std::vector<const Graph *> graph,
-			     std::vector<int> bins,
-			     std::vector<kshark_data_field_int64 *> data,
-			     Color col, float size)
-{
-	LatencyBox *rec = new LatencyBox;
-	rec->_data = data;
-
-	Point p0 = graph[0]->bin(bins[0])._base;
-	Point p1 = graph[0]->bin(bins[1])._base;
-	int height = graph[0]->height() * .3;
-
-	rec->setFill(false);
-	rec->setPoint(0, p0.x() - 1, p0.y() - height);
-	rec->setPoint(1, p0.x() - 1, p0.y() - 1);
-
-	rec->setPoint(3, p1.x() - 1, p1.y() - height);
-	rec->setPoint(2, p1.x() - 1, p1.y() - 1);
-
-	rec->_size = size;
-	rec->_color = col;
-
-	return rec;
 };
 
 /*
@@ -191,14 +140,14 @@ __hidden void plugin_draw(kshark_cpp_argv *argv_c,
 	eventFieldIntervalPlot(argvCpp,
 			       plugin_ctx->sw_data, checkFieldSW,
 			       plugin_ctx->ss_data, checkEntryPid,
-			       makeShape,
+			       makeLatencyBox<SchedLatencyBox>,
 			       {0, 255, 0}, // Green
 			       -1);         // Default size
 
 	eventFieldIntervalPlot(argvCpp,
 			       plugin_ctx->ss_data, checkFieldSS,
 			       plugin_ctx->ss_data, checkEntryPid,
-			       makeShape,
+			       makeLatencyBox<SchedLatencyBox>,
 			       {255, 0, 0}, // Red
 			       -1);         // Default size
 }

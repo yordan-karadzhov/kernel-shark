@@ -15,6 +15,7 @@
 // KernelShark
 #include "libkshark.h"
 #include "libkshark-plugin.h"
+#include "plugins/common_sched.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,10 +56,6 @@ struct plugin_sched_context {
 
 KS_DECLARE_PLUGIN_CONTEXT_METHODS(struct plugin_sched_context)
 
-/** The type of the data field stored in the kshark_data_container object. */
-typedef int64_t ks_num_field_t;
-
-int plugin_sched_get_pid(ks_num_field_t field);
 
 int plugin_sched_get_prev_state(ks_num_field_t field);
 
