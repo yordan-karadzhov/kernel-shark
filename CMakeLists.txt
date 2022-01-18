@@ -6,8 +6,8 @@ project(kernel-shark)
 
 set(KS_APP_NAME "kernelshark")
 set(KS_VERSION_MAJOR 2)
-set(KS_VERSION_MINOR 0)
-set(KS_VERSION_PATCH 2)
+set(KS_VERSION_MINOR 1)
+set(KS_VERSION_PATCH 0)
 set(KS_VERSION_STRING ${KS_VERSION_MAJOR}.${KS_VERSION_MINOR}.${KS_VERSION_PATCH})
 message("\n project: Kernel Shark: (version: ${KS_VERSION_STRING})\n")
 
