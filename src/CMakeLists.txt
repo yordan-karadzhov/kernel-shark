@@ -67,6 +67,14 @@ if (OPENGL_FOUND)
             LIBRARY DESTINATION    ${_LIBDIR}
                 COMPONENT              kernelshark)
 
+    install(FILES "${KS_DIR}/src/stb_truetype.h"
+                  "${KS_DIR}/src/libkshark-plot.h"
+                  "${KS_DIR}/src/KsPlotTools.hpp"
+                  "${KS_DIR}/src/KsPlugins.hpp"
+                  "${KS_DIR}/src/KsCmakeDef.hpp"
+            DESTINATION ${KS_INCLUDS_DESTINATION}
+                COMPONENT libkshark-devel)
+
 endif (OPENGL_FOUND)
 
 if (Qt5Widgets_FOUND AND Qt5Network_FOUND AND TT_FONT_FILE)

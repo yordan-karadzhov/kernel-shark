@@ -69,4 +69,8 @@ install(TARGETS ${PLUGIN_LIST}
         LIBRARY DESTINATION ${KS_PLUGIN_INSTALL_PREFIX}
         COMPONENT kernelshark)
 
+install(FILES "${KS_DIR}/src/plugins/common_sched.h"
+        DESTINATION "${KS_INCLUDS_DESTINATION}/plugins"
+            COMPONENT libkshark-devel)
+
 set(PLUGINS ${PLUGIN_LIST} PARENT_SCOPE)
