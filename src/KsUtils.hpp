@@ -330,6 +330,8 @@ private:
 	QVector<kshark_plugin_list *>
 	_loadPluginList(const QStringList &plugins);
 
+	void _registerCtrlInterface(kshark_plugin_list *plugin);
+
 	std::string _pluginLibFromName(const QString &plugin);
 
 	std::string _pluginNameFromLib(const QString &plugin);

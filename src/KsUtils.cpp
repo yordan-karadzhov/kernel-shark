@@ -1190,6 +1190,20 @@ QVector<int> KsPluginManager::getPluginsByStatus(int sd, int status) const
 	return vec;
 }
 
+void KsPluginManager::_registerCtrlInterface(kshark_plugin_list *plugin)
+{
+	if (!plugin->handle || !plugin->ctrl_interface)
+		return;
+
+	void *dialogPtr = plugin->ctrl_interface(parent());
+	if (dialogPtr) {
+		QWidget *dialog = static_cast<QWidget *>(dialogPtr);
+
+		if (dialog && _pluginDialogs.indexOf(dialog) < 0)
+			_pluginDialogs.append(dialog);
+	}
+}
+
 /**
  * @brief Loop over the registered plugins and register all plugin-defined
  *	  menus (if any).
@@ -1203,14 +1217,7 @@ void KsPluginManager::registerPluginMenues()
 		return;
 
 	for (plugin = kshark_ctx->plugins; plugin; plugin = plugin->next)
-		if (plugin->handle && plugin->ctrl_interface) {
-			void *dialogPtr = plugin->ctrl_interface(parent());
-			if (dialogPtr) {
-				QWidget *dialog =
-					static_cast<QWidget *>(dialogPtr);
-				_pluginDialogs.append(dialog);
-			}
-		}
+		_registerCtrlInterface(plugin);
 }
 
 std::string KsPluginManager::_pluginLibFromName(const QString &plugin)
@@ -1247,11 +1254,17 @@ std::string KsPluginManager::_pluginNameFromLib(const QString &plugin)
  * @param pluginNames: Provide here the names of the plugin (as in the
  *		       CMake-generated header file) or the names of the
  *		       plugin's library files (.so including path).
- * 		       The names must be comma separated.
+ *		       The names must be comma separated.
  */
 void KsPluginManager::registerPlugins(const QString &pluginNames)
 {
-	_userPlugins.append(_loadPluginList(pluginNames.split(',')));
+	QVector<kshark_plugin_list *> plugins;
+
+	plugins = _loadPluginList(pluginNames.split(','));
+	for (auto const &p: plugins)
+		_registerCtrlInterface(p);
+
+	_userPlugins.append(plugins);
 }
 
 /**
@@ -1369,6 +1382,8 @@ void KsPluginManager::addPlugins(const QStringList &fileNames,
 		return;
 
 	plugins = _loadPluginList(fileNames);
+	for (auto const &p: plugins)
+		_registerCtrlInterface(p);
 	_userPlugins.append(plugins);
 
 	if (streamIds.isEmpty())
