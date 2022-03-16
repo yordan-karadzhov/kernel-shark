@@ -793,8 +793,10 @@ static char *tepdata_get_latency(struct kshark_data_stream *stream,
 
 	record = tracecmd_read_at(kshark_get_tep_input(stream), entry->offset, NULL);
 
-	if (!record)
+	if (!record) {
+		pthread_mutex_unlock(&stream->input_mutex);
 		return NULL;
+	}
 
 	trace_seq_reset(&seq);
 	tep_print_event(kshark_get_tep(stream), &seq, record,
