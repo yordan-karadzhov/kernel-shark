@@ -286,6 +286,9 @@ struct kshark_data_stream {
 	/** The number of CPUs presented in this data stream. */
 	int			n_cpus;
 
+	/** Hash table of Idle CPUs. */
+	struct kshark_hash_id	*idle_cpus;
+
 	/**
 	 * The number of distinct event types presented in this data stream.
 	 */

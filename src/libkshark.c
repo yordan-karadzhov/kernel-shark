@@ -121,6 +121,8 @@ static void kshark_stream_free(struct kshark_data_stream *stream)
 	if (!stream)
 		return;
 
+	kshark_hash_id_free(stream->idle_cpus);
+
 	kshark_hash_id_free(stream->show_task_filter);
 	kshark_hash_id_free(stream->hide_task_filter);
 
@@ -146,6 +148,8 @@ static struct kshark_data_stream *kshark_stream_alloc()
 	stream = calloc(1, sizeof(*stream));
 	if (!stream)
 		goto fail;
+
+	stream->idle_cpus = kshark_hash_id_alloc(KS_FILTER_HASH_NBITS);
 
 	stream->show_task_filter = kshark_hash_id_alloc(KS_FILTER_HASH_NBITS);
 	stream->hide_task_filter = kshark_hash_id_alloc(KS_FILTER_HASH_NBITS);
@@ -432,6 +436,8 @@ static int kshark_stream_close(struct kshark_data_stream *stream)
 	kshark_hash_id_clear(stream->hide_event_filter);
 	kshark_hash_id_clear(stream->show_cpu_filter);
 	kshark_hash_id_clear(stream->hide_cpu_filter);
+
+	kshark_hash_id_clear(stream->idle_cpus);
 
 	if (kshark_is_tep(stream))
 		return kshark_tep_close_interface(stream);

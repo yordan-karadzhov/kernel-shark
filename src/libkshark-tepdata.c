@@ -391,7 +391,10 @@ static ssize_t get_records(struct kshark_context *kshark_ctx,
 			rec = tracecmd_read_data(kshark_get_tep_input(stream), cpu);
 		}
 
-		total += count;
+		if (!count)
+			kshark_hash_id_add(stream->idle_cpus, cpu);
+		else
+			total += count;
 	}
 
 	*rec_list = cpu_list;
