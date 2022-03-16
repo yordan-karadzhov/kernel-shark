@@ -906,11 +906,34 @@ void KsCheckBoxTreeWidget::_verify()
  * @param parent: The parent of this widget.
  */
 KsCPUCheckBoxWidget::KsCPUCheckBoxWidget(kshark_data_stream *stream, QWidget *parent)
-: KsCheckBoxTreeWidget(stream->stream_id, "CPUs", parent)
+: KsCheckBoxTreeWidget(stream->stream_id, "CPUs", parent),
+  _hideEmpty("hide empty")
 {
 	int height(FONT_HEIGHT * 1.5);
 	KsPlot::ColorTable colors;
 	QString style;
+
+	_hideEmpty.setCheckState(Qt::Checked);
+	_tb.addSeparator();
+	_tb.addWidget(&_hideEmpty);
+
+	auto lamHideEmpty = [this, stream] (bool hide) {
+		QTreeWidgetItem *item;
+		bool isIdle;
+
+		for(int cpu = 0; cpu < stream->n_cpus; ++cpu) {
+			item = _tree.topLevelItem(cpu);
+			if (hide) {
+				isIdle = kshark_hash_id_find(stream->idle_cpus, cpu);
+				item->setHidden(isIdle);
+			} else {
+				item->setHidden(false);
+			}
+		}
+	};
+
+	connect(&_hideEmpty,	&QCheckBox::clicked,
+				lamHideEmpty);
 
 	style = QString("QTreeView::item { height: %1 ;}").arg(height);
 	_tree.setStyleSheet(style);
@@ -934,6 +957,7 @@ KsCPUCheckBoxWidget::KsCPUCheckBoxWidget(kshark_data_stream *stream, QWidget *pa
 		_cb[i] = cpuItem;
 	}
 
+	lamHideEmpty(true);
 	_adjustSize();
 }
 

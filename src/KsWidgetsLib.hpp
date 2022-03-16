@@ -275,10 +275,9 @@ public:
 	/** The user provided an input. The widget has been modified. */
 	bool _userInput;
 
-private:
+protected:
 	QToolBar _tb;
 
-protected:
 	/** Identifier of the Data stream for which the selection applies. */
 	int		_sd;
 
@@ -544,6 +543,10 @@ struct KsCPUCheckBoxWidget : public KsCheckBoxTreeWidget
 
 	KsCPUCheckBoxWidget(kshark_data_stream *stream,
 			    QWidget *parent = nullptr);
+
+private:
+	/** The "hide empty" checkbox. */
+	QCheckBox	_hideEmpty;
 };
 
 /**
