@@ -230,7 +230,7 @@ public:
 	/** Get the name of the widget. */
 	QString name() const {return _name;}
 
-	/** Get the state of the "all" checkboxe. */
+	/** Get the state of the "all" checkbox. */
 	bool all() const
 	{
 		if(_allCb.checkState() == Qt::Checked)
@@ -238,7 +238,7 @@ public:
 		return false;
 	}
 
-	/** The "all" checkboxe to be visible or not. */
+	/** The "all" checkbox to be visible or not. */
 	void setVisibleCbAll(bool v) {_allCbAction->setVisible(v);}
 
 	void setDefault(bool);
@@ -282,10 +282,10 @@ protected:
 	/** Identifier of the Data stream for which the selection applies. */
 	int		_sd;
 
-	/** The "all" checkboxe. */
+	/** The "all" checkbox. */
 	QCheckBox	_allCb;
 
-	/** A vector of Id numbers coupled to each checkboxe. */
+	/** A vector of Id numbers coupled to each checkbox. */
 	QVector<int>	_id;
 
 	/** A nested widget used to position the checkboxes. */
@@ -342,13 +342,13 @@ public:
 
 	/**
 	 * The "apply" signal will emit a vector containing the Ids of all
-	 * checked checkboxe.
+	 * checked checkbox.
 	 */
 	void applyIds(bool v = true) {_applyIds = v;}
 
 	/**
 	 * The "apply" signal will emit a vector containing the statuse of all
-	 * checkboxe.
+	 * checkbox.
 	 */
 	void applyStatus(bool v = true) {_applyIds = !v;}
 
@@ -432,7 +432,7 @@ public:
 	KsCheckBoxTableWidget(int sd, const QString &name = "",
 			      QWidget *parent = nullptr);
 
-	/** Only one checkboxe at the time can be checked. */
+	/** Only one checkbox at the time can be checked. */
 	void setSingleSelection()
 	{
 		_table.setSelectionMode(QAbstractItemView::SingleSelection);
@@ -500,7 +500,7 @@ public:
 	KsCheckBoxTreeWidget(int sd, const QString &name = "",
 			     QWidget *parent = nullptr);
 
-	/** Only one checkboxe at the time can be checked. */
+	/** Only one checkbox at the time can be checked. */
 	void setSingleSelection()
 	{
 		_tree.setSelectionMode(QAbstractItemView::SingleSelection);
