@@ -1,5 +1,5 @@
 [Desktop Entry]
-Version=@KS_VERSION_STRING@
+Version=1.5
 Type=Application
 Name=Kernel Shark
 GenericName=Kernel Shark
