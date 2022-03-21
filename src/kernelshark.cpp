@@ -56,6 +56,7 @@ int main(int argc, char **argv)
 	int c;
 
 	QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+	QApplication::setDesktopFileName("kernelshark");
 	QApplication a(argc, argv);
 
 	KsMainWindow ks;
