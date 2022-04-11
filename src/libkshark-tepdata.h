@@ -51,6 +51,8 @@ void kshark_tep_filter_reset(struct kshark_data_stream *stream);
 
 char **kshark_tracecmd_local_plugins();
 
+void kshark_tracecmd_plugin_list_free(char **list);
+
 struct tep_handle;
 
 struct tep_handle *kshark_get_tep(struct kshark_data_stream *stream);

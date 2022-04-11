@@ -1724,6 +1724,11 @@ char **kshark_tracecmd_local_plugins()
 	return tracefs_tracers(tracefs_tracing_dir());
 }
 
+void kshark_tracecmd_plugin_list_free(char **list)
+{
+	tracefs_list_free(list);
+}
+
 /**
  * @brief Free an array, allocated by kshark_tracecmd_get_hostguest_mapping() API
  *
