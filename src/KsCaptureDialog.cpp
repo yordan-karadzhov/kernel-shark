@@ -222,12 +222,10 @@ QStringList KsCaptureControl::_getPlugins()
 	if (!all_tracers)
 		return pluginList;
 
-	for (int i = 0; all_tracers[i]; ++i) {
+	for (int i = 0; all_tracers[i]; ++i)
 		pluginList << all_tracers[i];
-		free(all_tracers[i]);
-	}
 
-	free(all_tracers);
+	kshark_tracecmd_plugin_list_free(all_tracers);
 	std::sort(pluginList.begin(), pluginList.end());
 
 	return pluginList;
