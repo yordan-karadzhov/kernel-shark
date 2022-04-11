@@ -114,6 +114,14 @@ CMake examples:
 
     cmake -DCMAKE_BUILD_TYPE=Package -DCMAKE_C_FLAGS_PACKAGE="-O3 -pedantic"  ../
 
+External plugins:
+------------------------------------------------------------
+    KernelShark also supports stand-alone plugin except for build-in. There is
+    a real example under https://source.denx.de/Xenomai/xenomai/-/tree/next/tracing/kernelshark/,
+    which is to visualize out-of-band state of realtime task with hollow cobalt
+    blue box mainly when there is cobalt context switches in Xenomai. As its
+    implemention mainly refers to build-in plugin-sched_events, it shares common
+    plugin features such as clickable shapes.
 
 Contributions:
 ------------------------------------------------------------
