@@ -69,7 +69,7 @@ if (TT_FONT_FILE)
 
 else (TT_FONT_FILE)
 
-  message(WARNING "\nCould not find font ${KS_FONT}!\n")
+  message(WARNING "\nCould not find font ${KS_FONT}! Kernelshark GUI requires font ${KS_FONT}!\n")
 
 endif (TT_FONT_FILE)
 
