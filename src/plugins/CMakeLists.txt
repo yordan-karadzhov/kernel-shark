@@ -61,8 +61,8 @@ if (Qt5Widgets_FOUND AND TT_FONT_FILE)
 
 endif (Qt5Widgets_FOUND AND TT_FONT_FILE)
 
-BUILD_PLUGIN(NAME missed_events
-             SOURCE missed_events.c MissedEvents.cpp)
+BUILD_GUI_PLUGIN(NAME missed_events
+		 SOURCE missed_events.c MissedEvents.cpp)
 list(APPEND PLUGIN_LIST "missed_events")
 
 install(TARGETS ${PLUGIN_LIST}
