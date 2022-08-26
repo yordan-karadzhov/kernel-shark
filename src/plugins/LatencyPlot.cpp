@@ -299,6 +299,8 @@ __hidden void draw_latency(struct kshark_cpp_argv *argv_c,
 		hash = &latencyCPUMap;
 	else if (draw_action & KSHARK_TASK_DRAW)
 		hash = &latencyTaskMap;
+	else
+		return;
 
 	auto range = hash->equal_range(val);
 	std::for_each(range.first, range.second, lamPlotLat);
