@@ -129,6 +129,9 @@ KsTraceViewer::KsTraceViewer(QWidget *parent)
 	_view.setSelectionBehavior(QAbstractItemView::SelectRows);
 	_view.setSelectionMode(QAbstractItemView::SingleSelection);
 	_view.verticalHeader()->setDefaultSectionSize(FONT_HEIGHT * 1.25);
+	_view.setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+	_view.horizontalHeader()->setFont(
+		QFontDatabase::systemFont(QFontDatabase::GeneralFont));
 
 	 _proxyModel.setSource(&_model);
 	_view.setModel(&_proxyModel);
