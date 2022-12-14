@@ -816,7 +816,7 @@ static char *get_info_str(struct kshark_data_stream *stream,
 			  struct tep_record *record,
 			  struct tep_event *event)
 {
-	char *pos, *buffer;
+	char *buffer;
 
 	if (!init_thread_seq() || !record || !event)
 		return NULL;
@@ -829,8 +829,8 @@ static char *get_info_str(struct kshark_data_stream *stream,
 	 * The event info string contains a trailing newline.
 	 * Remove this newline.
 	 */
-	if ((pos = strchr(seq.buffer, '\n')) != NULL)
-		*pos = '\0';
+	if (seq.buffer[seq.len - 1] == '\n')
+		seq.buffer[seq.len - 1] = '\0';
 
 	if (asprintf(&buffer, "%s", seq.buffer)  <= 0)
 		return NULL;
