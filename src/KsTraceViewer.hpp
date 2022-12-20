@@ -106,6 +106,8 @@ private:
 
 	KsFilterProxyModel	_proxyModel;
 
+	QItemSelectionModel 	_selectionModel;
+
 	QToolBar	_toolbar;
 
 	QLabel		_labelSearch, _labelGrFollows;

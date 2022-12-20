@@ -110,6 +110,25 @@ KsTraceViewer::KsTraceViewer(QWidget *parent)
 	connect(&_searchFSM._searchRestartButton,	&QPushButton::pressed,
 		this,				&KsTraceViewer::_searchContinue);
 
+	int defaultRowHeight = FONT_HEIGHT * 1.25;
+	auto lamSelectionChanged = [this, defaultRowHeight] (const QItemSelection &selected,
+							     const QItemSelection &deselected) {
+		if (deselected.count()) {
+			_view.verticalHeader()->resizeSection(deselected.indexes().first().row(),
+							      defaultRowHeight);
+		}
+		if (selected.count()) {
+			_view.resizeRowToContents(selected.indexes().first().row());
+		}
+
+		if (_mState->passiveMarker().isVisible()) {
+			QModelIndex index = _model.index(_mState->passiveMarker()._pos, 0);
+			_view.resizeRowToContents(_proxyModel.mapFromSource(index).row());
+		}
+	};
+	connect(&_selectionModel,	&QItemSelectionModel::selectionChanged,
+		lamSelectionChanged);
+
 	_searchFSM.placeInToolBar(&_toolbar);
 
 	/*
@@ -128,13 +147,15 @@ KsTraceViewer::KsTraceViewer(QWidget *parent)
 	_view.setEditTriggers(QAbstractItemView::NoEditTriggers);
 	_view.setSelectionBehavior(QAbstractItemView::SelectRows);
 	_view.setSelectionMode(QAbstractItemView::SingleSelection);
-	_view.verticalHeader()->setDefaultSectionSize(FONT_HEIGHT * 1.25);
+	_view.verticalHeader()->setDefaultSectionSize(defaultRowHeight);
 	_view.setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
 	_view.horizontalHeader()->setFont(
 		QFontDatabase::systemFont(QFontDatabase::GeneralFont));
 
 	 _proxyModel.setSource(&_model);
+	_selectionModel.setModel(&_proxyModel);
 	_view.setModel(&_proxyModel);
+	_view.setSelectionModel(&_selectionModel);
 	connect(&_proxyModel, &QAbstractItemModel::modelReset,
 		this, &KsTraceViewer::_searchReset);
 
