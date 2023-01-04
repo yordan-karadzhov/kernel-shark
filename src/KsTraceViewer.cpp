@@ -20,6 +20,26 @@
 #include "KsWidgetsLib.hpp"
 
 /**
+ * Reimplemented handler for creating delegate widget.
+ */
+QWidget *KsTableItemDelegate::createEditor(QWidget *parent,
+					   const QStyleOptionViewItem &option,
+					   const QModelIndex &index) const {
+	QTextEdit *edit = new QTextEdit(parent);
+	edit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	edit->setReadOnly(true);
+	return edit;
+}
+
+/**
+ * Reimplemented handler setting the data shown by the delegate widget.
+ */
+void KsTableItemDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const {
+	QTextEdit *textEditor = qobject_cast<QTextEdit *>(editor);
+	textEditor->setPlainText(_model->getValueStr(index.column(), index.row()));
+}
+
+/**
  * Reimplemented handler for mouse press events. Right mouse click events will
  * be ignored. This is done because we want the Right click is being used to
  * open a Context menu.
@@ -47,13 +67,13 @@ void KsTableView::scrollTo(const QModelIndex &index, ScrollHint hint)
 	QTableView::scrollTo(index, hint);
 }
 
-
 /** Create a default (empty) Trace viewer widget. */
 KsTraceViewer::KsTraceViewer(QWidget *parent)
 : KsWidgetsLib::KsDataWidget(parent),
   _view(this),
   _model(this),
   _proxyModel(this),
+  _itemDelegate(&_model, this),
   _toolbar(this),
   _labelSearch("Search: Column", this),
   _labelGrFollows("Graph follows  ", this),
@@ -144,7 +164,7 @@ KsTraceViewer::KsTraceViewer(QWidget *parent)
 	/* Initialize the trace viewer. */
 	_view.horizontalHeader()->setDefaultAlignment(Qt::AlignLeft);
 	_view.verticalHeader()->setVisible(false);
-	_view.setEditTriggers(QAbstractItemView::NoEditTriggers);
+	_view.setEditTriggers(QAbstractItemView::DoubleClicked);
 	_view.setSelectionBehavior(QAbstractItemView::SelectRows);
 	_view.setSelectionMode(QAbstractItemView::SingleSelection);
 	_view.verticalHeader()->setDefaultSectionSize(defaultRowHeight);
@@ -152,7 +172,8 @@ KsTraceViewer::KsTraceViewer(QWidget *parent)
 	_view.horizontalHeader()->setFont(
 		QFontDatabase::systemFont(QFontDatabase::GeneralFont));
 
-	 _proxyModel.setSource(&_model);
+	_view.setItemDelegate(&_itemDelegate);
+	_proxyModel.setSource(&_model);
 	_selectionModel.setModel(&_proxyModel);
 	_view.setModel(&_proxyModel);
 	_view.setSelectionModel(&_selectionModel);

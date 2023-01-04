@@ -482,6 +482,20 @@ size_t KsViewModel::search(int column,
 	return matchList->count();
 }
 
+/** @brief Reimplements handler to return a flags that enables the item
+ *	   (ItemIsEnabled) and allows it to be selecte.
+ *
+ * @param index: The index of the item.
+ *
+ * @returns Returns the item flags for the given index.
+ */
+Qt::ItemFlags KsViewModel::flags(const QModelIndex &index) const {
+	if (!index.isValid())
+	    return Qt::ItemIsEnabled;
+
+	return QAbstractItemModel::flags(index) | Qt::ItemIsEditable;
+}
+
 /** Create a default (empty) KsFilterProxyModel object. */
 KsGraphModel::KsGraphModel(QObject *parent)
 : QAbstractTableModel(parent)

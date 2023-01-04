@@ -130,6 +130,8 @@ public:
 		TRACE_VIEW_N_COLUMNS,
 	};
 
+	Qt::ItemFlags flags(const QModelIndex &index) const;
+
 private:
 	void _updateHeader();
 

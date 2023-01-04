@@ -23,6 +23,26 @@
 #include "KsWidgetsLib.hpp"
 
 /**
+ * Class used to customize the display of the data items from the model.
+ */
+class KsTableItemDelegate : public QItemDelegate
+{
+public:
+	/** Create KsTableItemDelegate. */
+	KsTableItemDelegate(KsViewModel *model, QWidget *parent = nullptr)
+	: QItemDelegate(parent),
+	  _model(model) {};
+
+private:
+	QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
+			      const QModelIndex &index) const override;
+
+	void setEditorData(QWidget *editor, const QModelIndex &index) const override;
+
+	KsViewModel *_model;
+};
+
+/**
  * Table View class, needed in order to reimplemented the handler for mouse
  * press events.
  */
@@ -107,6 +127,8 @@ private:
 	KsFilterProxyModel	_proxyModel;
 
 	QItemSelectionModel 	_selectionModel;
+
+	KsTableItemDelegate	_itemDelegate;
 
 	QToolBar	_toolbar;
 
