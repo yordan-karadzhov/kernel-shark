@@ -825,6 +825,8 @@ static char *get_info_str(struct kshark_data_stream *stream,
 	tep_print_event(kshark_get_tep(stream), &seq, record,
 			"%s", TEP_PRINT_INFO);
 
+	if (!seq.len)
+		return NULL;
 	/*
 	 * The event info string contains a trailing newline.
 	 * Remove this newline.
