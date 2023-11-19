@@ -44,16 +44,7 @@ static auto stringWidth = [](QString s)
 {
 	QFont font;
 	QFontMetrics fm(font);
-
-#ifdef QT_VERSION_LESS_5_11
-
-	return fm.width(s);
-
-#else
-
 	return fm.horizontalAdvance(s);
-
-#endif // QT_VERSION_LESS_5_11
 };
 
 //! @endcond
@@ -86,15 +77,7 @@ typedef std::chrono::high_resolution_clock::time_point  hd_time;
 std::chrono::duration_cast<std::chrono::duration<double>>( \
 std::chrono::high_resolution_clock::now() - t0).count()
 
-#ifdef QT_VERSION_LESS_5_15
-
-	#define KS_SPLIT_SkipEmptyParts QString::SkipEmptyParts
-
-#else
-
-	#define KS_SPLIT_SkipEmptyParts Qt::SkipEmptyParts
-
-#endif // QT_VERSION_LESS_5_15
+#define KS_SPLIT_SkipEmptyParts Qt::SkipEmptyParts
 
 //! @endcond
 

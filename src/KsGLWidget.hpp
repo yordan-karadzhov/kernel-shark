@@ -14,6 +14,7 @@
 
 // Qt
 #include <QRubberBand>
+#include <QOpenGLWidget>
 
 // KernelShark
 #include "KsUtils.hpp"

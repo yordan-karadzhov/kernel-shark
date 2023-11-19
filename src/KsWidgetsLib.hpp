@@ -635,9 +635,9 @@ public:
 	void setStreamCombo();
 
 private slots:
-	void _streamChanged(const QString &stream);
+	void _streamChanged(int);
 
-	void _eventChanged(const QString &event);
+	void _eventChanged(int);
 
 private:
 	QVBoxLayout	_topLayout;

@@ -83,7 +83,7 @@ private:
 
 private slots:
 
-	void _guestStreamChanged(const QString&);
+	void _guestStreamChanged(int);
 };
 
 #endif

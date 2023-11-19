@@ -38,7 +38,7 @@ add_test(NAME              "libkshark_tests"
          COMMAND           ${KS_TEST_DIR}/kshark-tests --log_format=HRF
          WORKING_DIRECTORY ${KS_TEST_DIR})
 
-if (Qt5Widgets_FOUND AND TT_FONT_FILE)
+if (Qt6Widgets_FOUND AND TT_FONT_FILE)
 
     add_executable(kshark-gui-tests          libkshark-gui-tests.cpp)
     target_include_directories(kshark-gui-tests PRIVATE ${Boost_INCLUDE_DIRS})
@@ -51,4 +51,4 @@ if (Qt5Widgets_FOUND AND TT_FONT_FILE)
              COMMAND           ${KS_TEST_DIR}/kshark-gui-tests --log_format=HRF
              WORKING_DIRECTORY ${KS_TEST_DIR})
 
-endif (Qt5Widgets_FOUND AND TT_FONT_FILE)
+endif ()

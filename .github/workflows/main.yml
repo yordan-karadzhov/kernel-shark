@@ -23,7 +23,7 @@ jobs:
         sudo apt-get install build-essential git cmake libjson-c-dev -y
         sudo apt-get install freeglut3-dev libxmu-dev libxi-dev -y
         sudo apt-get install fonts-freefont-ttf
-        sudo apt-get install qtbase5-dev libboost-all-dev -y
+        sudo apt-get install qt6-base-dev qt6-scxml-dev libboost-all-dev -y
         git clone https://git.kernel.org/pub/scm/libs/libtrace/libtraceevent.git/
         cd libtraceevent
         make

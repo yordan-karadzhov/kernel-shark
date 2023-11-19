@@ -93,19 +93,11 @@ KsTraceViewer::KsTraceViewer(QWidget *parent)
 	_toolbar.addWidget(&_labelSearch);
 	_searchFSM._columnComboBox.addItems(_model.header());
 
-	/*
-	 * Using the old Signal-Slot syntax because
-	 * QComboBox::currentIndexChanged has overloads.
-	 */
-	connect(&_searchFSM._columnComboBox,	SIGNAL(currentIndexChanged(int)),
-		this,				SLOT(_searchEdit(int)));
+	connect(&_searchFSM._columnComboBox,	&QComboBox::currentIndexChanged,
+		this,				&KsTraceViewer::_searchEdit);
 
-	/*
-	 * Using the old Signal-Slot syntax because
-	 * QComboBox::currentIndexChanged has overloads.
-	 */
-	connect(&_searchFSM._selectComboBox,	SIGNAL(currentIndexChanged(int)),
-		this,				SLOT(_searchEdit(int)));
+	connect(&_searchFSM._selectComboBox,	&QComboBox::currentIndexChanged,
+		this,				&KsTraceViewer::_searchEdit);
 
 	/* On the toolbar, make a Line edit field for search. */
 	_searchFSM._searchLineEdit.setMaximumWidth(FONT_WIDTH * 20);

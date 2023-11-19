@@ -28,7 +28,7 @@ if (OPENGL_FOUND AND GLUT_FOUND)
 
 endif (OPENGL_FOUND AND GLUT_FOUND)
 
-if (Qt5Widgets_FOUND AND TT_FONT_FILE)
+if (Qt6Widgets_FOUND AND TT_FONT_FILE)
 
     message(STATUS "widgetdemo")
     add_executable(widgetdemo          widgetdemo.cpp)
@@ -38,4 +38,4 @@ if (Qt5Widgets_FOUND AND TT_FONT_FILE)
     add_executable(cmd_split           cmd_split.cpp)
     target_link_libraries(cmd_split    kshark-gui)
 
-endif (Qt5Widgets_FOUND AND TT_FONT_FILE)
+endif ()

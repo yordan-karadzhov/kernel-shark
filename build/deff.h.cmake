@@ -32,10 +32,6 @@
 /** Truetype font file. */
 #cmakedefine TT_FONT_FILE "@TT_FONT_FILE@"
 
-/** Qt - old version detected. */
-#cmakedefine QT_VERSION_LESS_5_11
-#cmakedefine QT_VERSION_LESS_5_15
-
 /** Location of the KernelShark tests. */
 #cmakedefine KS_TEST_DIR "@KS_TEST_DIR@"
 

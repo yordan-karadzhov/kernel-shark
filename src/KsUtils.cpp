@@ -489,12 +489,12 @@ QStringList splitArguments(QString cmd)
 	auto opt = KS_SPLIT_SkipEmptyParts;
 	int i, progress = 0, size;
 	QStringList argv;
-	QChar quote = 0;
+	QChar quote{'\0'};
 
 	/* Remove all new lines. */
 	cmd.replace("\\\n", " ");
 
-	size = cmd.count();
+	size = cmd.size();
 	auto lamMid = [&] () {return cmd.mid(progress, i - progress);};
 	for (i = 0; i < size; ++i) {
 		if (cmd[i] == '\\') {
@@ -510,7 +510,7 @@ QStringList splitArguments(QString cmd)
 				progress = i;
 			} else if (quote == cmd[i]) {
 				argv << lamMid();
-				quote = 0;
+				quote = {'\0'};
 				progress = ++i;
 			}
 		}

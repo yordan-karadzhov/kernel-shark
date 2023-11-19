@@ -73,25 +73,8 @@ else (TT_FONT_FILE)
 
 endif (TT_FONT_FILE)
 
-find_package(Qt5Widgets 5.7.1)
-find_package(Qt5Network)
-if (Qt5Widgets_FOUND)
-
-    message(STATUS "Found Qt5Widgets:  (version ${Qt5Widgets_VERSION})")
-
-    if(Qt5Widgets_VERSION VERSION_LESS "5.11")
-
-        set(QT_VERSION_LESS_5_11 TRUE)
-
-    endif()
-
-    if(Qt5Widgets_VERSION VERSION_LESS "5.15")
-
-        set(QT_VERSION_LESS_5_15 TRUE)
-
-    endif()
-
-endif (Qt5Widgets_FOUND)
+find_package(Qt6Widgets 6.3.0)
+find_package(Qt6 COMPONENTS Network OpenGLWidgets StateMachine REQUIRED)
 
 find_package (Boost COMPONENTS unit_test_framework)
 

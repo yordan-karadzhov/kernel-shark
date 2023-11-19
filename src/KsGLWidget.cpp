@@ -52,11 +52,8 @@ KsGLWidget::KsGLWidget(QWidget *parent)
 {
 	setMouseTracking(true);
 
-	/*
-	 * Using the old Signal-Slot syntax because QWidget::update has
-	 * overloads.
-	 */
-	connect(&_model, SIGNAL(modelReset()), this, SLOT(update()));
+	connect(&_model,	&QAbstractTableModel::modelReset,
+		this,		&KsGLWidget::update);
 }
 
 void KsGLWidget::_freeGraphs()
@@ -86,7 +83,7 @@ KsGLWidget::~KsGLWidget()
 /** Reimplemented function used to set up all required OpenGL resources. */
 void KsGLWidget::initializeGL()
 {
-	_dpr = QApplication::desktop()->devicePixelRatio();
+	_dpr = QApplication::primaryScreen()->devicePixelRatio();
 	ksplot_init_opengl(_dpr);
 
 	ksplot_init_font(&_font, 15, TT_FONT_FILE);
@@ -345,15 +342,7 @@ void KsGLWidget::wheelEvent(QWheelEvent * event)
 		 * Use the position of the mouse as a focus point for the
 		 * zoom.
 		 */
-#ifdef QT_VERSION_LESS_5_15
-
-	zoomFocus = event->pos().x() - _bin0Offset();
-
-#else
-
-	zoomFocus = event->position().x() - _bin0Offset();
-
-#endif // QT_VERSION_LESS_5_15
+		zoomFocus = event->position().x() - _bin0Offset();
 	}
 
 	if (event->angleDelta().y() > 0) {
@@ -627,12 +616,12 @@ int KsGLWidget::_getMaxLabelSize()
 		int sd = it.key();
 		for (auto const &pid: it.value()._taskList) {
 			size = _font.char_width *
-			       KsUtils::taskPlotName(sd, pid).count();
+			       KsUtils::taskPlotName(sd, pid).size();
 			max = (size > max) ? size : max;
 		}
 
 		for (auto const &cpu: it.value()._cpuList) {
-			size = _font.char_width * KsUtils::cpuPlotName(cpu).count();
+			size = _font.char_width * KsUtils::cpuPlotName(cpu).size();
 			max = (size > max) ? size : max;
 		}
 	}
@@ -641,12 +630,12 @@ int KsGLWidget::_getMaxLabelSize()
 		for (auto const &p: c) {
 			if (p._type & KSHARK_TASK_DRAW) {
 				size = _font.char_width *
-					KsUtils::taskPlotName(p._streamId, p._id).count();
+					KsUtils::taskPlotName(p._streamId, p._id).size();
 
 				max = (size > max) ? size : max;
 			} else if (p._type & KSHARK_CPU_DRAW) {
 				size = _font.char_width *
-				       KsUtils::cpuPlotName(p._id).count();
+				       KsUtils::cpuPlotName(p._id).size();
 
 				max = (size > max) ? size : max;
 			}

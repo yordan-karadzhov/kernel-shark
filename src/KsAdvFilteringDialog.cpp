@@ -88,15 +88,11 @@ KsAdvFilteringDialog::KsAdvFilteringDialog(QWidget *parent)
 	_condToolBar1.addWidget(&_systemComboBox);
 	_condToolBar1.addWidget(&_eventComboBox);
 
-	/*
-	 * Using the old Signal-Slot syntax because QComboBox::currentIndexChanged
-	 * has overloads.
-	 */
-	connect(&_systemComboBox,	SIGNAL(currentIndexChanged(const QString&)),
-		this,			SLOT(_systemChanged(const QString&)));
+	connect(&_systemComboBox,	&QComboBox::currentIndexChanged,
+		this,			&KsAdvFilteringDialog::_systemChanged);
 
-	connect(&_eventComboBox,	SIGNAL(currentIndexChanged(const QString&)),
-		this,			SLOT(_eventChanged(const QString&)));
+	connect(&_eventComboBox,	&QComboBox::currentIndexChanged,
+		this,			&KsAdvFilteringDialog::_eventChanged);
 
 	_setSystemCombo(kshark_ctx);
 
@@ -320,8 +316,9 @@ void KsAdvFilteringDialog::_help()
 	}
 }
 
-void KsAdvFilteringDialog::_systemChanged(const QString &sysName)
+void KsAdvFilteringDialog::_systemChanged(int)
 {
+	QString sysName = _systemComboBox.currentText();
 	kshark_context *kshark_ctx(NULL);
 	kshark_data_stream *stream;
 	QStringList evtsList, name;
@@ -372,9 +369,10 @@ KsAdvFilteringDialog::_getEventFields(int eventId)
 	return fieldList;
 }
 
-void KsAdvFilteringDialog::_eventChanged(const QString &evtName)
+void KsAdvFilteringDialog::_eventChanged(int)
 {
 	QString sysName = _systemComboBox.currentText();
+	QString evtName = _eventComboBox.currentText();
 	QStringList fieldList, eventName;
 	kshark_context *kshark_ctx(NULL);
 	kshark_data_stream *stream;

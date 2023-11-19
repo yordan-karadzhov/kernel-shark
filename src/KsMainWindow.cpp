@@ -144,7 +144,7 @@ KsMainWindow::KsMainWindow(QWidget *parent)
 	connect(&_plugins,	&KsPluginManager::dataReload,
 		&_data,		&KsDataStore::reload);
 
-	_deselectShortcut.setKey(Qt::CTRL + Qt::Key_D);
+	_deselectShortcut.setKey(Qt::CTRL | Qt::Key_D);
 	connect(&_deselectShortcut,	&QShortcut::activated,
 		this,			&KsMainWindow::_deselectActive);
 
@@ -1502,12 +1502,8 @@ void KsMainWindow::_initCapture()
 	connect(&_capture,	&QProcess::started,
 		this,		&KsMainWindow::_captureStarted);
 
-	/*
-	 * Using the old Signal-Slot syntax because QProcess::finished has
-	 * overloads.
-	 */
-	connect(&_capture,	SIGNAL(finished(int, QProcess::ExitStatus)),
-		this,		SLOT(_captureFinished(int, QProcess::ExitStatus)));
+	connect(&_capture,	&QProcess::finished,
+		this,		&KsMainWindow::_captureFinished);
 
 	_captureErrorConnection =
 		connect(&_capture,	&QProcess::errorOccurred,

@@ -179,7 +179,7 @@ KsDualMarkerSM::KsDualMarkerSM(QWidget *parent)
 	/* Define transitions from State A to State B. */
 	_stateA->addTransition(this,	&KsDualMarkerSM::machineToB, _stateB);
 
-	_scCtrlA.setKey(Qt::CTRL + Qt::Key_A);
+	_scCtrlA.setKey(Qt::SHIFT | Qt::Key_A);
 	_stateA->addTransition(&_scCtrlB, &QShortcut::activated, _stateB);
 
 	connect(&_scCtrlA,	&QShortcut::activated,
@@ -196,7 +196,7 @@ KsDualMarkerSM::KsDualMarkerSM(QWidget *parent)
 	/* Define transitions from State B to State A. */
 	_stateB->addTransition(this,	&KsDualMarkerSM::machineToA, _stateA);
 
-	_scCtrlB.setKey(Qt::CTRL + Qt::Key_B);
+	_scCtrlB.setKey(Qt::SHIFT | Qt::Key_B);
 	_stateB->addTransition(&_scCtrlA, &QShortcut::activated, _stateA);
 
 	connect(&_scCtrlB,	&QShortcut::activated,

@@ -28,7 +28,7 @@ function(BUILD_GUI_PLUGIN)
 
     message(STATUS ${ADD_PLUGIN_NAME})
 
-    QT5_WRAP_CPP(plugin_moc ${ADD_PLUGIN_MOC})
+    QT6_WRAP_CPP(plugin_moc ${ADD_PLUGIN_MOC})
 
     add_library(${ADD_PLUGIN_NAME} SHARED ${plugin_moc} ${ADD_PLUGIN_SOURCE})
     set_target_properties(${ADD_PLUGIN_NAME} PROPERTIES PREFIX "plugin-")
@@ -38,7 +38,7 @@ endfunction()
 
 set(PLUGIN_LIST "")
 
-if (Qt5Widgets_FOUND AND TT_FONT_FILE)
+if (Qt6Widgets_FOUND AND TT_FONT_FILE)
 
     BUILD_GUI_PLUGIN(NAME sched_events
                      SOURCE sched_events.c SchedEvents.cpp)
@@ -59,7 +59,7 @@ if (Qt5Widgets_FOUND AND TT_FONT_FILE)
                      SOURCE kvm_combo.c KVMCombo.cpp KVMComboDialog.cpp)
     list(APPEND PLUGIN_LIST "kvm_combo")
 
-endif (Qt5Widgets_FOUND AND TT_FONT_FILE)
+endif ()
 
 BUILD_GUI_PLUGIN(NAME missed_events
 		 SOURCE missed_events.c MissedEvents.cpp)

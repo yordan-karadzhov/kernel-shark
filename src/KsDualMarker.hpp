@@ -14,6 +14,7 @@
 
 // Qt
 #include <QtWidgets>
+#include <QStateMachine>
 
 // KernelShark
 #include "KsUtils.hpp"
