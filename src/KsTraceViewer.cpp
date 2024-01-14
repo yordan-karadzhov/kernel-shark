@@ -139,7 +139,7 @@ KsTraceViewer::KsTraceViewer(QWidget *parent)
 		}
 	};
 	connect(&_selectionModel,	&QItemSelectionModel::selectionChanged,
-		lamSelectionChanged);
+		this,			lamSelectionChanged);
 
 	_searchFSM.placeInToolBar(&_toolbar);
 
