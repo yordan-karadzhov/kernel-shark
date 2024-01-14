@@ -624,11 +624,11 @@ void KsTraceViewer::_resizeToContents()
 	 * column by hand.
 	 */
 	col = KsViewModel::TRACE_VIEW_COL_STREAM;
-	columnSize = STRING_WIDTH(_model.header()[col]) + FONT_WIDTH;
+	columnSize = STRING_WIDTH(_model.header().at(col)) + FONT_WIDTH;
 	_view.setColumnWidth(col, columnSize);
 
 	col = KsViewModel::TRACE_VIEW_COL_CPU;
-	columnSize = STRING_WIDTH(_model.header()[col]) + FONT_WIDTH * 2;
+	columnSize = STRING_WIDTH(_model.header().at(col)) + FONT_WIDTH * 2;
 	_view.setColumnWidth(col, columnSize);
 
 	col = KsViewModel::TRACE_VIEW_COL_INDEX;

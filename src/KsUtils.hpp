@@ -25,10 +25,10 @@
 #include "KsPlotTools.hpp"
 
 /** Macro providing the height of the screen in pixels. */
-#define SCREEN_HEIGHT  QGuiApplication::screens()[0]->geometry().height()
+#define SCREEN_HEIGHT  QGuiApplication::screens().at(0)->geometry().height()
 
 /** Macro providing the width of the screen in pixels. */
-#define SCREEN_WIDTH   QGuiApplication::screens()[0]->geometry().width()
+#define SCREEN_WIDTH   QGuiApplication::screens().at(0)->geometry().width()
 
 //! @cond Doxygen_Suppress
 
