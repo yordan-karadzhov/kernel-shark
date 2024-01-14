@@ -331,7 +331,6 @@ void KsTraceGraph::_setPointerInfo(size_t i)
 	QString aux(lanMakeString(kshark_get_aux_info(e)));
 	QString info(lanMakeString(kshark_get_info(e)));
 	QString comm(lanMakeString(kshark_get_task(e)));
-	QString elidedText;
 	int labelWidth;
 	uint64_t sec, usec;
 	char *pointer;

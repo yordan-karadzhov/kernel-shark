@@ -1414,7 +1414,6 @@ void KsPluginManager::updatePlugins(int sd, QVector<int> pluginStates)
 	kshark_context *kshark_ctx(nullptr);
 	kshark_data_stream *stream;
 	kshark_dpi_list *plugin;
-	QVector<int> vec;
 	int i(0);
 
 	if (!kshark_instance(&kshark_ctx))
