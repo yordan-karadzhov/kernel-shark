@@ -172,9 +172,6 @@ class KsFilterProxyModel : public QSortFilterProxyModel
 public:
 	explicit KsFilterProxyModel(QObject *parent = nullptr);
 
-	bool filterAcceptsRow(int sourceRow,
-			      const QModelIndex &sourceParent) const override;
-
 	void fill(KsDataStore *data);
 
 	void setSource(KsViewModel *s);
@@ -224,8 +221,12 @@ public:
 	/** A mutex used by the condition variable. */
 	std::mutex		_mutex;
 
-	/** A flag used to stop the serch for all threads. */
+	/** A flag used to stop the search for all threads. */
 	bool			_searchStop;
+
+protected:
+	bool filterAcceptsRow(int sourceRow,
+			      const QModelIndex &sourceParent) const override;
 
 private:
 	int			_searchProgress;

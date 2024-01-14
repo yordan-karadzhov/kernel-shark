@@ -79,10 +79,6 @@ public:
 
 	void setTopRow(size_t r);
 
-	void resizeEvent(QResizeEvent* event) override;
-
-	void keyReleaseEvent(QKeyEvent *event);
-
 	void markSwitch();
 
 	void showRow(size_t r, bool mark);
@@ -100,6 +96,11 @@ public:
 	{
 		_model.loadColors();
 	}
+
+protected:
+	void resizeEvent(QResizeEvent* event) override;
+
+	void keyReleaseEvent(QKeyEvent *event) override;
 
 signals:
 	/** Signal emitted when new row is selected. */

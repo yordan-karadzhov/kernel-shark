@@ -261,19 +261,20 @@ public:
 	 */
 	int sd() const {return _sd;}
 
+	/** The user provided an input. The widget has been modified. */
+	bool _userInput;
+
+protected:
 	/**
 	 * Reimplemented event handler used to update the geometry of the widget on
 	 * resize events.
 	 */
-	void resizeEvent(QResizeEvent* event)
+	void resizeEvent(QResizeEvent* event) override
 	{
 		KsUtils::setElidedText(&_streamLabel, _streamName,
 				       Qt::ElideLeft, width());
 		QApplication::processEvents();
 	}
-
-	/** The user provided an input. The widget has been modified. */
-	bool _userInput;
 
 protected:
 	QToolBar _tb;

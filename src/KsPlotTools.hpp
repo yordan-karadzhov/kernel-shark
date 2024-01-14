@@ -662,7 +662,7 @@ private:
 	/** The vertical size (height) of the graphical element. */
 	int _height;
 
-	void _draw(const Color &col, float size) const;
+	void _draw(const Color &col, float size) const override;
 };
 
 }; // KsPlot
