@@ -443,8 +443,6 @@ void KsAdvFilteringDialog::_applyPress()
 	QMapIterator<int, QString> f(_filters);
 	kshark_context *kshark_ctx(NULL);
 	kshark_data_stream *stream;
-	const char *text;
-	char *filter;
 	int i(0);
 
 	if (!kshark_instance(&kshark_ctx))
@@ -476,18 +474,12 @@ void KsAdvFilteringDialog::_applyPress()
 		emit dataReload();
 	};
 
-	text = _filterEdit.text().toLocal8Bit().data();
-	if (strlen(text) == 0) {
+	QByteArray filter = _filterEdit.text().toLocal8Bit();
+	if (filter.isEmpty()) {
 		job_done();
 		return;
 	}
 
-	filter = (char*) malloc(strlen(text) + 1);
-	strcpy(filter, text);
-
-	kshark_tep_add_filter_str(stream, filter);
-
-	free(filter);
-
+	kshark_tep_add_filter_str(stream, filter.constData());
 	job_done();
 }
