@@ -855,7 +855,7 @@ void KsTraceViewer::_searchItemsMT()
 
 	QVector<QList<int>> res;
 	for (auto &m: maps)
-		res.append(std::move(m.get()));
+		res.append(m.get());
 
 	lamSearchMerge(_matchList, res);
 }
