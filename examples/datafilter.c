@@ -69,7 +69,6 @@ int main(int argc, char **argv)
 
 	/* Print to the screen the first 10 visible entries. */
 	count = 0;
-	i = 0;
 	for (i = 0; i < n_rows; ++i) {
 		if (data[i]->visible & KS_TEXT_VIEW_FILTER_MASK) {
 			entry_str = kshark_dump_entry(data[i]);
@@ -79,8 +78,6 @@ int main(int argc, char **argv)
 			if (++count > 10)
 				break;
 		}
-
-		++i;
 	}
 
 	puts("\n\n");
@@ -102,7 +99,6 @@ int main(int argc, char **argv)
 
 	/* Print to the screen the first 10 visible entries. */
 	count = 0;
-	i = 0;
 	for (i = 0; i < n_rows; ++i) {
 		if (data[i]->visible & KS_TEXT_VIEW_FILTER_MASK) {
 			entry_str = kshark_dump_entry(data[i]);
@@ -112,8 +108,6 @@ int main(int argc, char **argv)
 			if (++count > 10)
 				break;
 		}
-
-		++i;
 	}
 
 	puts("\n\n");
