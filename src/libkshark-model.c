@@ -104,7 +104,8 @@ static void ksmodel_set_in_range_bining(struct kshark_trace_histo *histo,
 
 		free(histo->bin_count);
 		free(histo->map);
-
+		histo->map = NULL;
+		histo->bin_count = NULL;
 		return;
 	}
 
