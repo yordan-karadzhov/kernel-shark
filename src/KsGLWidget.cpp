@@ -93,7 +93,7 @@ void KsGLWidget::initializeGL()
 }
 
 /**
- * Reimplemented function used to reprocess all graphs whene the widget has
+ * Reimplemented function used to reprocess all graphs when the widget has
  * been resized.
  */
 void KsGLWidget::resizeGL(int w, int h)
