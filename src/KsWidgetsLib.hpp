@@ -123,12 +123,6 @@ public:
 	explicit KsDataWidget(QWidget *parent = nullptr)
 	: QWidget(parent), _workInProgress(nullptr) {}
 
-	/** Set a pointer to the KsWorkInProgress widget. */
-	const KsWorkInProgress *wipPtr(KsWorkInProgress *wip) const
-	{
-		return _workInProgress;
-	}
-
 	/** Set the pointer to the KsWorkInProgress widget. */
 	void setWipPtr(KsWorkInProgress *wip)
 	{
