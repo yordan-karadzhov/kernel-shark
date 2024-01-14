@@ -1546,7 +1546,7 @@ void KsMainWindow::_captureFinished(int ret, QProcess::ExitStatus st)
 
 void KsMainWindow::_captureError(QProcess::ProcessError error)
 {
-	QProcess *capture = (QProcess *)sender();
+	QProcess *capture = static_cast<QProcess*>(sender());
 	_captureErrorMessage(capture);
 }
 
