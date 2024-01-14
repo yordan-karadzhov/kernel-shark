@@ -348,7 +348,7 @@ void KsSession::loadGraphs(kshark_context *kshark_ctx,
 void KsSession::_savePlots(int sd, KsGLWidget *glw, bool cpu)
 {
 	kshark_config_doc *streamsConf = kshark_config_alloc(KS_CONFIG_JSON);
-	json_object *jallStreams, *jstream, *jstreamId, *jplots;
+	json_object *jallStreams, *jstream = nullptr, *jstreamId, *jplots;
 	QVector<int> plotIds;
 	int nStreams;
 
@@ -438,7 +438,7 @@ void KsSession::_saveComboPlots(KsGLWidget *glw)
 QVector<int> KsSession::_getPlots(int sd, bool cpu)
 {
 	kshark_config_doc *streamsConf = kshark_config_alloc(KS_CONFIG_JSON);
-	json_object *jallStreams, *jstream, *jstreamId, *jplots;
+	json_object *jallStreams, *jstream = nullptr, *jstreamId, *jplots;
 	int nStreams, nPlots, id;
 	const char *plotKey;
 	QVector<int> plots;
