@@ -530,7 +530,7 @@ QVector<int> parseIdList(QString v_str)
 	QStringList list = v_str.split(",", KS_SPLIT_SkipEmptyParts);
 	QVector<int> v;
 
-	for (auto item: list) {
+	for (const auto &item: list) {
 		int i = item.indexOf('-');
 		if (i > 0) {
 			/* This item is an interval. */
