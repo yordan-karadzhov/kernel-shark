@@ -80,7 +80,7 @@ KsAdvFilteringDialog::KsAdvFilteringDialog(QWidget *parent)
 	_getFilters(kshark_ctx);
 
 	if (_filters.count()) {
-		_makeFilterTable(kshark_ctx);
+		_makeFilterTable();
 		lamAddLine();
 	}
 
@@ -264,7 +264,7 @@ void KsAdvFilteringDialog::_getFilters(kshark_context *kshark_ctx)
 	}
 }
 
-void KsAdvFilteringDialog::_makeFilterTable(struct kshark_context *kshark_ctx)
+void KsAdvFilteringDialog::_makeFilterTable()
 {
 	QMapIterator<int, QString> f(_filters);
 	QTableWidgetItem *i1, *i2, *i3;

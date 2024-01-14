@@ -80,7 +80,7 @@ private:
 
 	void _getFilters(kshark_context *kshark_ctx);
 
-	void _makeFilterTable(kshark_context *kshark_ctx);
+	void _makeFilterTable();
 
 	QStringList _getEventFields(int eventId);
 

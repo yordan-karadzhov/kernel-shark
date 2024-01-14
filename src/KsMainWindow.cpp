@@ -1434,12 +1434,12 @@ void KsMainWindow::loadSession(const QString &fileName)
 	_session.loadUserPlugins(kshark_ctx, &_plugins);
 	pb.setValue(20);
 
-	auto lamLoadJob = [&] (KsDataStore *d) {
+	auto lamLoadJob = [&] () {
 		_session.loadDataStreams(kshark_ctx, &_data);
 		loadDone = true;
 	};
 
-	std::thread job = std::thread(lamLoadJob, &_data);
+	std::thread job = std::thread(lamLoadJob);
 
 	for (int i = 0; i < 150; ++i) {
 		/*
