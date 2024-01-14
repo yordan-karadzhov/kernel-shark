@@ -276,8 +276,8 @@ void KsAdvFilteringDialog::_makeFilterTable()
 	headers << "Delete" << "Stream" << "Event" << " Id" << "Filter";
 	_table->init(headers, _filters.count());
 
-	for(auto f : _filters.keys()) {
-		QStringList thisFilter = _filters.value(f).split(":");
+	for (auto it = _filters.cbegin(), end = _filters.cend(); it != end; ++it) {
+		QStringList thisFilter = it.value().split(":");
 
 		i1 = new QTableWidgetItem(thisFilter[0]);
 		_table->setItem(count, 1, i1);
@@ -285,7 +285,7 @@ void KsAdvFilteringDialog::_makeFilterTable()
 		i1 = new QTableWidgetItem(thisFilter[1]);
 		_table->setItem(count, 2, i1);
 
-		i2 = new QTableWidgetItem(tr("%1").arg(f));
+		i2 = new QTableWidgetItem(tr("%1").arg(it.key()));
 		_table->setItem(count, 3, i2);
 
 		i3 = new QTableWidgetItem(thisFilter[2]);
