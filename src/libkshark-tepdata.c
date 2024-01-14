@@ -1046,6 +1046,7 @@ static char *tepdata_dump_entry(struct kshark_data_stream *stream,
 		case KS_EVENT_OVERFLOW:
 			entry_str = tepdata_dump_custom_entry(stream, entry,
 							     missed_events_dump);
+			break;
 		default:
 			return NULL;
 		}
