@@ -471,7 +471,7 @@ QString getSaveFile(QWidget *parent,
 	if (!fileName.isEmpty() && !fileName.endsWith(extension)) {
 		fileName += extension;
 
-		if (QFileInfo(fileName).exists()) {
+		if (QFileInfo::exists(fileName)) {
 			if (!KsWidgetsLib::fileExistsDialog(fileName))
 				fileName.clear();
 		}
