@@ -83,7 +83,7 @@ KsTraceViewer::KsTraceViewer(QWidget *parent)
   _mState(nullptr),
   _data(nullptr)
 {
-	this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+	this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
 	/* Make a search toolbar. */
 	_toolbar.setOrientation(Qt::Horizontal);
@@ -125,6 +125,7 @@ KsTraceViewer::KsTraceViewer(QWidget *parent)
 	int defaultRowHeight = FONT_HEIGHT * 1.25;
 	auto lamSelectionChanged = [this, defaultRowHeight] (const QItemSelection &selected,
 							     const QItemSelection &deselected) {
+
 		if (deselected.count()) {
 			_view.verticalHeader()->resizeSection(deselected.indexes().first().row(),
 							      defaultRowHeight);
@@ -208,33 +209,13 @@ void KsTraceViewer::loadData(KsDataStore *data)
 /** Connect the QTableView widget and the State machine of the Dual marker. */
 void KsTraceViewer::setMarkerSM(KsDualMarkerSM *m)
 {
-	QString styleSheetA, styleSheetB;
-
 	_mState = m;
 	_model.setMarkerColors(_mState->markerA()._color,
 			       _mState->markerB()._color);
 
-	/*
-	 * Assign a property to State A of the Dual marker state machine. When
-	 * the marker is in State A the background color of the selected row
-	 * will be the same as the color of Marker A.
-	 */
-	styleSheetA = "selection-background-color : " +
-		      _mState->markerA()._color.name() + ";";
-
-	_mState->stateAPtr()->assignProperty(&_view, "styleSheet",
-						     styleSheetA);
-
-	/*
-	 * Assign a property to State B. When the marker is in State B the
-	 * background color of the selected row will be the same as the color
-	 * of Marker B.
-	 */
-	styleSheetB = "selection-background-color : " +
-		      _mState->markerB()._color.name() + ";";
-
-	_mState->stateBPtr()->assignProperty(&_view, "styleSheet",
-						     styleSheetB);
+	_viewPalette = _view.palette();
+	_viewPalette.setColor(QPalette::Highlight, _mState->activeMarker()._color);
+	_view.setPalette(_viewPalette);
 }
 
 /** Reset (empty) the table. */
@@ -502,35 +483,38 @@ void KsTraceViewer::markSwitch()
 	ssize_t row;
 
 	/* The state of the Dual marker has changed. Get the new active marker. */
-	DualMarkerState state = _mState->getState();
+	DualMarkerState actState = _mState->getState();
+	DualMarkerState pasState = !actState;
 
 	/* First deal with the passive marker. */
-	if (_mState->getMarker(!state)._isSet) {
+	KsGraphMark &pasMark = _mState->getMarker(pasState);
+	if (pasMark._isSet) {
 		/*
 		 * The passive marker is set. Use the model to color the row of
 		 * the passive marker.
 		 */
-		_model.selectRow(!state, _mState->getMarker(!state)._pos);
+		_model.selectRow(pasState, pasMark._pos);
 	}
 	else {
 		/*
 		 * The passive marker is not set.
 		 * Make sure that the model colors nothing.
 		 */
-		_model.selectRow(!state, KS_NO_ROW_SELECTED);
+		_model.selectRow(pasState, KS_NO_ROW_SELECTED);
 	}
 
 	/*
 	 * Now deal with the active marker. This has to be done after dealing
 	 *  with the model, because changing the model clears the selection.
 	 */
-	if (_mState->getMarker(state)._isSet) {
+	KsGraphMark &actMark = _mState->getMarker(actState);
+	if (actMark._isSet) {
 		/*
 		 * The active marker is set. Use QTableView to select its row.
 		 * The index in the source model is used to retrieve the value
 		 * of the row number in the proxy model.
 		 */
-		row =_mState->getMarker(state)._pos;
+		row = actMark._pos;
 
 		QModelIndex index =
 			_proxyModel.mapFromSource(_model.index(row, 0));
@@ -551,6 +535,9 @@ void KsTraceViewer::markSwitch()
 	} else {
 		_view.clearSelection();
 	}
+
+	_viewPalette.setColor(QPalette::Highlight, actMark._color);
+	_view.setPalette(_viewPalette);
 
 	row = selectedRow();
 	if (row >= 0) {
@@ -604,7 +591,7 @@ void KsTraceViewer::keyReleaseEvent(QKeyEvent *event)
 
 void KsTraceViewer::_resizeToContents()
 {
-	int col, rows, columnSize, markRow = selectedRow();
+	int markRow = selectedRow();
 
 	_view.setVisible(false);
 	_view.resizeColumnsToContents();
@@ -617,24 +604,6 @@ void KsTraceViewer::_resizeToContents()
 	 */
 	if (markRow == KS_NO_ROW_SELECTED)
 		_view.clearSelection();
-
-	/*
-	 * Because of some unknown reason some of the columns doesn't get
-	 * resized properly by the code above. We will resize this
-	 * column by hand.
-	 */
-	col = KsViewModel::TRACE_VIEW_COL_STREAM;
-	columnSize = STRING_WIDTH(_model.header().at(col)) + FONT_WIDTH;
-	_view.setColumnWidth(col, columnSize);
-
-	col = KsViewModel::TRACE_VIEW_COL_CPU;
-	columnSize = STRING_WIDTH(_model.header().at(col)) + FONT_WIDTH * 2;
-	_view.setColumnWidth(col, columnSize);
-
-	col = KsViewModel::TRACE_VIEW_COL_INDEX;
-	rows = _model.rowCount({});
-	columnSize = STRING_WIDTH(QString("%1").arg(rows)) + FONT_WIDTH;
-	_view.setColumnWidth(col, columnSize);
 }
 
 //! @cond Doxygen_Suppress

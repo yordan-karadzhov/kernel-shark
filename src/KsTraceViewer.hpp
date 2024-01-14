@@ -123,6 +123,8 @@ private:
 
 	KsTableView	_view;
 
+	QPalette	_viewPalette;
+
 	KsViewModel		_model;
 
 	KsFilterProxyModel	_proxyModel;
