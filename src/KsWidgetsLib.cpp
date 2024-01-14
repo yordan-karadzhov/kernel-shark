@@ -209,7 +209,7 @@ bool fileExistsDialog(QString fileName)
 }
 
 /** Create KsTimeOffsetDialog. */
-KsTimeOffsetDialog::KsTimeOffsetDialog(QWidget *parent)
+KsTimeOffsetDialog::KsTimeOffsetDialog(QWidget *parent) : QDialog(parent)
 {
 	kshark_context *kshark_ctx(nullptr);
 	QVector<int> streamIds;
