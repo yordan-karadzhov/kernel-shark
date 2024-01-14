@@ -86,7 +86,7 @@ public:
 	void reset();
 
 	/** Reprocess all graphs. */
-	void update() {resizeGL(width(), height());}
+	void updateGeom() {resizeGL(width(), height());}
 
 	void mousePressEvent(QMouseEvent *event);
 

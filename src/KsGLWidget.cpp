@@ -53,7 +53,7 @@ KsGLWidget::KsGLWidget(QWidget *parent)
 	setMouseTracking(true);
 
 	connect(&_model,	&QAbstractTableModel::modelReset,
-		this,		&KsGLWidget::update);
+		this,		qOverload<>(&KsGLWidget::update));
 }
 
 void KsGLWidget::_freeGraphs()
@@ -89,7 +89,7 @@ void KsGLWidget::initializeGL()
 	ksplot_init_font(&_font, 15, TT_FONT_FILE);
 
 	_labelSize = _getMaxLabelSize() + FONT_WIDTH * 2;
-	update();
+	updateGeom();
 }
 
 /**

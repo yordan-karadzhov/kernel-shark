@@ -614,7 +614,7 @@ void KsTraceGraph::updateGeom()
 			       * widget is extended to maximum.
 			       */
 
-	_glWindow.update();
+	_glWindow.updateGeom();
 }
 
 /**
