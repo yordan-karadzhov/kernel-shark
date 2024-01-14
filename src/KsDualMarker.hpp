@@ -144,22 +144,16 @@ public:
 	/** Get the marker B. */
 	KsGraphMark &markerB() {return _markB;}
 
-	/** Get a pointer to the State A object. */
-	QState *stateAPtr() {return _stateA;}
-
-	/** Get a pointer to the State B object. */
-	QState *stateBPtr() {return _stateB;}
-
 	void updateMarkers(const KsDataStore &data,
 			   KsGLWidget *glw);
 
 	void updateLabels();
 
 	/** Get the index inside the data array marker A points to. */
-	ssize_t markerAPos() {return markerA()._isSet ? markerA()._pos : -1;}
+	ssize_t markerAPos() {return _markA._isSet ? _markA._pos : -1;}
 
 	/** Get the index inside the data array marker B points to. */
-	ssize_t markerBPos() {return markerB()._isSet ? markerB()._pos : -1;}
+	ssize_t markerBPos() {return _markB._isSet ? _markB._pos : -1;}
 
 signals:
 	/**
