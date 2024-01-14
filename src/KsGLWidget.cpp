@@ -992,15 +992,15 @@ bool KsGLWidget::_find(int bin, int sd, int cpu, int pid,
 		 * The click is over the CPU graphs. First try the exact
 		 * match.
 		 */
-		if (lamGetEntryByCPU(bin))
+		if (lamGetEntryByCPU(b))
 			return true;
 
 		/* Now look for a match, nearby the position of the click. */
 		for (int i = 1; i < variance; ++i) {
-			if (bin + i <= hSize && lamGetEntryByCPU(bin + i))
+			if (b + i <= hSize && lamGetEntryByCPU(b + i))
 				return true;
 
-			if (bin - i >= 0 && lamGetEntryByCPU(bin - i))
+			if (b - i >= 0 && lamGetEntryByCPU(b - i))
 				return true;
 		}
 
@@ -1013,15 +1013,15 @@ bool KsGLWidget::_find(int bin, int sd, int cpu, int pid,
 		 * The click is over the Task graphs. First try the exact
 		 * match.
 		 */
-		if (lamGetEntryByPid(bin))
+		if (lamGetEntryByPid(b))
 			return true;
 
 		/* Now look for a match, nearby the position of the click. */
 		for (int i = 1; i < variance; ++i) {
-			if ((bin + i <= hSize) && lamGetEntryByPid(bin + i))
+			if ((b + i <= hSize) && lamGetEntryByPid(b + i))
 				return true;
 
-			if ((bin - i >= 0) && lamGetEntryByPid(bin - i))
+			if ((b - i >= 0) && lamGetEntryByPid(b - i))
 				return true;
 		}
 
