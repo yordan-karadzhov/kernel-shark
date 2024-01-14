@@ -773,7 +773,7 @@ static bool kshark_plugin_from_json(struct kshark_context *kshark_ctx,
 static bool kshark_all_plugins_from_json(struct kshark_context *kshark_ctx,
 					 struct json_object *jobj)
 {
-	struct json_object *jlist, *jfile;
+	struct json_object *jlist = NULL, *jfile = NULL;
 	int i, n_plugins;
 
 	if (!kshark_ctx || !jobj)
@@ -896,7 +896,7 @@ static bool kshark_stream_plugins_from_json(struct kshark_context *kshark_ctx,
 	int i, n_plugins;
 	bool active;
 
-	jplg = jname = jstatus = NULL;
+	jlist = jplg = jname = jstatus = NULL;
 
 	if (!kshark_ctx || !stream || !jobj)
 		return false;
