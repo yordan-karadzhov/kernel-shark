@@ -69,8 +69,8 @@ bool KSHARK_INPUT_CHECK(const char *file, char **format)
 	return false;
 }
 
-static const int get_pid(struct kshark_data_stream *stream,
-			 const struct kshark_entry *entry)
+static int get_pid(struct kshark_data_stream *stream,
+		   const struct kshark_entry *entry)
 {
 	return entry->pid;
 }

@@ -142,8 +142,8 @@ typedef char *(*stream_get_str_func) (struct kshark_data_stream *,
 				      const struct kshark_entry *);
 
 /** A function type to be used by the method interface of the data stream. */
-typedef const int (*stream_get_int_func) (struct kshark_data_stream *,
-					  const struct kshark_entry *);
+typedef int (*stream_get_int_func) (struct kshark_data_stream *,
+				    const struct kshark_entry *);
 
 /** A function type to be used by the method interface of the data stream. */
 typedef int (*stream_find_id_func) (struct kshark_data_stream *,
@@ -176,16 +176,16 @@ typedef kshark_event_field_format
 			    const char *);
 
 /** A function type to be used by the method interface of the data stream. */
-typedef const int (*stream_read_event_field) (struct kshark_data_stream *,
-					      const struct kshark_entry *,
-					      const char *,
-					      int64_t *);
+typedef int (*stream_read_event_field) (struct kshark_data_stream *,
+					const struct kshark_entry *,
+					const char *,
+					int64_t *);
 
 /** A function type to be used by the method interface of the data stream. */
-typedef const int (*stream_read_record_field) (struct kshark_data_stream *,
-					       void *,
-					       const char *,
-					       int64_t *);
+typedef int (*stream_read_record_field) (struct kshark_data_stream *,
+					 void *,
+					 const char *,
+					 int64_t *);
 
 struct kshark_context;
 

@@ -634,8 +634,8 @@ ssize_t kshark_load_tep_records(struct kshark_context *kshark_ctx, int sd,
 	return -ENOMEM;
 }
 
-static const int tepdata_get_event_id(struct kshark_data_stream *stream,
-				      const struct kshark_entry *entry)
+static int tepdata_get_event_id(struct kshark_data_stream *stream,
+				const struct kshark_entry *entry)
 {
 	int event_id = KS_EMPTY_BIN;
 	struct tep_record *record;
@@ -727,8 +727,8 @@ static char *tepdata_get_event_name(struct kshark_data_stream *stream,
 	return buffer;
 }
 
-static const int tepdata_get_pid(struct kshark_data_stream *stream,
-				 const struct kshark_entry *entry)
+static int tepdata_get_pid(struct kshark_data_stream *stream,
+			   const struct kshark_entry *entry)
 {
 	struct tep_record *record;
 	int pid = KS_EMPTY_BIN;
@@ -1054,8 +1054,8 @@ static char *tepdata_dump_entry(struct kshark_data_stream *stream,
 	return entry_str;
 }
 
-static const int tepdata_find_event_id(struct kshark_data_stream *stream,
-				       const char *event_name)
+static int tepdata_find_event_id(struct kshark_data_stream *stream,
+				 const char *event_name)
 {
 	struct tep_event *event;
 	char *buffer, *system, *name;
