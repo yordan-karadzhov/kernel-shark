@@ -81,7 +81,7 @@ public:
 	void update(KsDataStore *data);
 
 	/** Get the list of column's headers. */
-	QStringList header() const {return _header;}
+	const QStringList& header() const {return _header;}
 
 	QString getValueStr(int column, int row) const;
 
