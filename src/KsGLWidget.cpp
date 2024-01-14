@@ -793,13 +793,8 @@ void KsGLWidget::_makePluginShapes()
 
 KsPlot::Graph *KsGLWidget::_newCPUGraph(int sd, int cpu)
 {
-	QString name;
-	/* The CPU graph needs to know only the colors of the tasks. */
-	KsPlot::Graph *graph = new KsPlot::Graph(_model.histo(),
-						 &_pidColors,
-						 &_pidColors);
-
-	kshark_context *kshark_ctx(nullptr);
+	KsPlot::Graph *graph = nullptr;
+	kshark_context *kshark_ctx = nullptr;
 	kshark_data_stream *stream;
 	kshark_entry_collection *col;
 
@@ -810,6 +805,8 @@ KsPlot::Graph *KsGLWidget::_newCPUGraph(int sd, int cpu)
 	if (!stream)
 		return nullptr;
 
+	/* The CPU graph needs to know only the colors of the tasks. */
+	graph = new KsPlot::Graph(_model.histo(), &_pidColors, &_pidColors);
 	graph->setIdleSuppressed(true, stream->idle_pid);
 	graph->setHeight(KS_GRAPH_HEIGHT);
 	graph->setLabelText(KsUtils::cpuPlotName(cpu).toStdString());
@@ -826,15 +823,8 @@ KsPlot::Graph *KsGLWidget::_newCPUGraph(int sd, int cpu)
 
 KsPlot::Graph *KsGLWidget::_newTaskGraph(int sd, int pid)
 {
-	QString name;
-	/*
-	 * The Task graph needs to know the colors of the tasks and the colors
-	 * of the CPUs.
-	 */
-	KsPlot::Graph *graph = new KsPlot::Graph(_model.histo(),
-						 &_pidColors,
-						 &_cpuColors);
-	kshark_context *kshark_ctx(nullptr);
+	KsPlot::Graph *graph = nullptr;
+	kshark_context *kshark_ctx = nullptr;
 	kshark_entry_collection *col;
 	kshark_data_stream *stream;
 
@@ -845,6 +835,9 @@ KsPlot::Graph *KsGLWidget::_newTaskGraph(int sd, int pid)
 	if (!stream)
 		return nullptr;
 
+	/* The Task graph needs to know the colors of the tasks and the colors
+	 * of the CPUs */
+	graph = new KsPlot::Graph(_model.histo(), &_pidColors, &_cpuColors);
 	graph->setHeight(KS_GRAPH_HEIGHT);
 	graph->setLabelText(KsUtils::taskPlotName(sd, pid).toStdString());
 
