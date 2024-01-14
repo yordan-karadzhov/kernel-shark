@@ -1275,7 +1275,7 @@ void KsMainWindow::_load(const QString& fileName, bool append)
 		pbLabel += fileName;
 	} else {
 		pbLabel += "...";
-		pbLabel += fileName.mid(fileName.size() - 37, 37);
+		pbLabel += fileName.sliced(fileName.size() - 37);
 	}
 
 	setWindowTitle("Kernel Shark");

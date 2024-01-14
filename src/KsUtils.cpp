@@ -534,8 +534,8 @@ QVector<int> parseIdList(QString v_str)
 		int i = item.indexOf('-');
 		if (i > 0) {
 			/* This item is an interval. */
-			int to = item.right(item.size() - i - 1).toInt();
-			int from = item.left(i).toInt();
+			int to = item.sliced(i + 1).toInt();
+			int from = item.first(i).toInt();
 			int s = v.size();
 
 			v.resize(s + to - from + 1);
