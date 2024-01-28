@@ -515,7 +515,7 @@ kshark_export_trace_file(const char *file, const char *name,
 	if (!conf)
 		return NULL;
 
-	switch (format) {
+	switch (conf->format) {
 	case KS_CONFIG_JSON:
 		kshark_trace_file_to_json(file, name, conf->conf_doc);
 		return conf;
@@ -523,6 +523,7 @@ kshark_export_trace_file(const char *file, const char *name,
 	default:
 		fprintf(stderr, "Document format %d not supported\n",
 			conf->format);
+		kshark_free_config_doc(conf);
 		return NULL;
 	}
 }
@@ -682,7 +683,7 @@ kshark_export_plugin_file(struct kshark_plugin_list *plugin,
 	if (!conf)
 		return NULL;
 
-	switch (format) {
+	switch (conf->format) {
 	case KS_CONFIG_JSON:
 		kshark_plugin_to_json(plugin, conf->conf_doc);
 		return conf;
@@ -690,6 +691,7 @@ kshark_export_plugin_file(struct kshark_plugin_list *plugin,
 	default:
 		fprintf(stderr, "Document format %d not supported\n",
 			conf->format);
+		kshark_free_config_doc(conf);
 		return NULL;
 	}
 }
@@ -740,12 +742,12 @@ kshark_export_all_plugins(struct kshark_context *kshark_ctx,
 			  enum kshark_config_formats format)
 {
 	struct kshark_config_doc *conf =
-		kshark_config_new("kshark.config.plugins", KS_CONFIG_JSON);
+		kshark_config_new("kshark.config.plugins", format);
 
 	if (!conf)
 		return NULL;
 
-	switch (format) {
+	switch (conf->format) {
 	case KS_CONFIG_JSON:
 		kshark_all_plugins_to_json(kshark_ctx, conf->conf_doc);
 		return conf;
@@ -753,6 +755,7 @@ kshark_export_all_plugins(struct kshark_context *kshark_ctx,
 	default:
 		fprintf(stderr, "Document format %d not supported\n",
 			conf->format);
+		kshark_free_config_doc(conf);
 		return NULL;
 	}
 }
@@ -868,12 +871,12 @@ kshark_export_stream_plugins(struct kshark_data_stream *stream,
 			     enum kshark_config_formats format)
 {
 	struct kshark_config_doc *conf =
-		kshark_config_new("kshark.config.plugins", KS_CONFIG_JSON);
+		kshark_config_new("kshark.config.plugins", format);
 
 	if (!conf)
 		return NULL;
 
-	switch (format) {
+	switch (conf->format) {
 	case KS_CONFIG_JSON:
 		kshark_stream_plugins_to_json(stream, conf->conf_doc);
 		return conf;
@@ -881,6 +884,7 @@ kshark_export_stream_plugins(struct kshark_data_stream *stream,
 	default:
 		fprintf(stderr, "Document format %d not supported\n",
 			conf->format);
+		kshark_free_config_doc(conf);
 		return NULL;
 	}
 }
@@ -1026,14 +1030,15 @@ kshark_export_model(struct kshark_trace_histo *histo,
 	if (!conf)
 		return NULL;
 
-	switch (format) {
+	switch (conf->format) {
 	case KS_CONFIG_JSON:
 		kshark_model_to_json(histo, conf->conf_doc);
 		return conf;
 
 	default:
 		fprintf(stderr, "Document format %d not supported\n",
-			format);
+			conf->format);
+		kshark_free_config_doc(conf);
 		return NULL;
 	}
 }
