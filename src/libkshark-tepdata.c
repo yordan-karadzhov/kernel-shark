@@ -949,6 +949,7 @@ static int tepdata_get_field_names(struct kshark_data_stream *stream,
 	for (i = 0; i < nr_fields; ++i)
 		free(buffer[i]);
 
+	free(buffer);
 	return -EFAULT;
 }
 
@@ -1425,8 +1426,10 @@ int kshark_tep_open_buffer(struct kshark_context *kshark_ctx, int sd,
 
 	sd_buffer = kshark_add_stream(kshark_ctx);
 	buffer_stream = kshark_get_data_stream(kshark_ctx, sd_buffer);
-	if (!buffer_stream)
-		return -EFAULT;
+	if (!buffer_stream) {
+		ret = -EFAULT;
+		goto end;
+	}
 
 	for (i = 0; i < n_buffers; ++i) {
 		if (strcmp(buffer_name, names[i]) == 0) {
@@ -1439,7 +1442,8 @@ int kshark_tep_open_buffer(struct kshark_context *kshark_ctx, int sd,
 			if (!buffer_stream->name || !buffer_stream->file) {
 				free(buffer_stream->name);
 				free(buffer_stream->file);
-
+				buffer_stream->name = NULL;
+				buffer_stream->file = NULL;
 				ret = -ENOMEM;
 				break;
 			}
@@ -1450,6 +1454,7 @@ int kshark_tep_open_buffer(struct kshark_context *kshark_ctx, int sd,
 		}
 	}
 
+end:
 	for (i = 0; i < n_buffers; ++i)
 		free(names[i]);
 	free(names);
@@ -1501,8 +1506,9 @@ int kshark_tep_init_all_buffers(struct kshark_context *kshark_ctx,
 		if (!buffer_stream->name || !buffer_stream->file) {
 			free(buffer_stream->name);
 			free(buffer_stream->file);
-			ret = -ENOMEM;
-			break;
+			buffer_stream->name = NULL;
+			buffer_stream->file = NULL;
+			return -ENOMEM;
 		}
 
 		ret = kshark_tep_stream_init(buffer_stream, buffer_input);
