@@ -137,9 +137,10 @@ void KsGLWidget::paintGL()
 	/* Draw the time axis. */
 	_drawAxisX(size);
 
-	for (auto const &stream: _graphs)
-		for (auto const &g: stream)
+	for (auto it = _graphs.cbegin(), end = _graphs.cend(); it != end; ++it) {
+		for (auto const &g: it.value())
 			g->draw(size);
+	}
 
 	for (auto const &s: _shapes) {
 		if (!s)

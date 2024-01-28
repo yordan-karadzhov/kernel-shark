@@ -308,13 +308,15 @@ void KsComboPlotDialog::_applyPress()
 	int nPlots(0);
 
 	_plotMap[guestId] = _streamCombos(guestId);
-	for (auto const &stream: _plotMap)
-		for (auto const &combo: stream) {
+
+	for (auto it = _plotMap.cbegin(), end = _plotMap.cend(); it != end; ++it) {
+			for (auto const &combo: it.value()) {
 			allCombosVec.append(2);
 			combo[0] >> allCombosVec;
 			combo[1] >> allCombosVec;
 			++nPlots;
 		}
+	}
 
 	emit apply(nPlots, allCombosVec);
 }
