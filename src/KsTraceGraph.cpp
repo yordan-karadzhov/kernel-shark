@@ -593,8 +593,8 @@ void KsTraceGraph::updateGeom()
 	       _layout.contentsMargins().top() +
 	       _layout.contentsMargins().bottom();
 
-	if (hMin > KS_GRAPH_HEIGHT * 8)
-		hMin = KS_GRAPH_HEIGHT * 8;
+	if (hMin > KS_GRAPH_HEIGHT * 6)
+		hMin = KS_GRAPH_HEIGHT * 6;
 
 	setMinimumHeight(hMin);
 
