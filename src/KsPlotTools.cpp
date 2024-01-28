@@ -318,6 +318,9 @@ ksplot_point Shape::center() const
 {
 	ksplot_point c = {0, 0};
 
+	if (_nPoints == 0)
+		return c;
+
 	for (size_t i = 0; i < _nPoints; ++i) {
 		c.x += _points[i].x;
 		c.y += _points[i].y;
