@@ -621,7 +621,7 @@ void KsCheckBoxTable::mousePressEvent(QMouseEvent *event)
 	QTableWidget::mousePressEvent(event);
 }
 
-void KsCheckBoxTable::_doubleClicked(int row, int col)
+void KsCheckBoxTable::_doubleClicked(int row, [[maybe_unused]] int col)
 {
 	emit changeState(row);
 	for (auto &i: selectedItems())
@@ -854,7 +854,7 @@ void KsCheckBoxTreeWidget::_adjustSize()
 			_topLayout.contentsMargins().right());
 }
 
-void KsCheckBoxTreeWidget::_update(QTreeWidgetItem *item, int column)
+void KsCheckBoxTreeWidget::_update(QTreeWidgetItem *item, [[maybe_unused]] int column)
 {
 	/* Get the new state of the item. */
 	Qt::CheckState state = item->checkState(0);

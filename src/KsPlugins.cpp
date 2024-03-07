@@ -125,8 +125,9 @@ getLastInBinEvents(kshark_trace_histo *histo, kshark_data_container *data,
 	 * Do not resolve. This means that only the very last (in time)
 	 * appearance of the event in the bin will be visualized.
 	 */
-	resolveFunc resolve = [] (kshark_data_container *data, ssize_t i,
-				  PlotPointList *list) {};
+	resolveFunc resolve = [] ([[maybe_unused]] kshark_data_container *data,
+				  [[maybe_unused]] ssize_t i,
+				  [[maybe_unused]] PlotPointList *list) {};
 
 	return getInBinEvents(histo, data, isApplicable, push, resolve);
 }

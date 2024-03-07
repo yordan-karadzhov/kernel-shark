@@ -667,9 +667,9 @@ static int tepdata_get_event_id(struct kshark_data_stream *stream,
 	return (event_id == -1)? -EFAULT : event_id;
 }
 
-static char* missed_events_dump(struct kshark_data_stream *stream,
-				      const struct kshark_entry *entry,
-				      bool get_info)
+static char* missed_events_dump(__attribute__ ((unused)) struct kshark_data_stream *stream,
+				const struct kshark_entry *entry,
+				bool get_info)
 {
 	char *buffer;
 	int size = 0;

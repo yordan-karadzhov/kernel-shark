@@ -1274,14 +1274,14 @@ bool ksmodel_task_visible_event_exist(struct kshark_trace_histo *histo,
 	return true;
 }
 
-static bool match_cpu_missed_events(struct kshark_context *kshark_ctx,
+static bool match_cpu_missed_events(__attribute__ ((unused)) struct kshark_context *kshark_ctx,
 				    struct kshark_entry *e, int sd, int *cpu)
 {
 	return e->event_id == KS_EVENT_OVERFLOW &&
 	       e->cpu == *cpu && e->stream_id == sd;
 }
 
-static bool match_pid_missed_events(struct kshark_context *kshark_ctx,
+static bool match_pid_missed_events(__attribute__ ((unused)) struct kshark_context *kshark_ctx,
 				    struct kshark_entry *e, int sd, int *pid)
 {
 	return e->event_id == KS_EVENT_OVERFLOW &&

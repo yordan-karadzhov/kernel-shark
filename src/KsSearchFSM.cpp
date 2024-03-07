@@ -30,7 +30,8 @@ static bool matchCond(const QString &searchText, const QString &itemText)
 	return (itemText.compare(searchText, Qt::CaseInsensitive) == 0);
 }
 
-static bool noCond(const QString &searchText, const QString &itemText)
+static bool noCond([[maybe_unused]] const QString &searchText,
+		   [[maybe_unused]] const QString &itemText)
 {
 	return false;
 }

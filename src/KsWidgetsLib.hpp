@@ -263,7 +263,7 @@ protected:
 	 * Reimplemented event handler used to update the geometry of the widget on
 	 * resize events.
 	 */
-	void resizeEvent(QResizeEvent* event) override
+	void resizeEvent([[maybe_unused]] QResizeEvent* event) override
 	{
 		KsUtils::setElidedText(&_streamLabel, _streamName,
 				       Qt::ElideLeft, width());

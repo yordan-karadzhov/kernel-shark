@@ -279,7 +279,8 @@ public:
 	 * This dummy function is an implementation of the pure
 	 * virtual method of the abstract model class.
 	 */
-	QVariant data(const QModelIndex &index, int role) const override
+	QVariant data([[maybe_unused]] const QModelIndex &index,
+		      [[maybe_unused]] int role) const override
 	{
 		return {};
 	}

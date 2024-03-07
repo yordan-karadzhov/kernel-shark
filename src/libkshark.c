@@ -1572,7 +1572,7 @@ ssize_t kshark_find_entry_by_time(int64_t time,
  * @returns True if the Pid of the entry matches the value of "pid".
  *	    Else false.
  */
-bool kshark_match_pid(struct kshark_context *kshark_ctx,
+bool kshark_match_pid(__attribute__ ((unused)) struct kshark_context *kshark_ctx,
 		      struct kshark_entry *e, int sd, int *pid)
 {
 	if (e->stream_id == sd && e->pid == *pid)
@@ -1592,7 +1592,7 @@ bool kshark_match_pid(struct kshark_context *kshark_ctx,
  * @returns True if the Cpu of the entry matches the value of "cpu".
  *	    Else false.
  */
-bool kshark_match_cpu(struct kshark_context *kshark_ctx,
+bool kshark_match_cpu(__attribute__ ((unused)) struct kshark_context *kshark_ctx,
 		      struct kshark_entry *e, int sd, int *cpu)
 {
 	if (e->stream_id == sd && e->cpu == *cpu)
@@ -1612,7 +1612,7 @@ bool kshark_match_cpu(struct kshark_context *kshark_ctx,
  * @returns True if the event Id of the entry matches the value of "event_id".
  *	    Else false.
  */
-bool kshark_match_event_id(struct kshark_context *kshark_ctx,
+bool kshark_match_event_id(__attribute__ ((unused)) struct kshark_context *kshark_ctx,
 			   struct kshark_entry *e, int sd, int *event_id)
 {
 	return e->stream_id == sd && e->event_id == *event_id;
@@ -1630,7 +1630,7 @@ bool kshark_match_event_id(struct kshark_context *kshark_ctx,
  * @returns True if the event Id of the entry matches the values.
  *	    Else false.
  */
-bool kshark_match_event_and_pid(struct kshark_context *kshark_ctx,
+bool kshark_match_event_and_pid(__attribute__ ((unused)) struct kshark_context *kshark_ctx,
 				struct kshark_entry *e,
 				int sd, int *values)
 {
@@ -1651,7 +1651,7 @@ bool kshark_match_event_and_pid(struct kshark_context *kshark_ctx,
  * @returns True if the event Id of the entry matches the values.
  *	    Else false.
  */
-bool kshark_match_event_and_cpu(struct kshark_context *kshark_ctx,
+bool kshark_match_event_and_cpu(__attribute__ ((unused)) struct kshark_context *kshark_ctx,
 				struct kshark_entry *e,
 				int sd, int *values)
 {

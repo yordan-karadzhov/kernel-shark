@@ -261,7 +261,8 @@ Color getColor(const ColorTable *colors, int id)
  * @param x: The X coordinate of the click.
  * @param y: The Y coordinate of the click.
  */
-double PlotObject::distance(int x, int y) const
+double PlotObject::distance([[maybe_unused]] int x,
+			    [[maybe_unused]] int y) const
 {
 	return std::numeric_limits<double>::max();
 }
@@ -652,7 +653,7 @@ void TextBox::setBoxAppearance(const Color &col, int l, int h)
 	_box.setPoint(3, _box.pointX(0) + l,	_box.pointY(0));
 }
 
-void TextBox::_draw(const Color &col, float size) const
+void TextBox::_draw(const Color &col, [[maybe_unused]]float size) const
 {
 	_box.draw();
 	if (!_font || _text.empty())
@@ -1518,7 +1519,8 @@ void Graph::draw(float size)
 	}
 }
 
-void VirtGap::_draw(const Color &col, float size) const
+void VirtGap::_draw([[maybe_unused]]const Color &col,
+		    [[maybe_unused]] float size) const
 {
 	if (_entryPoint.x() - _exitPoint.x() < 4)
 		return;

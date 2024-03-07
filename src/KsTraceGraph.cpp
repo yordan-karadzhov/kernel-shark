@@ -620,7 +620,7 @@ void KsTraceGraph::updateGeom()
  * Reimplemented event handler used to update the geometry of the widget on
  * resize events.
  */
-void KsTraceGraph::resizeEvent(QResizeEvent* event)
+void KsTraceGraph::resizeEvent([[maybe_unused]] QResizeEvent* event)
 {
 	updateGeom();
 }

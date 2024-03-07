@@ -1544,7 +1544,7 @@ void KsMainWindow::_captureFinished(int ret, QProcess::ExitStatus st)
 		_captureErrorMessage(capture);
 }
 
-void KsMainWindow::_captureError(QProcess::ProcessError error)
+void KsMainWindow::_captureError([[maybe_unused]] QProcess::ProcessError error)
 {
 	QProcess *capture = static_cast<QProcess*>(sender());
 	_captureErrorMessage(capture);
@@ -1595,7 +1595,8 @@ void KsMainWindow::_readSocket()
 	loadDataFile(fileName);
 }
 
-void KsMainWindow::_splitterMoved(int pos, int index)
+void KsMainWindow::_splitterMoved([[maybe_unused]] int pos,
+				  [[maybe_unused]] int index)
 {
 	_session.saveSplitterSize(_splitter);
 }

@@ -23,8 +23,8 @@
  * Reimplemented handler for creating delegate widget.
  */
 QWidget *KsTableItemDelegate::createEditor(QWidget *parent,
-					   const QStyleOptionViewItem &option,
-					   const QModelIndex &index) const {
+					   [[maybe_unused]] const QStyleOptionViewItem &option,
+					   [[maybe_unused]] const QModelIndex &index) const {
 	QTextEdit *edit = new QTextEdit(parent);
 	edit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	edit->setReadOnly(true);
@@ -295,12 +295,12 @@ void KsTraceViewer::_onCustomContextMenu(const QPoint &point)
 	}
 }
 
-void KsTraceViewer::_searchEdit(int index)
+void KsTraceViewer::_searchEdit([[maybe_unused]] int index)
 {
 	_searchReset(); // The search has been modified.
 }
 
-void KsTraceViewer::_searchEditText(const QString &text)
+void KsTraceViewer::_searchEditText([[maybe_unused]] const QString &text)
 {
 	_searchReset(); // The search has been modified.
 }
@@ -550,7 +550,7 @@ void KsTraceViewer::markSwitch()
  * Reimplemented event handler used to update the geometry of the widget on
  * resize events.
  */
-void KsTraceViewer::resizeEvent(QResizeEvent* event)
+void KsTraceViewer::resizeEvent([[maybe_unused]] QResizeEvent* event)
 {
 	int nColumns = _model.header().count();
 	int tableSize(0), viewSize, freeSpace;

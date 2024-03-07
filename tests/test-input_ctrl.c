@@ -15,7 +15,7 @@
 #include "libkshark-plugin.h"
 
 static ssize_t load_entries(struct kshark_data_stream *stream,
-			    struct kshark_context *kshark_ctx,
+			    __attribute__ ((unused)) struct kshark_context *kshark_ctx,
 			    struct kshark_entry ***data_rows)
 {
 	struct kshark_entry **rows;
@@ -37,7 +37,7 @@ static ssize_t load_entries(struct kshark_data_stream *stream,
 	return total;
 }
 
-static char *dump_entry(struct kshark_data_stream *stream,
+static char *dump_entry(__attribute__ ((unused)) struct kshark_data_stream *stream,
 			const struct kshark_entry *entry)
 {
 	char *entry_str;
@@ -61,7 +61,7 @@ const char *KSHARK_INPUT_FORMAT()
 	return format_name;
 }
 
-bool KSHARK_INPUT_CHECK(const char *file, char **format)
+bool KSHARK_INPUT_CHECK(const char *file, __attribute__ ((unused)) char **format)
 {
 	char *ext = strrchr(file, '.');
 
@@ -71,14 +71,14 @@ bool KSHARK_INPUT_CHECK(const char *file, char **format)
 	return false;
 }
 
-static int get_pid(struct kshark_data_stream *stream,
+static int get_pid(__attribute__ ((unused)) struct kshark_data_stream *stream,
 		   const struct kshark_entry *entry)
 {
 	return entry->pid;
 }
 
-static char *get_task(struct kshark_data_stream *stream,
-		      const struct kshark_entry *entry)
+static char *get_task(__attribute__ ((unused)) struct kshark_data_stream *stream,
+		      __attribute__ ((unused)) const struct kshark_entry *entry)
 {
 	char *entry_str;
 	int ret;
@@ -91,7 +91,7 @@ static char *get_task(struct kshark_data_stream *stream,
 	return entry_str;
 }
 
-static char *get_event_name(struct kshark_data_stream *stream,
+static char *get_event_name(__attribute__ ((unused)) struct kshark_data_stream *stream,
 			    const struct kshark_entry *entry)
 {
 	char *evt_str;
@@ -130,11 +130,11 @@ int KSHARK_INPUT_INITIALIZER(struct kshark_data_stream *stream)
 	return 0;
 }
 
-void KSHARK_INPUT_DEINITIALIZER(struct kshark_data_stream *stream)
+void KSHARK_INPUT_DEINITIALIZER(__attribute__ ((unused)) struct kshark_data_stream *stream)
 {}
 
 /** Initialize the control interface of the plugin. */
-void *KSHARK_MENU_PLUGIN_INITIALIZER(void *ptr)
+void *KSHARK_MENU_PLUGIN_INITIALIZER(__attribute__ ((unused)) void *ptr)
 {
 	return NULL;
 }

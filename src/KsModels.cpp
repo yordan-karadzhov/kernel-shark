@@ -23,11 +23,11 @@ KsFilterProxyModel::KsFilterProxyModel(QObject *parent)
 
 /**
  * Returns False if the item in the row indicated by the sourceRow and
- * sourceParentshould be filtered out. Otherwise returns True.
+ * sourceParent should be filtered out. Otherwise returns True.
  */
 bool
 KsFilterProxyModel::filterAcceptsRow(int sourceRow,
-				     const QModelIndex &sourceParent) const
+				     [[maybe_unused]] const QModelIndex &sourceParent) const
 {
 	if (_data[sourceRow]->visible & KS_TEXT_VIEW_FILTER_MASK)
 		return true;

@@ -162,7 +162,7 @@ void LatencyPlotDialog::_reset()
 	_gui_ptr->wipPtr()->hide(work);
 }
 
-static void showDialog(KsMainWindow *ks)
+static void showDialog([[maybe_unused]] KsMainWindow *ks)
 {
 	lp_dialog->update();
 	lp_dialog->show();

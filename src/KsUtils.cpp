@@ -324,7 +324,7 @@ QCheckBox *addCheckBoxToMenu(QMenu *menu, QString name)
  * @returns True if the CPU of the entry matches the value of "cpu" and
  * 	    the entry is visibility in Graph. Otherwise false.
  */
-bool matchCPUVisible(struct kshark_context *kshark_ctx,
+bool matchCPUVisible([[maybe_unused]] struct kshark_context *kshark_ctx,
 		     struct kshark_entry *e, int sd, int *cpu)
 {
 	return (e->cpu == *cpu &&

@@ -161,7 +161,7 @@ void KsEFPDialog::_reset()
 	_gui_ptr->wipPtr()->hide(work);
 }
 
-static void showDialog(KsMainWindow *ks)
+static void showDialog([[maybe_unused]] KsMainWindow *ks)
 {
 	efp_dialog->update();
 	efp_dialog->show();
