@@ -120,7 +120,7 @@ kshark_data_collection_alloc(struct kshark_context *kshark_ctx,
 		temp->type = COLLECTION_IGNORE;
 	}
 
-	for (i = first + margin; i < end; ++i) {
+	for (i = first + margin; i < (size_t) end; ++i) {
 		if (!cond(kshark_ctx, data[i], sd, values)) {
 			/*
 			 * The entry is irrelevant for this collection.
@@ -161,9 +161,8 @@ kshark_data_collection_alloc(struct kshark_context *kshark_ctx,
 
 			/* Keep adding entries until the "next" record. */
 			for (j = i + 1;
-			     j != end && last_vis_entry->next != data[j];
-			     j++)
-				;
+			     j != (size_t) end && last_vis_entry->next != data[j];
+			     j++);
 
 			/*
 			 * If the number of added entries is smaller than the
@@ -322,8 +321,9 @@ map_collection_request_init(const struct kshark_entry_collection *col,
 			    bool front, size_t *end)
 {
 	int col_index_flag;
-	ssize_t col_index;
+	size_t col_index;
 	size_t req_end;
+	ssize_t ret;
 
 	if (req->next || col->size == 0) {
 		fprintf(stderr,
@@ -338,19 +338,17 @@ map_collection_request_init(const struct kshark_entry_collection *col,
 	 * Find the first Resume Point of the collection which is equal or
 	 * greater than the first index of this request.
 	 */
-	col_index = map_collection_index_from_source(col,
-						     req->first,
-						     &col_index_flag);
+	ret = map_collection_index_from_source(col, req->first, &col_index_flag);
+	if (ret == KS_EMPTY_BIN) {
+		/* Empty collection. */
+		goto do_nothing;
+	}
+	col_index = ret;
 
 	/*
 	 * The value of "col_index" is ambiguous. Use the "col_index_flag" to
 	 * deal with all possible cases.
 	 */
-	if (col_index == KS_EMPTY_BIN) {
-		/* Empty collection. */
-		goto do_nothing;
-	}
-
 	if (col_index_flag == COLLECTION_AFTER) {
 		/*
 		 * This request starts after the end of interval "col_index".
@@ -436,12 +434,14 @@ map_collection_back_request(const struct kshark_entry_collection *col,
 			    struct kshark_entry_request *req)
 {
 	size_t req_first, req_end;
-	ssize_t col_index;
+	size_t col_index;
 	int req_count;
+	ssize_t ret;
 
-	col_index = map_collection_request_init(col, req, false, &req_end);
-	if (col_index == KS_EMPTY_BIN)
+	ret = map_collection_request_init(col, req, false, &req_end);
+	if (ret == KS_EMPTY_BIN)
 		return 0;
+	col_index = ret;
 
 	/*
 	 * Now loop over the intervals of the collection going backwards till
@@ -449,7 +449,7 @@ map_collection_back_request(const struct kshark_entry_collection *col,
 	 * each of those interest.
 	 */
 	req_count = 1;
-	while (col_index >= 0 && req_end <= col->break_points[col_index]) {
+	while (req_end <= col->break_points[col_index]) {
 		if (req_end >= col->resume_points[col_index]) {
 			/*
 			 * The last entry of the original request is inside
@@ -519,12 +519,14 @@ map_collection_front_request(const struct kshark_entry_collection *col,
 			     struct kshark_entry_request *req)
 {
 	size_t req_first, req_end;
-	ssize_t col_index;
+	size_t col_index;
 	int req_count;
+	ssize_t ret;
 
-	col_index = map_collection_request_init(col, req, true, &req_end);
-	if (col_index == KS_EMPTY_BIN)
+	ret = map_collection_request_init(col, req, true, &req_end);
+	if (ret == KS_EMPTY_BIN)
 		return 0;
+	col_index = ret;
 
 	/*
 	 * Now loop over the intervals of the collection going forwards till

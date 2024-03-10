@@ -91,7 +91,7 @@ static bool ksmodel_histo_alloc(struct kshark_trace_histo *histo, size_t n)
 }
 
 static void ksmodel_set_in_range_bining(struct kshark_trace_histo *histo,
-					size_t n, int64_t min, int64_t max,
+					int n, int64_t min, int64_t max,
 					bool force_in_range)
 {
 	int64_t corrected_range, delta_range, range = max - min;
@@ -110,7 +110,7 @@ static void ksmodel_set_in_range_bining(struct kshark_trace_histo *histo,
 	}
 
 	/* The size of the bin must be >= 1, hence the range must be >= n. */
-	if (range < n) {
+	if (range < (int64_t) n) {
 		range = n;
 		max = min + n;
 	}
@@ -266,10 +266,10 @@ static size_t ksmodel_set_upper_edge(struct kshark_trace_histo *histo)
 }
 
 static void ksmodel_set_next_bin_edge(struct kshark_trace_histo *histo,
-				      size_t bin, size_t last_row)
+				      int bin, size_t last_row)
 {
 	int64_t time_min, time_max;
-	size_t next_bin = bin + 1;
+	int next_bin = bin + 1;
 	ssize_t row;
 
 	/* Calculate the beginning and the end of the next bin. */
@@ -463,12 +463,12 @@ size_t ksmodel_bin_count(struct kshark_trace_histo *histo, int bin)
  * @param histo: Input location for the model descriptor.
  * @param n: Number of bins to shift.
  */
-void ksmodel_shift_forward(struct kshark_trace_histo *histo, size_t n)
+void ksmodel_shift_forward(struct kshark_trace_histo *histo, int n)
 {
 	size_t last_row = 0;
 	int bin;
 
-	if (!histo->data_size)
+	if (!histo->data_size || histo->n_bins <= 0)
 		return;
 
 	if (histo->map[UOB(histo)] == KS_EMPTY_BIN) {
@@ -541,12 +541,12 @@ void ksmodel_shift_forward(struct kshark_trace_histo *histo, size_t n)
  * @param histo: Input location for the model descriptor.
  * @param n: Number of bins to shift.
  */
-void ksmodel_shift_backward(struct kshark_trace_histo *histo, size_t n)
+void ksmodel_shift_backward(struct kshark_trace_histo *histo, int n)
 {
 	size_t last_row = 0;
 	int bin;
 
-	if (!histo->data_size)
+	if (!histo->data_size || histo->n_bins <= 0)
 		return;
 
 	if (histo->map[LOB(histo)] == KS_EMPTY_BIN) {
@@ -649,7 +649,7 @@ void ksmodel_jump_to(struct kshark_trace_histo *histo, int64_t ts)
 static void ksmodel_zoom(struct kshark_trace_histo *histo,
 			 double r, int mark, bool zoom_in)
 {
-	size_t range, min, max, delta_min;
+	int64_t range, min, max, delta_min;
 	double delta_tot;
 
 	if (!histo->data_size)
@@ -668,7 +668,7 @@ static void ksmodel_zoom(struct kshark_trace_histo *histo,
 	 * Avoid overzooming. If needed, adjust the Scale factor to a the value
 	 * which provides bin_size >= 5.
 	 */
-	if (zoom_in && (size_t) (range * (1. - r)) < histo->n_bins * 5)
+	if (zoom_in && (int64_t) (range * (1. - r)) < (int64_t) histo->n_bins * 5)
 		r = 1. - (histo->n_bins * 5.) / range;
 
 	/*

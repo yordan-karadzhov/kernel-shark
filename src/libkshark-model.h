@@ -85,9 +85,9 @@ void ksmodel_fill(struct kshark_trace_histo *histo,
 
 size_t ksmodel_bin_count(struct kshark_trace_histo *histo, int bin);
 
-void ksmodel_shift_forward(struct kshark_trace_histo *histo, size_t n);
+void ksmodel_shift_forward(struct kshark_trace_histo *histo, int n);
 
-void ksmodel_shift_backward(struct kshark_trace_histo *histo, size_t n);
+void ksmodel_shift_backward(struct kshark_trace_histo *histo, int n);
 
 void ksmodel_jump_to(struct kshark_trace_histo *histo, int64_t ts);
 

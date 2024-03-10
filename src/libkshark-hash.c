@@ -168,8 +168,7 @@ void kshark_hash_id_remove(struct kshark_hash_id *hash, int id)
 void kshark_hash_id_clear(struct kshark_hash_id *hash)
 {
 	struct kshark_hash_id_item *item, *next;
-	size_t size;
-	int i;
+	size_t i, size;
 
 	if (!hash || ! hash->hash)
 		return;
@@ -211,8 +210,8 @@ static int compare_ids(const void* a, const void* b)
 int *kshark_hash_ids(struct kshark_hash_id *hash)
 {
 	struct kshark_hash_id_item *item;
-	size_t size = hash_size(hash);
-	int count = 0, i;
+	size_t i, size = hash_size(hash);
+	int count = 0;
 	int *ids;
 
 	if (!hash->count)

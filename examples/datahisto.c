@@ -70,7 +70,7 @@ void dump_bin(struct kshark_trace_histo *histo, int bin, int sd,
 
 void dump_histo(struct kshark_trace_histo *histo, int sd, const char *type, int val)
 {
-	size_t bin;
+	int bin;
 
 	for (bin = 0; bin < histo->n_bins; ++bin)
 		dump_bin(histo, bin, sd, type, val);

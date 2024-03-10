@@ -764,7 +764,7 @@ struct kshark_entry_collection {
 	int *values;
 
 	/** The suze of the array of matching condition values. */
-	int n_val;
+	size_t n_val;
 
 	/**
 	 * Array of indexes defining the beginning of each individual data
@@ -1071,7 +1071,7 @@ struct kshark_entry_data_set {
 
 struct kshark_entry **
 kshark_merge_data_entries(struct kshark_entry_data_set *buffers,
-			  int n_buffers);
+			  size_t n_buffers);
 
 ssize_t kshark_load_all_entries(struct kshark_context *kshark_ctx,
 				struct kshark_entry ***data_rows);
@@ -1111,7 +1111,7 @@ struct kshark_matrix_data_set {
 
 struct kshark_matrix_data_set
 kshark_merge_data_matrices(struct kshark_matrix_data_set *buffers,
-			   int n_buffers);
+			   size_t n_buffers);
 
 /**
  * Structure used to store the data of a kshark_entry plus one additional

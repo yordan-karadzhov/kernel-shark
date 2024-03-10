@@ -8,7 +8,8 @@ int main(int argc, char **argv)
 	struct kshark_config_doc *conf, *filter, *hello;
 	struct kshark_context *kshark_ctx;
 	struct kshark_data_stream *stream;
-	int sd, *ids = NULL, i;
+	int sd, *ids = NULL;
+	size_t i;
 
 	/* Create a new kshark session. */
 	kshark_ctx = NULL;

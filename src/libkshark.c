@@ -1370,14 +1370,15 @@ void kshark_clear_all_filters(struct kshark_context *kshark_ctx,
 			      size_t n_entries)
 {
 	struct kshark_data_stream *stream;
-	int *stream_ids, i;
+	int *stream_ids, sd;
+	size_t i;
 
 	for (i = 0; i < n_entries; ++i)
 		set_all_visible(&data[i]->visible);
 
 	stream_ids = kshark_all_streams(kshark_ctx);
-	for (i = 0; i < kshark_ctx->n_streams; i++) {
-		stream = kshark_get_data_stream(kshark_ctx, stream_ids[i]);
+	for (sd = 0; sd < kshark_ctx->n_streams; sd++) {
+		stream = kshark_get_data_stream(kshark_ctx, stream_ids[sd]);
 		stream->filter_is_applied = false;
 	}
 
@@ -1902,10 +1903,13 @@ void kshark_set_clock_offset(struct kshark_context *kshark_ctx,
 	kshark_data_qsort(entries, size);
 }
 
-static int first_in_time_entry(struct kshark_entry_data_set *buffer, int n_buffers, size_t *count)
+static int first_in_time_entry(struct kshark_entry_data_set *buffer,
+			       size_t n_buffers,
+			       ssize_t *count)
 {
 	int64_t t_min = INT64_MAX;
-	int i, min = -1;
+	int min = -1;
+	size_t i;
 
 	for (i = 0; i < n_buffers; ++i) {
 		if (count[i] == buffer[i].n_rows)
@@ -1930,10 +1934,11 @@ static int first_in_time_entry(struct kshark_entry_data_set *buffer, int n_buffe
  *	    responsible for freeing the elements of the outputted array.
  */
 struct kshark_entry **
-kshark_merge_data_entries(struct kshark_entry_data_set *buffers, int n_buffers)
+kshark_merge_data_entries(struct kshark_entry_data_set *buffers, size_t n_buffers)
 {
 	struct kshark_entry **merged_data;
-	size_t i, tot = 0, count[n_buffers];
+	ssize_t count[n_buffers];
+	size_t i, tot = 0;
 	int i_first;
 
 	if (n_buffers < 2) {
@@ -2078,7 +2083,9 @@ ssize_t kshark_append_all_entries(struct kshark_context *kshark_ctx,
 				merged_data);
 }
 
-static int first_in_time_row(struct kshark_matrix_data_set *buffers, int n_buffers, size_t *count)
+static int first_in_time_row(struct kshark_matrix_data_set *buffers,
+			     int n_buffers,
+			     ssize_t *count)
 {
 	int64_t t_min = INT64_MAX;
 	int i, min = -1;
@@ -2107,10 +2114,11 @@ static int first_in_time_row(struct kshark_matrix_data_set *buffers, int n_buffe
  *	    matrix.
  */
 struct kshark_matrix_data_set
-kshark_merge_data_matrices(struct kshark_matrix_data_set *buffers, int n_buffers)
+kshark_merge_data_matrices(struct kshark_matrix_data_set *buffers, size_t n_buffers)
 {
 	struct kshark_matrix_data_set merged_data;
-	size_t i, tot = 0, count[n_buffers];
+	ssize_t count[n_buffers];
+	size_t i, tot = 0;
 	int i_first;
 	bool status;
 

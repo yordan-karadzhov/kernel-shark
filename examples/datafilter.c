@@ -17,11 +17,11 @@ const char *default_file = "trace.dat";
 
 int main(int argc, char **argv)
 {
-	size_t i, sd, n_rows, n_tasks, n_evts, count;
+	size_t i, n_rows, n_tasks, n_evts, count;
 	struct kshark_context *kshark_ctx;
 	struct kshark_data_stream *stream;
 	struct kshark_entry **data = NULL;
-	int *pids, *evt_ids;
+	int sd, *pids, *evt_ids;
 	char *entry_str;
 
 	/* Create a new kshark session. */

@@ -104,28 +104,28 @@ static void plugin_sched_swith_action(struct kshark_data_stream *stream,
 {
 	struct tep_record *record = (struct tep_record *) rec;
 	struct plugin_sched_context *plugin_ctx;
-	unsigned long long next_pid, prev_state;
+	unsigned long long next_pid_val, prev_state_val;
 	ks_num_field_t ks_field = 0;
-	int ret;
+	int ret, pid;
 
 	plugin_ctx = __get_context(stream->stream_id);
 	if (!plugin_ctx)
 		return;
 
 	ret = tep_read_number_field(plugin_ctx->sched_switch_next_field,
-				    record->data, &next_pid);
-
-	if (ret == 0 && next_pid >= 0) {
+				    record->data, &next_pid_val);
+	pid = next_pid_val;
+	if (ret == 0 && pid >= 0) {
 		plugin_sched_set_pid(&ks_field, entry->pid);
 
 		ret = tep_read_number_field(plugin_ctx->sched_switch_prev_state_field,
-					    record->data, &prev_state);
+					    record->data, &prev_state_val);
 
 		if (ret == 0)
-			plugin_sched_set_prev_state(&ks_field, prev_state);
+			plugin_sched_set_prev_state(&ks_field, prev_state_val);
 
 		kshark_data_container_append(plugin_ctx->ss_data, entry, ks_field);
-		entry->pid = next_pid;
+		entry->pid = pid;
 	}
 }
 

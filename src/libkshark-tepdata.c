@@ -239,7 +239,7 @@ static int get_next_pid(struct kshark_data_stream *stream,
 	ret = tep_read_number_field(get_sched_next(stream),
 				    record->data, &val);
 
-	return ret ? : val;
+	return ret ? : (int) val;
 }
 
 static void register_command(struct kshark_data_stream *stream,
@@ -312,7 +312,6 @@ static ssize_t get_records(struct kshark_context *kshark_ctx,
 		count = 0;
 		cpu_list[cpu] = NULL;
 		temp_next = &cpu_list[cpu];
-
 		rec = tracecmd_read_cpu_first(kshark_get_tep_input(stream), cpu);
 		while (rec) {
 			*temp_next = temp_rec = calloc(1, sizeof(*temp_rec));
