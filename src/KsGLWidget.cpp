@@ -13,6 +13,9 @@
 #include <GL/glut.h>
 #include <GL/gl.h>
 
+// OpenMP
+#include <omp.h>
+
 // KernelShark
 #include "libkshark-plugin.h"
 #include "KsGLWidget.hpp"
@@ -54,6 +57,7 @@ KsGLWidget::KsGLWidget(QWidget *parent)
 
 	connect(&_model,	&QAbstractTableModel::modelReset,
 		this,		qOverload<>(&KsGLWidget::update));
+	omp_set_num_threads(omp_get_num_procs());
 }
 
 void KsGLWidget::_freeGraphs()
@@ -690,23 +694,41 @@ void KsGLWidget::_makeGraphs()
 
 	for (auto it = _streamPlots.begin(); it != _streamPlots.end(); ++it) {
 		sd = it.key();
+		size_t nCpus = it.value()._cpuList.count();
+		size_t nTasks = it.value()._taskList.count();
+		QVector<KsPlot::Graph *> cpuGraphs(nCpus);
+		QVector<KsPlot::Graph *> taskGraphs(nTasks);
+
 		/* Create CPU graphs according to the cpuList. */
 		it.value()._cpuGraphs = {};
-		for (auto const &cpu: it.value()._cpuList) {
-			g = lamAddGraph(sd, _newCPUGraph(sd, cpu), _vSpacing);
+		#pragma omp parallel for
+		for (size_t idx = 0; idx < nCpus; ++idx) {
+			int cpu = it.value()._cpuList[idx];
+			cpuGraphs[idx] = _newCPUGraph(sd, cpu);
+		}
+		QVectorIterator<KsPlot::Graph *> itCpuGraphs(cpuGraphs);
+		while (itCpuGraphs.hasNext()) {
+			g = lamAddGraph(sd, itCpuGraphs.next(), _vSpacing);
 			it.value()._cpuGraphs.append(g);
 		}
 
 		/* Create Task graphs according to the taskList. */
 		it.value()._taskGraphs = {};
-		for (auto const &pid: it.value()._taskList) {
-			g = lamAddGraph(sd, _newTaskGraph(sd, pid), _vSpacing);
+		#pragma omp parallel for
+		for (size_t idx = 0; idx < nTasks; ++idx) {
+			int pid = it.value()._taskList[idx];
+			taskGraphs[idx] = _newTaskGraph(sd, pid);
+		}
+		QVectorIterator<KsPlot::Graph *> itTaskGraphs(taskGraphs);
+		while (itTaskGraphs.hasNext()) {
+			g = lamAddGraph(sd, itTaskGraphs.next(), _vSpacing);
 			it.value()._taskGraphs.append(g);
 		}
 	}
 
 	for (auto &c: _comboPlots) {
 		int n = c.count();
+		#pragma omp parallel for
 		for (int i = 0; i < n; ++i) {
 			sd = c[i]._streamId;
 			if (c[i]._type & KSHARK_TASK_DRAW) {
