@@ -309,7 +309,8 @@ QVariant KsViewModel::data(const QModelIndex &index, int role) const
 	}
 
 	if (role == Qt::DisplayRole)
-		return this->getValue(index.column(), index.row());
+		if (index.isValid())
+			return this->getValue(index.column(), index.row());
 
 	return {};
 }
