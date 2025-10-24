@@ -71,7 +71,7 @@ if (OPENGL_FOUND)
                   "${KS_DIR}/src/libkshark-plot.h"
                   "${KS_DIR}/src/KsPlotTools.hpp"
                   "${KS_DIR}/src/KsPlugins.hpp"
-                  "${KS_DIR}/src/KsCmakeDef.hpp"
+                  "${KS_DIR}/build/include/KsCmakeDef.hpp"
             DESTINATION ${KS_INCLUDS_DESTINATION}
                 COMPONENT libkshark-devel)
 

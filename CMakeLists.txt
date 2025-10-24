@@ -129,7 +129,7 @@ else (CMAKE_BUILD_TYPE MATCHES Package)
 endif (CMAKE_BUILD_TYPE MATCHES Package)
 
 include_directories(${KS_DIR}/src/
-                    ${KS_DIR}/build/src/)
+                    ${KS_DIR}/build/include/)
 
 message("")
 message(STATUS "C flags      : " ${CMAKE_C_FLAGS})
@@ -163,7 +163,7 @@ if (_DOXYGEN_DOC AND DOXYGEN_FOUND)
 endif ()
 
 configure_file(${KS_DIR}/build/deff.h.cmake
-               ${KS_DIR}/src/KsCmakeDef.hpp)
+               ${KS_DIR}/build/include/KsCmakeDef.hpp)
 
 configure_file(${KS_DIR}/build/ks.desktop.cmake
                ${KS_DIR}/${KS_APP_NAME}.desktop)
