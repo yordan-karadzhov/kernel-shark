@@ -353,7 +353,7 @@ The columns of the list are:
 resolution.
 <li><b>Task</b> - The name of the process that was running when the event occurred.
 <li><b>PID</b> - The process ID of the task that was running when the event occurred.
-<li><b><a name="latency">Latency</a></b> -  The latency is broken into 4 fields:
+<li><b><a name="latency">Latency</a></b> -  The latency is broken into 4 or 5 fields:
   <ol>
     <li>Interrupts disabled - 'd' if interrupts are disabled, otherwise '.'
     <li>Need reschedule - 'N' if the kernel was notified that a schedule is needed, otherwise '.'
@@ -365,6 +365,12 @@ resolution.
       than zero, then the kernel will not preempt the running tasks, even
       if a schedule has been requested by some event. If the counter is zero,
       then '.' is shown.
+    <li>Migrate disabled counter - Starting in Linux kernel version 5.11, a task can
+      be temporarily pinned to the CPU. For accessing critical sections that are protected
+      by a per-CPU mutex, the task will need to stay on the current CPU. A "migrate_disable()"
+      call is performed that increments the task's "migrate disabled counter" and will pin
+      the task to the CPU. If the kernel has this feature, this number will be displayed
+      as the 5th argument when it is not zero. Otherwise it will be '.'.
   </ol>
   <p>Note: These may be different depending on the kernel the trace.dat file came from.</p>
 <li><b>Event</b> - The name of the event.
