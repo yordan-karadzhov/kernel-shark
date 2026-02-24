@@ -1528,7 +1528,7 @@ bool kshark_export_adv_filters(struct kshark_context *kshark_ctx, int sd,
 static bool kshark_adv_filters_from_json(struct kshark_data_stream *stream,
 					 struct json_object *jobj)
 {
-	json_object *jfilter, *jname, *jcond;
+	json_object *jfilter, *jname, *jcond, *jitem;
 	int i, length, n, ret = 0;
 	char *filter_str = NULL;
 
@@ -1548,10 +1548,10 @@ static bool kshark_adv_filters_from_json(struct kshark_data_stream *stream,
 	/* Set the filter. */
 	length = json_object_array_length(jfilter);
 	for (i = 0; i < length; ++i) {
-		jfilter = json_object_array_get_idx(jfilter, i);
+		jitem = json_object_array_get_idx(jfilter, i);
 
-		if (!json_object_object_get_ex(jfilter, "name", &jname) ||
-		    !json_object_object_get_ex(jfilter, "condition", &jcond))
+		if (!json_object_object_get_ex(jitem, "name", &jname) ||
+		    !json_object_object_get_ex(jitem, "condition", &jcond))
 			goto fail;
 
 		n = asprintf(&filter_str, "%s:%s",
